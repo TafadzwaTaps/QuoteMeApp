@@ -5,3 +5,19 @@ Traceback (most recent call last):
               ^^^^^^^^^^^^^^^^^
 AttributeError: module 'bcrypt' has no attribute '__about__'
 2025-12-11 16:38:09,708 [INFO] Admin 'admin' created with default password.
+2025-12-11 19:10:23,040 [WARNING] Failed login attempt for admin Ruva.
+2025-12-11 19:10:23,041 [ERROR] Login error: 401: Invalid credentials
+2025-12-11 19:10:51,932 [WARNING] Failed login attempt for admin Ruva.
+2025-12-11 19:10:51,933 [ERROR] Login error: 401: Invalid credentials
+2025-12-11 19:14:59,111 [WARNING] Failed login attempt for admin Ruva.
+2025-12-11 19:15:24,596 [WARNING] Failed login attempt for admin Ruva.
+2025-12-11 19:19:37,103 [INFO] Admin 'Ruva' created with password 'Ruva123$'.
+2025-12-11 19:19:57,183 [INFO] Admin Ruva logged in successfully.
+2025-12-11 19:43:51,238 [INFO] Admin 'Ruva' logged in successfully.
+2025-12-11 20:06:36,532 [INFO] Image uploaded by admin Ruva: Kunene DoringKloof.jpg
+2025-12-11 20:06:58,454 [INFO] Quote added by admin: Ruva
+2025-12-11 20:22:54,950 [INFO] Image uploaded by admin Ruva: QuoteMe Logo.jpg
+2025-12-11 20:22:54,994 [INFO] Quote added by admin: Ruva
+2025-12-11 20:47:31,400 [INFO] Admin 'Ruva' logged in successfully.
+2025-12-11 20:48:50,870 [INFO] Admin 'Ruva' logged in successfully.
+2025-12-11 20:49:11,506 [INFO] Image uploaded by admin Ruva: QuoteMe Logo.jpg

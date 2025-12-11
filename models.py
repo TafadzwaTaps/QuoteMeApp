@@ -13,8 +13,8 @@ class Admin(Base):
 class Quote(Base):
     __tablename__ = "quotes"
     id = Column(Integer, primary_key=True, index=True)
-    text = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    text = Column(String, nullable=False)
+    image_url = Column(String, nullable=True)
 
 class Story(Base):
     __tablename__ = "stories"

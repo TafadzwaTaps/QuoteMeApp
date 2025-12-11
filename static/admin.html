@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuoteMe ZW Admin Login</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            background: #ffeaf4;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .login-container h2 {
+            color: #d63384;
+            margin-bottom: 20px;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        .login-container button {
+            background: #d63384;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .login-container button:hover {
+            background: #b12a6f;
+        }
+        .error-msg {
+            color: #ff0033;
+            margin-top: 10px;
+            display: none;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Admin Login</h2>
+    <form id="adminLoginForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+        <div class="error-msg" id="loginError"></div>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById('adminLoginForm');
+    const loginError = document.getElementById('loginError');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const res = await fetch('http://127.0.0.1:8000/admin/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password})
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                loginError.style.display = 'block';
+                loginError.textContent = data.detail || 'Login failed';
+                return;
+            }
+
+            const data = await res.json();
+            loginError.style.display = 'none';
+
+            // Store token (if needed) and redirect to dashboard
+            localStorage.setItem('adminToken', data.token);
+            window.location.href = '/dashboard.html';
+
+        } catch (err) {
+            loginError.style.display = 'block';
+            loginError.textContent = 'Server error. Please try again.';
+            console.error(err);
+        }
+    });
+</script>
+
+</body>
+</html>

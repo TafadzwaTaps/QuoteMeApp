@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>QuoteMe — Admin Dashboard</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#fff0f7; --card:#ffffff; --accent:#d63384;
+  --accent-2:#ff66b3; --muted:#666; --text:#222; --glass: rgba(255,255,255,0.8);
+}
+[data-theme="dark"]{
+  --bg:#121214; --card:#1b1b1f; --accent:#ff66b3;
+  --accent-2:#d63384; --muted:#bbb; --text:#eef; --glass: rgba(255,255,255,0.03);
+}
+
+*{box-sizing:border-box;font-family:'Poppins',sans-serif}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);transition:background .25s,color .25s}
+
+/* Topbar */
+.topbar{
+  display:flex;align-items:center;gap:12px;padding:14px 18px;
+  background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,0.06);
+  position:sticky;top:0;z-index:40;
+}
+.brand{font-weight:700;color:var(--accent);font-size:18px}
+.spacer{flex:1}
+.btn{background:var(--accent);color:white;padding:8px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:600;transition:transform .12s,opacity .12s}
+.btn.secondary{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.btn:active{transform:scale(.98)}
+.icon-btn{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:18px;padding:6px;border-radius:8px}
+
+/* Layout */
+.wrap{display:grid;grid-template-columns:260px 1fr;gap:18px;padding:18px;align-items:start}
+@media(max-width:900px){ 
+  .wrap{grid-template-columns:1fr;padding:12px} 
+  .sidebar{display:none} 
+  .sidebar.open{display:block;position:fixed;left:0;top:64px;bottom:0;z-index:60;width:260px;box-shadow:8px 0 30px rgba(0,0,0,0.1)} 
+}
+
+/* Sidebar */
+.sidebar{background:linear-gradient(180deg,var(--card),#fff);padding:18px;border-radius:14px;height:calc(100vh - 118px);overflow:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;color:var(--muted);cursor:pointer}
+.nav-item.active{background:var(--accent);color:white}
+.nav-item:hover{background: rgba(0,0,0,0.03)}
+
+/* Content area */
+.content{min-height:70vh}
+.section{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.04);margin-bottom:16px;transition:transform .12s;overflow:hidden}
+.section h2{margin:0 0 12px 0;color:var(--accent)}
+
+/* Controls */
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.search{padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);min-width:200px}
+.tabs{display:flex;gap:8px}
+
+/* Grid list */
+.list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card{background:var(--glass);padding:14px;border-radius:12px;border:1px solid rgba(0,0,0,0.03);backdrop-filter: blur(4px);display:flex;flex-direction:column;gap:8px;animation:fadeIn .22s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.card .meta{display:flex;justify-content:space-between;align-items:center}
+.card .title{font-weight:600;color:var(--accent)}
+.card p{color:var(--muted);margin:0;font-size:14px}
+.card img{width:100%;height:140px;object-fit:cover;border-radius:8px}
+
+/* Pagination */
+.pagination{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:14px}
+.page-btn{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px 12px;border-radius:8px;cursor:pointer}
+
+/* Modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;justify-content:center;align-items:center;z-index:80}
+.modal{background:var(--card);width:92%;max-width:720px;border-radius:12px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,0.25)}
+.modal h3{margin-top:0;color:var(--accent)}
+.form-row{display:flex;gap:12px;flex-wrap:wrap}
+.form-control{flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06)}
+.file-input{display:flex;gap:8px;align-items:center}
+.img-preview{width:100%;max-height:220px;object-fit:contain;border-radius:8px;border:1px solid rgba(0,0,0,0.06);}
+
+/* small screens */
+@media(max-width:600px){
+  .controls{flex-direction:column;align-items:stretch}
+  .form-row{flex-direction:column}
+  .list{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar" id="topbar">
+  <button class="icon-btn" id="menuToggle" title="Menu">☰</button>
+  <div class="brand">QuoteMe Admin</div>
+  <div class="spacer"></div>
+
+  <div style="display:flex;align-items:center;gap:8px">
+    <button class="icon-btn" id="darkToggle" title="Toggle dark">🌙</button>
+    <button class="btn secondary" id="refreshBtn" title="Refresh lists">Refresh</button>
+    <button class="btn" id="logoutBtn">Logout</button>
+  </div>
+</div>
+
+<!-- WRAP -->
+<div class="wrap" id="wrap">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div style="font-weight:700;color:var(--accent);margin-bottom:10px">Admin Panel</div>
+    <div class="nav-item active" data-tab="quotes" onclick="switchTab('quotes')">Quotes</div>
+    <div class="nav-item" data-tab="stories" onclick="switchTab('stories')">Stories</div>
+    <div class="nav-item" data-tab="blogs" onclick="switchTab('blogs')">Blogs</div>
+    <div style="height:14px"></div>
+    <div style="font-size:13px;color:var(--muted)">Account</div>
+    <div class="nav-item" id="accountInfo"></div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+    <section class="section" id="managerSection">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <h2 id="sectionTitle">Manage Quotes</h2>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="tabs" id="tabButtons">
+            <button class="btn secondary" onclick="switchTab('quotes')">Quotes</button>
+            <button class="btn secondary" onclick="switchTab('stories')">Stories</button>
+            <button class="btn secondary" onclick="switchTab('blogs')">Blogs</button>
+          </div>
+
+          <input id="searchInput" class="search" placeholder="Search title or text...">
+          <button class="btn" id="addBtn">+ Add</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="controls">
+        <div style="display:flex;align-items:center;gap:12px">
+          <label style="color:var(--muted)">Items per page</label>
+          <select id="pageSize" class="form-control" style="width:90px;padding:8px;border-radius:8px">
+            <option value="6">6</option>
+            <option value="12" selected>12</option>
+            <option value="24">24</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="listContainer" class="list" aria-live="polite"></div>
+      <div class="pagination" id="pagination"></div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 id="modalTitle">Add Item</h3>
+    <div class="form-row">
+      <input id="itemTitle" class="form-control" placeholder="Title or Quote text">
+      <input id="itemImageUrl" class="form-control" placeholder="Image URL (optional)">
+    </div>
+    <div style="margin-top:10px">
+      <textarea id="itemContent" class="form-control" rows="4" placeholder="Content / details"></textarea>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:12px;align-items:center">
+      <input type="file" id="itemFile" accept="image/*">
+      <button class="btn secondary" id="uploadFileBtn">Upload File</button>
+      <div style="flex:1;color:var(--muted);font-size:13px">You can upload an image file; URL will fill Image URL field.</div>
+    </div>
+    <img id="modalPreview" class="img-preview" style="display:none;margin-top:10px" alt="Preview">
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px">
+      <button class="btn secondary" id="closeModalBtn">Cancel</button>
+      <button class="btn" id="saveModalBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================== Config ==================
+const API = {
+  quotes: '/quotes',
+  stories: '/stories',
+  blogs: '/blogs',
+  upload: '/upload-image'
+};
+
+let state = {
+  tab: 'quotes',
+  items: [],
+  page:1,
+  pageSize:12,
+  search:'',
+  editingId:null,
+  isAdding:true
+};
+
+// ================== Auth ==================
+const getToken = () => localStorage.getItem('adminToken') || '';
+function authHeaders(extra={}){ const token=getToken(); const headers={...extra}; if(token) headers['Authorization'] = `Bearer ${token}`; return headers; }
+function decodeJwt(token){ try{ const p=token.split('.')[1]; const json=atob(p.replace(/-/g,'+').replace(/_/g,'/')); return JSON.parse(decodeURIComponent(escape(json))); }catch(e){ return null; } }
+
+(function initAuth(){
+  const token=getToken();
+  const accountInfo=document.getElementById('accountInfo');
+  if(token){ const payload=decodeJwt(token); accountInfo.textContent = `${payload?.username||'admin'} • ${payload?.role||'admin'}`; }
+  else { accountInfo.textContent='Not logged in'; setTimeout(()=>window.location.href='/admin.html', 800);}
+})();
+
+// ================== Dark Mode ==================
+(function initDark(){ 
+  const root=document.documentElement; const toggle=document.getElementById('darkToggle'); 
+  if(localStorage.getItem('dm')==='1') root.setAttribute('data-theme','dark'); 
+  toggle.addEventListener('click',()=>{ if(root.getAttribute('data-theme')==='dark'){ root.removeAttribute('data-theme'); localStorage.removeItem('dm'); } else { root.setAttribute('data-theme','dark'); localStorage.setItem('dm','1'); }});
+})();
+
+// ================== UI ==================
+document.getElementById('menuToggle').addEventListener('click', ()=>document.getElementById('sidebar').classList.toggle('open'));
+document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('adminToken'); window.location.href='/admin.html'; });
+document.getElementById('refreshBtn').addEventListener('click', ()=>loadList(true));
+document.getElementById('addBtn').addEventListener('click', ()=>openModalForAdd());
+document.getElementById('searchInput').addEventListener('input', (e)=>{ state.search=e.target.value||''; state.page=1; renderList(); });
+document.getElementById('pageSize').addEventListener('change', (e)=>{ state.pageSize=Number(e.target.value); state.page=1; renderList(); });
+
+// ================== Tabs ==================
+function switchTab(tab){
+  state.tab=tab; state.page=1;
+  document.querySelectorAll('.nav-item').forEach(n=> n.classList.toggle('active', n.dataset.tab===tab));
+  document.getElementById('sectionTitle').innerText = `Manage ${tab.charAt(0).toUpperCase()+tab.slice(1)}`;
+  loadList(true);
+}
+
+// ================== Fetch ==================
+async function fetchItemsFromApi(){
+  try{
+    const res=await fetch(API[state.tab], {headers:authHeaders()});
+    if(!res.ok) throw new Error(`Failed: ${res.status}`);
+    const items=await res.json();
+    return items.map((it,i)=>({...it,id:it.id||i+1})); // fallback id if missing
+  }catch(e){ console.error(e); showToast('Failed to load items'); return []; }
+}
+
+async function loadList(forceReload=false){
+  if(!forceReload && state.items.length>0 && state.tab!=='quotes') return;
+  state.items = await fetchItemsFromApi();
+  state.page=1;
+  renderList();
+}
+
+// ================== Render ==================
+function renderList(){
+  const container=document.getElementById('listContainer');
+  const searchLower=state.search.trim().toLowerCase();
+  const filtered=state.items.filter(it=>{
+    const title=(it.title||it.text||'').toLowerCase();
+    const content=(it.content||'').toLowerCase();
+    return !searchLower || title.includes(searchLower) || content.includes(searchLower);
+  });
+  const total=filtered.length, perPage=state.pageSize, pages=Math.max(1, Math.ceil(total/perPage));
+  if(state.page>pages) state.page=pages;
+  const start=(state.page-1)*perPage;
+  const pageItems=filtered.slice(start,start+perPage);
+  container.innerHTML=pageItems.map(it=>renderCardHtml(it)).join('') || `<div style="padding:24px;color:var(--muted)">No items found.</div>`;
+  
+  const pag=document.getElementById('pagination');
+  pag.innerHTML='';
+  if(pages>1){
+    const makeBtn=(txt,disabled,cb)=>{ const b=document.createElement('button'); b.className='page-btn'; b.textContent=txt; if(disabled) b.disabled=true; b.addEventListener('click',cb); return b; };
+    pag.appendChild(makeBtn('« Prev', state.page===1, ()=>{ state.page--; renderList(); }));
+    for(let p=1;p<=pages;p++){
+      const b=document.createElement('button'); b.className='page-btn'; b.textContent=p; b.style.fontWeight=(p===state.page)?700:400; b.addEventListener('click',()=>{ state.page=p; renderList(); }); pag.appendChild(b);
+    }
+    pag.appendChild(makeBtn('Next »', state.page===pages, ()=>{ state.page++; renderList(); }));
+  }
+}
+
+function renderCardHtml(it){
+  const title=escapeHtml(it.title||it.text||'(no title)');
+  const content=escapeHtml((it.content||'').slice(0,160));
+  const image=it.image_url ? `<img src="${escapeHtml(it.image_url)}" alt="">` : '';
+  const id=it.id;
+  return `
+    <div class="card" data-id="${id}">
+      <div class="meta"><div class="title">${title}</div><div style="font-size:12px;color:var(--muted)">#${id}</div></div>
+      ${image}
+      <p>${content}</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn secondary" onclick="openModalForEdit(${id})">Edit</button>
+        <button class="btn" onclick="deleteItem(${id})">Delete</button>
+      </div>
+    </div>`;
+}
+function escapeHtml(s){return s?.toString()?.replace?.(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))||'';}
+
+// ================== Modal ==================
+const modalBackdrop=document.getElementById('modalBackdrop');
+const modalTitle=document.getElementById('modalTitle');
+const itemTitle=document.getElementById('itemTitle');
+const itemContent=document.getElementById('itemContent');
+const itemImageUrl=document.getElementById('itemImageUrl');
+const itemFile=document.getElementById('itemFile');
+const modalPreview=document.getElementById('modalPreview');
+let modalState={id:null,isAdd:true};
+
+function openModalForAdd(){
+  modalState={id:null,isAdd:true}; modalTitle.innerText=`Add new ${state.tab.slice(0,-1)}`;
+  itemTitle.value=''; itemContent.value=''; itemImageUrl.value=''; itemFile.value=''; modalPreview.style.display='none'; modalBackdrop.style.display='flex'; itemTitle.focus();
+}
+
+async function openModalForEdit(id){
+  modalState={id,isAdd:false}; modalTitle.innerText=`Edit ${state.tab.slice(0,-1)} #${id}`;
+  const existing = state.items.find(x=>Number(x.id)===Number(id));
+  if(existing){
+    itemTitle.value=existing.title||existing.text||'';
+    itemContent.value=existing.content||'';
+    itemImageUrl.value=existing.image_url||'';
+    if(existing.image_url){ modalPreview.src=existing.image_url; modalPreview.style.display='block'; } else modalPreview.style.display='none';
+    modalBackdrop.style.display='flex';
+  } else showToast('Item not found; refresh first');
+}
+
+document.getElementById('closeModalBtn').addEventListener('click', ()=> modalBackdrop.style.display='none');
+
+itemFile.addEventListener('change', (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader(); reader.onload=(evt)=>{ modalPreview.src=evt.target.result; modalPreview.style.display='block'; };
+  reader.readAsDataURL(f);
+});
+
+document.getElementById('uploadFileBtn').addEventListener('click', async ()=>{
+  if(!itemFile.files.length){ showToast('No file chosen'); return; }
+  const url = await uploadFileAndGetUrl(itemFile.files[0]);
+  if(url){ itemImageUrl.value=url; modalPreview.src=url; modalPreview.style.display='block'; showToast('Uploaded'); }
+});
+
+async function uploadFileAndGetUrl(file){
+  try{
+    const fd=new FormData(); fd.append('file', file);
+    const res=await fetch(API.upload,{method:'POST',headers:authHeaders(),body:fd});
+    if(!res.ok){ const txt=await res.text(); console.error('upload failed',txt); showToast('Upload failed'); return null; }
+    const data=await res.json(); return data.url;
+  }catch(e){ console.error(e); showToast('Upload error'); return null; }
+}
+
+document.getElementById('saveModalBtn').addEventListener('click', async ()=>{
+  const title=itemTitle.value.trim(); const content=itemContent.value.trim(); let image_url=itemImageUrl.value.trim();
+  if(!title){ showToast('Title/Quote required'); return; }
+  if(itemFile.files.length>0){ const uploaded=await uploadFileAndGetUrl(itemFile.files[0]); if(uploaded) image_url=uploaded; }
+  const payload = (state.tab==='quotes') ? { text:title } : { title, content, image_url };
+  const endpoint = API[state.tab];
+  const isAdd = modalState.isAdd;
+  let url = endpoint; let method='POST';
+  if(!isAdd){ url=`${endpoint}/${modalState.id}`; method='PUT'; }
+  const res=await fetch(url,{method,headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(payload)});
+  if(res.ok){ showToast(isAdd?'Created':'Updated'); modalBackdrop.style.display='none'; await loadList(true); }
+  else { const txt=await res.text(); console.error('save failed',txt); showToast('Save failed'); }
+});
+
+// ================== Delete ==================
+async function deleteItem(id){
+  if(!confirm('Delete this item?')) return;
+  const endpoint = API[state.tab];
+  const res=await fetch(`${endpoint}/${id}`,{method:'DELETE',headers:authHeaders()});
+  if(res.ok){ showToast('Deleted'); await loadList(true); }
+  else { showToast('Delete failed'); console.error(await res.text()); }
+}
+
+// ================== Toast ==================
+function showToast(msg){
+  const el=document.createElement('div'); el.textContent=msg;
+  el.style.position='fixed'; el.style.right='20px'; el.style.bottom='20px';
+  el.style.background='var(--accent)'; el.style.color='white'; el.style.padding='10px 14px';
+  el.style.borderRadius='10px'; el.style.boxShadow='0 6px 20px rgba(0,0,0,0.15)';
+  document.body.appendChild(el);
+  setTimeout(()=>el.animate([{opacity:1},{opacity:0}],{duration:1800}).onfinish=()=>el.remove(),2200);
+}
+
+// ================== Init ==================
+switchTab('quotes');
+</script>
+</body>
+</html>

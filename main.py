@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine
 from models import Base, Admin, Quote, Story, Blog, ForumPost, ContactMessage
-from schemas import AdminLogin, QuoteSchema, StorySchema, BlogSchema, ForumPostSchema, ContactSchema
+from schemas import AdminLogin, QuoteSchema, StorySchema, BlogSchema, ForumPostSchema, ContactSchema, QuoteOut
 from passlib.hash import bcrypt
 import logging_setup
 import jwt
@@ -52,6 +52,14 @@ def serve_home():
         return FileResponse(FRONTEND_HTML)
     else:
         raise HTTPException(status_code=404, detail="Frontend HTML not found")
+    
+@app.get("/admin.html")
+def admin_page():
+    return FileResponse("static/admin.html")
+
+@app.get("/dashboard.html")
+def dashboard_page():
+    return FileResponse("static/dashboard.html")
 
 # ===== AUTH =====
 def verify_token(token: str):
@@ -73,43 +81,46 @@ def admin_required(token: str):
 def login(admin: AdminLogin, db: Session = Depends(get_db)):
     try:
         user = db.query(Admin).filter(Admin.username == admin.username).first()
-        if user and bcrypt.verify(admin.password, user.password_hash):
-            token = jwt.encode({"username": user.username}, SECRET_KEY, algorithm="HS256")
-            logger.info(f"Admin {admin.username} logged in successfully.")
-            return {"token": token}
-        logger.warning(f"Failed login attempt for admin {admin.username}.")
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not user:
+            # Admin username not found
+            logger.warning(f"Failed login attempt for unknown admin '{admin.username}'.")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        # Verify password
+        if not bcrypt.verify(admin.password, user.password_hash):
+            logger.warning(f"Failed login attempt for admin '{admin.username}': Wrong password.")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        # Successful login
+        token = jwt.encode({"username": user.username}, SECRET_KEY, algorithm="HS256")
+        logger.info(f"Admin '{admin.username}' logged in successfully.")
+        return {"token": token}
+
+    except HTTPException:
+        # Re-raise HTTP exceptions without turning them into 500
+        raise
+
     except Exception as e:
-        logger.error(f"Login error: {e}")
+        # Log unexpected errors
+        logger.error(f"Unexpected login error for admin '{admin.username}': {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 # ===== QUOTES =====
-@app.get("/quotes", response_model=List[QuoteSchema])
+@app.get("/quotes", response_model=list[QuoteOut])
 def get_quotes(db: Session = Depends(get_db)):
-    return db.query(Quote).order_by(Quote.created_at.desc()).all()
+    return db.query(Quote).all()
 
-@app.post("/quotes")
+
+@app.post("/quotes", response_model=QuoteOut)
 def add_quote(quote: QuoteSchema, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    try:
-        new_quote = Quote(text=quote.text)
-        db.add(new_quote)
-        db.commit()
-        db.refresh(new_quote)
-        logger.info(f"Quote added by admin: {username}")
-        return {"success": True, "quote": new_quote}
-    except Exception as e:
-        logger.error(f"Error adding quote: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
-@app.put("/quotes/{quote_id}")
-def edit_quote(quote_id: int, quote: QuoteSchema, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    q = db.query(Quote).filter(Quote.id == quote_id).first()
-    if not q:
-        raise HTTPException(status_code=404, detail="Quote not found")
-    q.text = quote.text
+    new_quote = Quote(text=quote.text)
+    db.add(new_quote)
     db.commit()
-    db.refresh(q)
-    return {"success": True, "quote": q}
+    db.refresh(new_quote)
+    return new_quote
+
 
 @app.delete("/quotes/{quote_id}")
 def delete_quote(quote_id: int, db: Session = Depends(get_db), username: str = Depends(admin_required)):

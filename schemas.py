@@ -37,3 +37,10 @@ class ContactSchema(BaseModel):
     class Config:
         orm_mode = True
     
+class QuoteOut(BaseModel):
+    id: int
+    text: str
+    image_url: Optional[str] = None
+
+    class Config:
+        orm_mode = True
