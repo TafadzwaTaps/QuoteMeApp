@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header, APIRouter
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -241,7 +241,20 @@ def delete_blog(blog_id: int, db: Session = Depends(get_db), username: str = Dep
 
 # ===== IMAGE UPLOAD =====
 @app.post("/upload-image")
-def upload_image(file: UploadFile = File(...), username: str = Depends(admin_required)):
+def upload_image(
+    file: UploadFile = File(...),
+    authorization: str = Header(...),
+    db: Session = Depends(get_db)
+):
+    # Verify token
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid auth header")
+    token = authorization.split(" ")[1]
+    username = verify_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Save file
     try:
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as buffer:

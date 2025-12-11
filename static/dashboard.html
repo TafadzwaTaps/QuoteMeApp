@@ -336,12 +336,32 @@ document.getElementById('uploadFileBtn').addEventListener('click', async ()=>{
 
 async function uploadFileAndGetUrl(file){
   try{
-    const fd=new FormData(); fd.append('file', file);
-    const res=await fetch(API.upload,{method:'POST',headers:authHeaders(),body:fd});
-    if(!res.ok){ const txt=await res.text(); console.error('upload failed',txt); showToast('Upload failed'); return null; }
-    const data=await res.json(); return data.url;
-  }catch(e){ console.error(e); showToast('Upload error'); return null; }
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const res = await fetch(API.upload, {
+      method: 'POST',
+      headers: authHeaders(),  // OK, keeps Authorization
+      body: fd                  // browser sets Content-Type automatically
+    });
+
+    if(!res.ok){
+      const txt = await res.text();
+      console.error('upload failed', txt);
+      showToast('Upload failed');
+      return null;
+    }
+
+    const data = await res.json();
+    return data.url;
+
+  } catch(e) {
+    console.error(e);
+    showToast('Upload error');
+    return null;
+  }
 }
+
 
 document.getElementById('saveModalBtn').addEventListener('click', async ()=>{
   const title=itemTitle.value.trim(); const content=itemContent.value.trim(); let image_url=itemImageUrl.value.trim();
