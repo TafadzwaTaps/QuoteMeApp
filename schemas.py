@@ -21,3 +21,19 @@ class BlogSchema(BaseModel):
     title: str
     content: str
     image_url: Optional[str] = None
+
+class ForumPostSchema(BaseModel):
+    name: str
+    message: str
+
+    class Config:
+        orm_mode = True
+
+class ContactSchema(BaseModel):
+    name: str
+    email: str
+    message: str
+
+    class Config:
+        orm_mode = True
+    

@@ -1,22 +1,29 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine
-from models import Base, Admin, Quote, Story, Blog
-from schemas import AdminLogin, QuoteSchema, StorySchema, BlogSchema
+from models import Base, Admin, Quote, Story, Blog, ForumPost, ContactMessage
+from schemas import AdminLogin, QuoteSchema, StorySchema, BlogSchema, ForumPostSchema, ContactSchema
 from passlib.hash import bcrypt
 import logging_setup
 import jwt
 import shutil, os
 from typing import List
+from datetime import datetime
 
 logger = logging_setup.logger
 
 # ===== CONFIG =====
-SECRET_KEY = "supersecretkey"  # replace in production
+SECRET_KEY = "supersecretkey"  # Replace with environment variable in production
 DATABASE_URL = "sqlite:///./database.db"
 UPLOAD_DIR = "./uploads"
+STATIC_DIR = "./static"
+FRONTEND_HTML = "index.html"
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(STATIC_DIR, exist_ok=True)
 
 # ===== DATABASE =====
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -31,8 +38,20 @@ def get_db():
         db.close()
 
 # ===== FASTAPI APP =====
-app = FastAPI(title="QuoteMe Admin Backend")
+app = FastAPI(title="QuoteMe App Backend")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# ===== STATIC FILES =====
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+# Serve homepage
+@app.get("/")
+def serve_home():
+    if os.path.exists(FRONTEND_HTML):
+        return FileResponse(FRONTEND_HTML)
+    else:
+        raise HTTPException(status_code=404, detail="Frontend HTML not found")
 
 # ===== AUTH =====
 def verify_token(token: str):
@@ -45,11 +64,11 @@ def verify_token(token: str):
 def admin_required(token: str):
     username = verify_token(token)
     if not username:
-        logger.warning("Unauthorized access attempt detected: Invalid or missing token")
+        logger.warning("Unauthorized access attempt")
         raise HTTPException(status_code=401, detail="Unauthorized")
     return username
 
-
+# ===== ADMIN LOGIN =====
 @app.post("/admin/login")
 def login(admin: AdminLogin, db: Session = Depends(get_db)):
     try:
@@ -63,7 +82,6 @@ def login(admin: AdminLogin, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Login error: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
-
 
 # ===== QUOTES =====
 @app.get("/quotes", response_model=List[QuoteSchema])
@@ -82,7 +100,6 @@ def add_quote(quote: QuoteSchema, db: Session = Depends(get_db), username: str =
     except Exception as e:
         logger.error(f"Error adding quote: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
-
 
 @app.put("/quotes/{quote_id}")
 def edit_quote(quote_id: int, quote: QuoteSchema, db: Session = Depends(get_db), username: str = Depends(admin_required)):
@@ -130,19 +147,14 @@ def edit_story(story_id: int, story: StorySchema, db: Session = Depends(get_db),
 
 @app.delete("/stories/{story_id}")
 def delete_story(story_id: int, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    try:
-        s = db.query(Story).filter(Story.id == story_id).first()
-        if not s:
-            logger.warning(f"Admin {username} attempted to delete non-existent story ID {story_id}")
-            raise HTTPException(status_code=404, detail="Story not found")
-        db.delete(s)
-        db.commit()
-        logger.info(f"Story ID {story_id} deleted by admin {username}")
-        return {"success": True}
-    except Exception as e:
-        logger.error(f"Error deleting story ID {story_id} by admin {username}: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
+    s = db.query(Story).filter(Story.id == story_id).first()
+    if not s:
+        logger.warning(f"Admin {username} attempted to delete non-existent story ID {story_id}")
+        raise HTTPException(status_code=404, detail="Story not found")
+    db.delete(s)
+    db.commit()
+    logger.info(f"Story ID {story_id} deleted by admin {username}")
+    return {"success": True}
 
 # ===== BLOGS =====
 @app.get("/blogs", response_model=List[BlogSchema])
@@ -191,3 +203,24 @@ def upload_image(file: UploadFile = File(...), username: str = Depends(admin_req
         logger.error(f"Image upload error by admin {username}: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload image")
 
+# ===== FORUM =====
+@app.get("/forum/posts", response_model=List[ForumPostSchema])
+def get_forum_posts(db: Session = Depends(get_db)):
+    return db.query(ForumPost).order_by(ForumPost.created_at.desc()).all()
+
+@app.post("/forum/post")
+def post_forum_message(post: ForumPostSchema, db: Session = Depends(get_db)):
+    new_post = ForumPost(name=post.name, message=post.message)
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    return {"success": True, "post": new_post}
+
+# ===== CONTACT =====
+@app.post("/contact/send")
+def send_contact(message: ContactSchema, db: Session = Depends(get_db)):
+    new_msg = ContactMessage(name=message.name, email=message.email, message=message.message)
+    db.add(new_msg)
+    db.commit()
+    db.refresh(new_msg)
+    return {"success": True}

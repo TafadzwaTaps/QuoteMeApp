@@ -5,8 +5,11 @@ import logging_setup  # import logger
 
 db = SessionLocal()
 
-username = "admin"
-password = "admin123"  # change to a strong password
+username = "Ruva"
+password = "Ruva123$"
+
+# Ensure password <= 72 bytes for bcrypt
+password = password[:72]
 
 existing_admin = db.query(Admin).filter(Admin.username == username).first()
 if existing_admin:

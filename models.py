@@ -31,3 +31,18 @@ class Blog(Base):
     content = Column(Text, nullable=False)
     image_url = Column(String(300), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class ForumPost(Base):
+    __tablename__ = "forum_posts"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ContactMessage(Base):
+    __tablename__ = "contact_messages"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
