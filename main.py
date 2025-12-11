@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -113,14 +113,38 @@ def get_quotes(db: Session = Depends(get_db)):
     return db.query(Quote).all()
 
 
-@app.post("/quotes", response_model=QuoteOut)
-def add_quote(quote: QuoteSchema, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    new_quote = Quote(text=quote.text)
-    db.add(new_quote)
-    db.commit()
-    db.refresh(new_quote)
-    return new_quote
+@app.post("/quotes")
+def create_quote(data: dict, authorization: str = Header(...), db: Session = Depends(get_db)):
+    verify_token(authorization)
 
+    text = data.get("text")
+    author = data.get("author")
+    image_url = data.get("image_url")
+
+    if not text:
+        raise HTTPException(status_code=422, detail="Quote text is required")
+
+    quote = Quote(text=text, author=author, image_url=image_url)
+    db.add(quote)
+    db.commit()
+    db.refresh(quote)
+    return quote
+
+@app.put("/quotes/{quote_id}")
+def update_quote(quote_id: int, data: dict, authorization: str = Header(...), db: Session = Depends(get_db)):
+    verify_token(authorization)
+
+    quote = db.query(Quote).filter(Quote.id == quote_id).first()
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    quote.text = data.get("text", quote.text)
+    quote.author = data.get("author", quote.author)
+    quote.image_url = data.get("image_url", quote.image_url)
+    
+    db.commit()
+    db.refresh(quote)
+    return quote
 
 @app.delete("/quotes/{quote_id}")
 def delete_quote(
