@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -123,13 +123,27 @@ def add_quote(quote: QuoteSchema, db: Session = Depends(get_db), username: str =
 
 
 @app.delete("/quotes/{quote_id}")
-def delete_quote(quote_id: int, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    q = db.query(Quote).filter(Quote.id == quote_id).first()
-    if not q:
+def delete_quote(
+    quote_id: int,
+    authorization: str = Header(...),
+    db: Session = Depends(get_db)  # <-- inject session here
+):
+    # Extract token from header
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid auth header")
+    token = authorization.split(" ")[1]
+
+    # TODO: verify JWT here
+    # payload = decode_jwt(token)
+    # if payload['role'] != 'admin': raise HTTPException(403)
+
+    # Delete quote
+    quote = db.query(Quote).filter(Quote.id == quote_id).first()
+    if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
-    db.delete(q)
+    db.delete(quote)
     db.commit()
-    return {"success": True}
+    return {"message": "Deleted successfully"}
 
 # ===== STORIES =====
 @app.get("/stories", response_model=List[StorySchema])

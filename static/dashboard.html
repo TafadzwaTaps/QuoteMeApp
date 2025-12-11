@@ -361,7 +361,7 @@ document.getElementById('saveModalBtn').addEventListener('click', async ()=>{
 async function deleteItem(id){
   if(!confirm('Delete this item?')) return;
   const endpoint = API[state.tab];
-  const res=await fetch(`${endpoint}/${id}`,{method:'DELETE',headers:authHeaders()});
+  const res=await fetch(`${endpoint}/${id}`, { method:'DELETE', headers:authHeaders() });
   if(res.ok){ showToast('Deleted'); await loadList(true); }
   else { showToast('Delete failed'); console.error(await res.text()); }
 }
