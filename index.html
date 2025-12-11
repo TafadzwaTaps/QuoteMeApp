@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuoteMe ZW</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- MOBILE MENU BUTTON -->
+    <div class="mobile-menu-btn" onclick="toggleMenu()">☰</div>
+
+    <!-- HEADER -->
+    <header class="header">
+        <h1 class="logo">QuoteMe ZW</h1>
+        <nav class="nav" id="navMenu">
+            <ul class="nav-links">
+                <li><a href="#explore">Quotes</a></li>
+                <li><a href="#stories">Stories</a></li>
+                <li><a href="#blog">Blog</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><a href="#forum">Forum</a></li>
+            </ul>
+        </nav>
+        <button class="dark-toggle" onclick="toggleDark()">🌙</button>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero fade-in">
+        <div class="hero-content">
+            <h2 id="qotd">Quote of the Day Loading...</h2>
+            <p>Daily quotes, powerful stories, and motivational content curated for you.</p>
+            <a href="#explore" class="btn">Explore Quotes</a>
+        </div>
+        <img src="QuoteMe Logo.jpg" alt="Quote Me Logo" class="hero-logo">
+    </section>
+
+    <!-- QUOTE GALLERY -->
+    <section id="explore" class="quotes-section fade-in">
+        <h2>Featured Quotes</h2>
+        <div class="quote-grid">
+            <div class="quote-card">"Success starts with believing in yourself."</div>
+            <div class="quote-card">"Confidence is the best outfit. Rock it and own it."</div>
+            <div class="quote-card">"A strong woman looks a challenge in the eye and gives it a wink."</div>
+            <div class="quote-card">"You are capable of amazing things."</div>
+        </div>
+    </section>
+
+    <!-- STORIES SECTION -->
+    <section id="stories" class="stories-section fade-in">
+        <h2>Women Empowerment Stories</h2>
+        <div class="story-grid">
+            <div class="story-card">
+                <h3>Breaking Barriers</h3>
+                <p>Read inspiring stories of women making a difference in Zimbabwe and beyond.</p>
+                <a href="#" class="story-link">Read More</a>
+            </div>
+            <div class="story-card">
+                <h3>Beauty With Brains</h3>
+                <p>Celebrating achievements, intelligence and resilience.</p>
+                <a href="#" class="story-link">Read More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOG SECTION -->
+    <section id="blog" class="blog-section fade-in">
+        <h2>Motivational Blog</h2>
+        <div class="blog-grid">
+            <div class="blog-card">
+                <h3>The Power of Self-Love</h3>
+                <p>Understanding your worth is the beginning of growth.</p>
+            </div>
+            <div class="blog-card">
+                <h3>How to Stay Motivated</h3>
+                <p>Tips and strategies for daily inspiration.</p>
+            </div>
+            <div class="blog-card">
+                <h3>Quotes That Transform Lives</h3>
+                <p>Words that spark change and drive success.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section id="contact" class="contact-section fade-in">
+        <h2>Contact Us</h2>
+        <p>Have a suggestion or want to collaborate? Reach out!</p>
+        <form id="contactForm" class="contact-form">
+            <input type="text" id="contactName" placeholder="Your Name" required>
+            <input type="email" id="contactEmail" placeholder="Your Email" required>
+            <textarea id="contactMessage" placeholder="Your Message" required></textarea>
+            <button type="submit" class="btn">Send Message</button>
+        </form>
+    </section>
+
+    <!-- FORUM SECTION -->
+    <section id="forum" class="forum-section fade-in">
+        <h2>Community Forum</h2>
+        <p>Interact with others and admin, share your favorite quotes or stories!</p>
+        <div class="forum-container">
+            <div class="forum-posts" id="forumPosts"></div>
+            <form id="forumForm" class="forum-form">
+                <input type="text" id="userName" placeholder="Your Name" required>
+                <textarea id="userMessage" placeholder="Your Message" required></textarea>
+                <button type="submit" class="btn">Post Message</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- INSTAGRAM EMBED -->
+    <section id="instagram" class="instagram-section fade-in">
+        <h2>Follow Us on Instagram</h2>
+        <iframe src="https://www.instagram.com/quoteme_zw/embed" width="400" height="480" frameborder="0" scrolling="no" allowtransparency="true"></iframe>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p>© 2025 QuoteMe ZW • Inspiration Everyday</p>
+        <p>Follow us on Instagram @quoteme_zw</p>
+    </footer>
+
+    <!-- BACK TO TOP BUTTON -->
+    <button id="backToTop" onclick="scrollToTop()">↑</button>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        // MOBILE MENU
+        function toggleMenu() {
+            document.getElementById('navMenu').classList.toggle('show');
+        }
+
+        // DARK MODE
+        function toggleDark() {
+            document.body.classList.toggle('dark');
+        }
+
+        // QUOTE OF THE DAY
+        const quotes = [
+            "Be the energy you want to attract.",
+            "You are powerful, beautiful, brilliant, and brave.",
+            "Small steps every day create big results.",
+            "Your only limit is your mind.",
+            "Queens fix each other's crowns."
+        ];
+        document.getElementById('qotd').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+
+        // FORUM: Fetch posts and post new messages
+        const forumForm = document.getElementById('forumForm');
+        const forumPosts = document.getElementById('forumPosts');
+
+        async function loadPosts() {
+            const res = await fetch('http://localhost:8000/forum/posts');
+            const posts = await res.json();
+            forumPosts.innerHTML = '';
+            posts.forEach(p => {
+                const post = document.createElement('div');
+                post.className = 'forum-post';
+                const strong = document.createElement('strong');
+                strong.textContent = p.name + ': ';
+                post.appendChild(strong);
+                post.appendChild(document.createTextNode(p.message));
+                forumPosts.appendChild(post);
+            });
+        }
+
+        forumForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('userName').value;
+            const message = document.getElementById('userMessage').value;
+
+            await fetch('http://localhost:8000/forum/post', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, message})
+            });
+
+            forumForm.reset();
+            loadPosts();
+        });
+
+        loadPosts();
+
+        // CONTACT FORM: Submit message to backend
+        const contactForm = document.getElementById('contactForm');
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('contactName').value;
+            const email = document.getElementById('contactEmail').value;
+            const message = document.getElementById('contactMessage').value;
+
+            await fetch('http://localhost:8000/contact/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, email, message})
+            });
+
+            contactForm.reset();
+            alert('Message sent successfully!');
+        });
+
+        // BACK TO TOP BUTTON
+        const backToTop = document.getElementById('backToTop');
+        window.onscroll = function() {
+            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+                backToTop.style.display = 'block';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        };
+        function scrollToTop() {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        // SAFE NAVIGATION FOR HASH LINKS
+        document.querySelectorAll('a[href^="#"]').forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                const target = document.querySelector(link.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    console.warn('Navigation target does not exist:', link.getAttribute('href'));
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
