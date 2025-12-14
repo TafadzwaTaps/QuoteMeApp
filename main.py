@@ -175,12 +175,21 @@ def get_stories(db: Session = Depends(get_db)):
     return db.query(Story).order_by(Story.created_at.desc()).all()
 
 @app.post("/stories")
-def add_story(story: StorySchema, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    new_story = Story(title=story.title, content=story.content, image_url=story.image_url)
-    db.add(new_story)
+def create_story(data: dict, authorization: str = Header(...), db: Session = Depends(get_db)):
+    verify_token(authorization)
+
+    title = data.get("title")
+    content = data.get("content")
+    image_url = data.get("image_url")
+
+    if not title or not content:
+        raise HTTPException(status_code=422, detail="Title and content are required")
+
+    story = Story(title=title, content=content, image_url=image_url)
+    db.add(story)
     db.commit()
-    db.refresh(new_story)
-    return {"success": True, "story": new_story}
+    db.refresh(story)
+    return story
 
 @app.put("/stories/{story_id}")
 def edit_story(story_id: int, story: StorySchema, db: Session = Depends(get_db), username: str = Depends(admin_required)):
