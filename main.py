@@ -192,27 +192,46 @@ def create_story(data: dict, authorization: str = Header(...), db: Session = Dep
     return story
 
 @app.put("/stories/{story_id}")
-def edit_story(story_id: int, story: StorySchema, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    s = db.query(Story).filter(Story.id == story_id).first()
-    if not s:
+def update_story(story_id: int, data: dict, authorization: str = Header(...), db: Session = Depends(get_db)):
+    verify_token(authorization)
+
+    story = db.query(Story).filter(Story.id == story_id).first()
+    if not story:
         raise HTTPException(status_code=404, detail="Story not found")
-    s.title = story.title
-    s.content = story.content
-    s.image_url = story.image_url
+
+    story.title = data.get("title", story.title)
+    story.content = data.get("content", story.content)
+    story.image_url = data.get("image_url", story.image_url)
+    
     db.commit()
-    db.refresh(s)
-    return {"success": True, "story": s}
+    db.refresh(story)
+    return story
 
 @app.delete("/stories/{story_id}")
-def delete_story(story_id: int, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    s = db.query(Story).filter(Story.id == story_id).first()
-    if not s:
-        logger.warning(f"Admin {username} attempted to delete non-existent story ID {story_id}")
+def delete_story(
+    story_id: int,
+    authorization: str = Header(...),
+    db: Session = Depends(get_db)
+):
+    # Extract token
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid auth header")
+
+    token = authorization.split(" ")[1]
+    username = verify_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Delete story
+    story = db.query(Story).filter(Story.id == story_id).first()
+    if not story:
         raise HTTPException(status_code=404, detail="Story not found")
-    db.delete(s)
+
+    db.delete(story)
     db.commit()
+
     logger.info(f"Story ID {story_id} deleted by admin {username}")
-    return {"success": True}
+    return {"message": "Deleted successfully"}
 
 # ===== BLOGS =====
 @app.get("/blogs", response_model=List[BlogSchema])
@@ -220,33 +239,63 @@ def get_blogs(db: Session = Depends(get_db)):
     return db.query(Blog).order_by(Blog.created_at.desc()).all()
 
 @app.post("/blogs")
-def add_blog(blog: BlogSchema, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    new_blog = Blog(title=blog.title, content=blog.content, image_url=blog.image_url)
-    db.add(new_blog)
+def create_blog(data: dict, authorization: str = Header(...), db: Session = Depends(get_db)):
+    verify_token(authorization)
+
+    title = data.get("title")
+    content = data.get("content")
+    image_url = data.get("image_url")
+
+    if not title or not content:
+        raise HTTPException(status_code=422, detail="Title and content are required")
+
+    blog = Blog(title=title, content=content, image_url=image_url)
+    db.add(blog)
     db.commit()
-    db.refresh(new_blog)
-    return {"success": True, "blog": new_blog}
+    db.refresh(blog)
+    return blog
 
 @app.put("/blogs/{blog_id}")
-def edit_blog(blog_id: int, blog: BlogSchema, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    b = db.query(Blog).filter(Blog.id == blog_id).first()
-    if not b:
+def update_blog(blog_id: int, data: dict, authorization: str = Header(...), db: Session = Depends(get_db)):
+    verify_token(authorization)
+
+    blog = db.query(Blog).filter(Blog.id == blog_id).first()
+    if not blog:
         raise HTTPException(status_code=404, detail="Blog not found")
-    b.title = blog.title
-    b.content = blog.content
-    b.image_url = blog.image_url
+
+    blog.title = data.get("title", blog.title)
+    blog.content = data.get("content", blog.content)
+    blog.image_url = data.get("image_url", blog.image_url)
+    
     db.commit()
-    db.refresh(b)
-    return {"success": True, "blog": b}
+    db.refresh(blog)
+    return blog
 
 @app.delete("/blogs/{blog_id}")
-def delete_blog(blog_id: int, db: Session = Depends(get_db), username: str = Depends(admin_required)):
-    b = db.query(Blog).filter(Blog.id == blog_id).first()
-    if not b:
+def delete_blog(
+    blog_id: int,
+    authorization: str = Header(...),
+    db: Session = Depends(get_db)
+):
+    # Extract token
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid auth header")
+
+    token = authorization.split(" ")[1]
+    username = verify_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Delete blog
+    blog = db.query(Blog).filter(Blog.id == blog_id).first()
+    if not blog:
         raise HTTPException(status_code=404, detail="Blog not found")
-    db.delete(b)
+
+    db.delete(blog)
     db.commit()
-    return {"success": True}
+
+    logger.info(f"Blog ID {blog_id} deleted by admin {username}")
+    return {"message": "Deleted successfully"}
 
 # ===== IMAGE UPLOAD =====
 @app.post("/upload-image")

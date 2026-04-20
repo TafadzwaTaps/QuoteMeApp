@@ -41,48 +41,29 @@
     <section id="explore" class="quotes-section fade-in">
         <h2>Featured Quotes</h2>
         <div class="quote-grid">
-            <div class="quote-card">"Success starts with believing in yourself."</div>
-            <div class="quote-card">"Confidence is the best outfit. Rock it and own it."</div>
-            <div class="quote-card">"A strong woman looks a challenge in the eye and gives it a wink."</div>
-            <div class="quote-card">"You are capable of amazing things."</div>
+            <img src="/uploads/quote1.jpg" alt="Quote image">
+            <div class="quote-grid" id="quoteGrid"></div>
+            <div class="quote-grid" id="quoteGrid"></div>
+            <div class="quote-grid" id="quoteGrid"></div>
+            <div class="quote-grid" id="quoteGrid"></div>
+
         </div>
     </section>
 
     <!-- STORIES SECTION -->
     <section id="stories" class="stories-section fade-in">
         <h2>Women Empowerment Stories</h2>
-        <div class="story-grid">
-            <div class="story-card">
-                <h3>Breaking Barriers</h3>
-                <p>Read inspiring stories of women making a difference in Zimbabwe and beyond.</p>
-                <a href="#" class="story-link">Read More</a>
-            </div>
-            <div class="story-card">
-                <h3>Beauty With Brains</h3>
-                <p>Celebrating achievements, intelligence and resilience.</p>
-                <a href="#" class="story-link">Read More</a>
-            </div>
-        </div>
+        <div class="story-grid" id="storyGrid"></div>
+        <div class="story-grid" id="storyGrid"></div>
+        <div class="story-grid" id="storyGrid"></div>
+
     </section>
 
     <!-- BLOG SECTION -->
     <section id="blog" class="blog-section fade-in">
         <h2>Motivational Blog</h2>
-        <div class="blog-grid">
-            <div class="blog-card">
-                <h3>The Power of Self-Love</h3>
-                <p>Understanding your worth is the beginning of growth.</p>
-            </div>
-            <div class="blog-card">
-                <h3>How to Stay Motivated</h3>
-                <p>Tips and strategies for daily inspiration.</p>
-            </div>
-            <div class="blog-card">
-                <h3>Quotes That Transform Lives</h3>
-                <p>Words that spark change and drive success.</p>
-            </div>
-        </div>
-    </section>
+        <div class="blog-grid" id="blogGrid"></div>
+        <div class="blog-grid" id="blogGrid"></div>
 
     <!-- CONTACT SECTION -->
     <section id="contact" class="contact-section fade-in">
@@ -226,6 +207,86 @@
                 }
             });
         });
+
+ async function loadQuotes() {
+    try {
+        const res = await fetch('http://localhost:8000/quotes');
+        const quotes = await res.json();
+
+        const grid = document.querySelector('.quote-grid');
+        grid.innerHTML = '';
+
+        quotes.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'quote-card';
+
+            // Image (ONLY if exists)
+            if (q.image_url) {
+                const img = document.createElement('img');
+                img.src = q.image_url;
+                img.alt = 'Quote image';
+                img.loading = 'lazy';
+                card.appendChild(img);
+            }
+
+            // Quote text
+            const text = document.createElement('p');
+            text.textContent = q.text;
+            card.appendChild(text);
+
+            grid.appendChild(card);
+        });
+
+    } catch (err) {
+        console.error('Failed to load quotes', err);
+    }
+}
+
+// Load on page load
+loadQuotes();                            
+
+     async function loadStories() {
+    const res = await fetch('http://localhost:8000/stories');
+    const stories = await res.json();
+
+    const grid = document.getElementById('storyGrid');
+    grid.innerHTML = '';
+
+    stories.slice(0, 3).forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'story-card';
+
+        card.innerHTML = `
+            <h3>${s.title}</h3>
+            <p>${s.content.substring(0, 120)}...</p>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+loadStories();   
+
+async function loadBlogs() {
+    const res = await fetch('http://localhost:8000/blogs');
+    const blogs = await res.json();
+
+    const grid = document.getElementById('blogGrid');
+    grid.innerHTML = '';
+
+    blogs.slice(0, 3).forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'blog-card';
+
+        card.innerHTML = `
+            <h3>${b.title}</h3>
+            <p>${b.content.substring(0, 100)}...</p>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+loadBlogs();
+        
     </script>
 
 </body>

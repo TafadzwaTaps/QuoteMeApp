@@ -367,7 +367,22 @@ document.getElementById('saveModalBtn').addEventListener('click', async ()=>{
   const title=itemTitle.value.trim(); const content=itemContent.value.trim(); let image_url=itemImageUrl.value.trim();
   if(!title){ showToast('Title/Quote required'); return; }
   if(itemFile.files.length>0){ const uploaded=await uploadFileAndGetUrl(itemFile.files[0]); if(uploaded) image_url=uploaded; }
-  const payload = (state.tab==='quotes') ? { text:title } : { title, content, image_url };
+  let payload;
+
+if (state.tab === 'quotes') {
+  payload = {
+    text: title,
+    author: content || null,
+    image_url: image_url || null
+  };
+} else {
+  payload = {
+    title,
+    content,
+    image_url
+  };
+}
+
   const endpoint = API[state.tab];
   const isAdd = modalState.isAdd;
   let url = endpoint; let method='POST';
