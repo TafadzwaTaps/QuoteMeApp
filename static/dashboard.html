@@ -393,7 +393,7 @@ textarea.form-control{resize:vertical;min-height:100px}
 
 <script>
 // ================== CONFIG ==================
-const BASE = '';
+const BASE = 'http://127.0.0.1:8000';
 const API = {
   quotes: `${BASE}/quotes`,
   stories: `${BASE}/stories`,
@@ -788,47 +788,55 @@ async function doDelete(id) {
 
 // ================== COMMENTS ==================
 async function viewComments(itemId, itemType) {
-  // Load comments in a simple modal
-  const data = await fetch(`${API.comments}/${itemType}/${itemId}`).then(r => r.json()).catch(() => []);
-  document.getElementById('modalTitle').textContent = `💭 Comments on ${itemType} #${itemId}`;
-  document.getElementById('modalBackdrop').classList.add('show');
-  // Hijack modal body temporarily
-  const body = document.querySelector('.modal-body');
-  const origHTML = body.innerHTML;
-  const sentimentEmoji = { positive: '😊', neutral: '😐', negative: '😠' };
-  body.innerHTML = `
+  const data = await fetch(`${API.comments}/${itemType}/${itemId}`)
+    .then(r => r.json())
+    .catch(() => []);
+
+  const defaultView = document.getElementById('modalDefaultView');
+  const commentsView = document.getElementById('modalCommentsView');
+
+  // hide form
+  defaultView.style.display = 'none';
+
+  commentsView.style.display = 'block';
+
+  const sentimentEmoji = {
+    positive: '😊',
+    neutral: '😐',
+    negative: '😠'
+  };
+
+  commentsView.innerHTML = `
+    <h3 style="margin-bottom:10px">💭 Comments</h3>
+
     <div class="comment-thread">
-      ${data.length === 0 ? '<div style="color:var(--muted);text-align:center;padding:20px">No comments yet.</div>' :
-        data.map(c => `
-          <div class="comment-item">
-            <div class="comment-user">${esc(c.username)} <span class="sentiment-badge ${c.sentiment}">${sentimentEmoji[c.sentiment]||''} ${c.sentiment}</span></div>
-            <div class="comment-text">${esc(c.content)}</div>
-          </div>
-        `).join('')}
+      ${
+        data.length === 0
+          ? `<div style="color:var(--muted);text-align:center;padding:20px">No comments yet.</div>`
+          : data.map(c => `
+              <div class="comment-item">
+                <div class="comment-user">
+                  ${esc(c.username)}
+                  <span class="sentiment-badge ${c.sentiment}">
+                    ${sentimentEmoji[c.sentiment] || ''} ${c.sentiment}
+                  </span>
+                </div>
+                <div class="comment-text">${esc(c.content)}</div>
+              </div>
+            `).join('')
+      }
     </div>
+
     <div style="margin-top:16px;display:flex;gap:8px">
       <input id="inlineCommentUser" class="form-control" placeholder="Your name" style="flex:.4">
       <input id="inlineCommentText" class="form-control" placeholder="Write a comment…" style="flex:1">
       <button class="btn btn-primary" onclick="submitInlineComment(${itemId},'${itemType}')">Post</button>
     </div>
-  `;
-  document.getElementById('saveModalBtn').style.display = 'none';
-  const closeBtns = [document.getElementById('closeModalBtn'), document.getElementById('closeModalBtn2')];
-  const origClose = () => { body.innerHTML = origHTML; document.getElementById('saveModalBtn').style.display = ''; closeBtns.forEach(b => b.removeEventListener('click', origClose)); closeModal(); };
-  closeBtns.forEach(b => b.addEventListener('click', origClose, { once: true }));
-}
 
-async function submitInlineComment(itemId, itemType) {
-  const username = document.getElementById('inlineCommentUser').value.trim();
-  const content = document.getElementById('inlineCommentText').value.trim();
-  if (!username || !content) { showToast('Name and comment required', 'warn'); return; }
-  await fetch(API.comments, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, content, item_type: itemType, item_id: itemId })
-  });
-  showToast('Comment posted!', 'success');
-  viewComments(itemId, itemType);
+    <button class="btn btn-ghost" style="margin-top:12px" onclick="closeCommentsView()">
+      ← Back
+    </button>
+  `;
 }
 
 async function loadAllComments() {

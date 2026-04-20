@@ -8,14 +8,15 @@ from models import Base, Admin, AdminSettings, Quote, Story, Blog, ForumPost, Co
 from schemas import (AdminLogin, AdminPasswordUpdate, AdminUsernameUpdate, AdminSettingsUpdate, AdminSettingsOut,
                      QuoteOut, StoryOut, BlogOut, CommentCreate, CommentOut,
                      ForumPostSchema, ContactSchema)
-from passlib.hash import bcrypt
+from passlib.context import CryptContext
 import logging_setup
-import jwt
+from jose import jwt
 import shutil, os, uuid
 from typing import List, Optional
 from datetime import datetime
 
 logger = logging_setup.logger
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ===== CONFIG =====
 SECRET_KEY = "supersecretkey"  # Replace with environment variable in production
@@ -118,7 +119,7 @@ def login(admin: AdminLogin, db: Session = Depends(get_db)):
         if not user:
             logger.warning(f"Failed login attempt for admin {admin.username}.")
             raise HTTPException(status_code=401, detail="Invalid credentials")
-        if not bcrypt.verify(admin.password, user.password_hash):
+        if not pwd_context.verify(admin.password, user.password_hash):
             logger.warning(f"Failed login attempt for admin {admin.username}.")
             raise HTTPException(status_code=401, detail="Invalid credentials")
         token = jwt.encode({"username": user.username}, SECRET_KEY, algorithm="HS256")
@@ -164,9 +165,9 @@ def update_settings(data: AdminSettingsUpdate, username: str = Depends(require_a
 @app.put("/admin/change-password")
 def change_password(data: AdminPasswordUpdate, username: str = Depends(require_admin), db: Session = Depends(get_db)):
     admin = db.query(Admin).filter(Admin.username == username).first()
-    if not bcrypt.verify(data.current_password, admin.password_hash):
+    if not pwd_context.verify(admin.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
-    admin.password_hash = bcrypt.hash(data.new_password[:72])
+    admin.password_hash = pwd_context.hash(data.new_password)
     db.commit()
     logger.info(f"Admin '{username}' changed their password.")
     return {"success": True, "message": "Password updated"}

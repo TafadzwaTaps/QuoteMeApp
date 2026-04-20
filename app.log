@@ -57,3 +57,36 @@ You can install "python-multipart" with:
 
 pip install python-multipart
 
+2026-04-20 19:03:48,783 [ERROR] Form data requires "python-multipart" to be installed. 
+You can install "python-multipart" with: 
+
+pip install python-multipart
+
+2026-04-20 19:05:37,726 [ERROR] Unexpected login error for admin 'Ruvarashe': bcrypt: no backends available -- recommend you install one (e.g. 'pip install bcrypt')
+2026-04-20 19:05:39,011 [ERROR] Unexpected login error for admin 'Ruvarashe': bcrypt: no backends available -- recommend you install one (e.g. 'pip install bcrypt')
+2026-04-20 19:05:43,428 [ERROR] Unexpected login error for admin 'Ruvarashe': bcrypt: no backends available -- recommend you install one (e.g. 'pip install bcrypt')
+2026-04-20 19:06:15,356 [ERROR] Unexpected login error for admin 'Ruvarashe': bcrypt: no backends available -- recommend you install one (e.g. 'pip install bcrypt')
+2026-04-20 19:08:45,490 [WARNING] (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "c:\Users\manix\QuoteMeApp\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-04-20 19:08:45,496 [ERROR] Unexpected login error for admin 'Ruvarashe': password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+2026-04-20 19:31:18,382 [WARNING] (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "c:\Users\manix\QuoteMeApp\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-04-20 19:31:18,401 [ERROR] Unexpected login error for admin 'Ruvarashe': password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+2026-04-20 19:31:40,860 [WARNING] (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "c:\Users\manix\QuoteMeApp\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-04-20 19:31:40,866 [ERROR] Unexpected login error for admin 'Ruvarashe': password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+2026-04-20 19:37:08,128 [ERROR] Unexpected login error for admin 'Ruvarashe': module 'jwt' has no attribute 'encode'
+2026-04-20 19:40:50,291 [INFO] Admin 'Ruvarashe' logged in successfully.
+2026-04-20 19:42:33,837 [INFO] Quote added by admin: Ruvarashe
