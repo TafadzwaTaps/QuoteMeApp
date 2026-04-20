@@ -33,6 +33,19 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base.metadata.create_all(bind=engine)
 
+def init_db():
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+
+    # Ensure likes column exists on quotes, stories, blogs
+    for table_name in ("quotes", "stories", "blogs"):
+        columns = {col["name"] for col in inspector.get_columns(table_name)}
+        if "likes" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN likes INTEGER DEFAULT 0"))
+
+init_db()
+
 def get_db():
     db = SessionLocal()
     try:
