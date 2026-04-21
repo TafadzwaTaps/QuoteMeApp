@@ -177,9 +177,18 @@ def update_settings(data: AdminSettingsUpdate, username: str = Depends(require_a
 @app.put("/admin/change-password")
 def change_password(data: AdminPasswordUpdate, username: str = Depends(require_admin), db: Session = Depends(get_db)):
     admin = db.query(Admin).filter(Admin.username == username).first()
-    if not pwd_context.verify(admin.password, user.password_hash):
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    try:
+        valid = pwd_context.verify(data.current_password, admin.password_hash)
+    except Exception as e:
+        logger.error(f"Password verification error for '{username}': {e}")
+        raise HTTPException(status_code=500, detail="Auth system error")
+    if not valid:
         raise HTTPException(status_code=401, detail="Current password is incorrect")
-    admin.password_hash = pwd_context.hash(data.new_password)
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=422, detail="New password must be at least 6 characters")
+    admin.password_hash = pwd_context.hash(data.new_password[:72])
     db.commit()
     logger.info(f"Admin '{username}' changed their password.")
     return {"success": True, "message": "Password updated"}

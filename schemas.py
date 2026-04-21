@@ -102,6 +102,7 @@ class CommentOut(BaseModel):
 class ForumPostSchema(BaseModel):
     name: str
     message: str
+    created_at: Optional[datetime] = None
 
     class Config:
         orm_mode = True

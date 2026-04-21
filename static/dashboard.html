@@ -414,129 +414,247 @@ let state = {
   page: 1,
   pageSize: 12,
   search: '',
-  editingId: null,
-  isAdding: true,
 };
 let pendingDeleteFn = null;
+let modalState = { id: null, isAdd: true };
 
 // ================== AUTH ==================
 const getToken = () => localStorage.getItem('adminToken') || '';
-function authHeaders(extra={}) {
+function authHeaders(extra = {}) {
   const token = getToken();
-  const h = {...extra};
+  const h = { ...extra };
   if (token) h['Authorization'] = `Bearer ${token}`;
   return h;
 }
 function decodeJwt(token) {
-  try { const p = token.split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))); }
-  catch { return null; }
+  try {
+    const p = token.split('.')[1];
+    return JSON.parse(atob(p.replace(/-/g, '+').replace(/_/g, '/')));
+  } catch { return null; }
 }
 
-(function initAuth() {
+// ================== INIT ==================
+document.addEventListener('DOMContentLoaded', function () {
+
+  // Guard: redirect if no token
   const token = getToken();
-  if (!token) { setTimeout(() => window.location.href = '/admin.html', 800); return; }
+  if (!token) {
+    setTimeout(() => window.location.href = '/admin.html', 800);
+    return;
+  }
   const payload = decodeJwt(token);
   const uname = payload?.username || 'admin';
   document.getElementById('sidebarUser').textContent = uname;
   document.getElementById('profileName').textContent = uname;
-  // Avatar bubble initials
   const ab = document.getElementById('avatarBubble');
   const pl = document.getElementById('profileAvatarLg');
   ab.textContent = uname.charAt(0).toUpperCase();
   pl.textContent = uname.charAt(0).toUpperCase();
   loadSettings();
-})();
 
-// ================== DARK MODE ==================
-(function initDark() {
-  const root = document.documentElement;
-  const toggle = document.getElementById('darkToggle');
+  // Dark mode init
   const saved = localStorage.getItem('dm');
   if (saved === '1') applyDark(true);
-  toggle.addEventListener('click', () => {
-    const isDark = root.getAttribute('data-theme') === 'dark';
+
+  // Wire up static event listeners safely
+  wireEventListeners();
+
+  // Initial tab load
+  switchTab('quotes');
+});
+
+function wireEventListeners() {
+  // Topbar controls
+  safeOn('menuToggle', 'click', () => document.getElementById('sidebar').classList.toggle('mobile-open'));
+  safeOn('logoutBtn', 'click', () => { localStorage.removeItem('adminToken'); window.location.href = '/admin.html'; });
+  safeOn('refreshBtn', 'click', () => {
+    if (['quotes', 'stories', 'blogs'].includes(state.tab)) loadList(true);
+    else loadCurrentTab();
+  });
+  safeOn('addBtn', 'click', () => openModalForAdd());
+  safeOn('searchInput', 'input', (e) => { state.search = e.target.value || ''; state.page = 1; renderList(); });
+  safeOn('pageSize', 'change', (e) => { state.pageSize = Number(e.target.value); state.page = 1; renderList(); });
+
+  // Dark mode toggles
+  safeOn('darkToggle', 'click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     applyDark(!isDark);
     localStorage.setItem('dm', isDark ? '0' : '1');
   });
-  document.getElementById('darkModeToggle').addEventListener('change', (e) => {
+  safeOn('darkModeToggle', 'change', async (e) => {
     applyDark(e.target.checked);
     localStorage.setItem('dm', e.target.checked ? '1' : '0');
+    try {
+      await fetch(API.settings, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ dark_mode: e.target.checked ? 1 : 0 })
+      });
+    } catch (err) { /* non-critical */ }
   });
-})();
-function applyDark(on) {
-  const root = document.documentElement;
-  root.setAttribute('data-theme', on ? 'dark' : 'light');
-  document.getElementById('darkModeToggle').checked = on;
-  const knob = document.getElementById('darkKnob');
-  const slider = document.getElementById('darkModeSlider');
-  if (on) { knob.style.transform = 'translateX(22px)'; slider.style.background = 'var(--accent)'; }
-  else { knob.style.transform = 'translateX(0)'; slider.style.background = 'var(--border)'; }
+
+  // Modal close buttons
+  safeOn('closeModalBtn', 'click', closeModal);
+  safeOn('closeModalBtn2', 'click', closeModal);
+  safeOn('saveModalBtn', 'click', handleSaveModal);
+
+  // Confirm modal
+  safeOn('confirmOkBtn', 'click', () => {
+    if (pendingDeleteFn) pendingDeleteFn();
+    closeConfirm();
+  });
+
+  // Image drop zone in modal
+  const dropZone = document.getElementById('dropZone');
+  if (dropZone) {
+    dropZone.addEventListener('click', () => document.getElementById('itemFile').click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault(); dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) previewFile(file);
+    });
+  }
+  safeOn('itemFile', 'change', (e) => { if (e.target.files[0]) previewFile(e.target.files[0]); });
+  safeOn('itemImageUrl', 'input', (e) => {
+    const prev = document.getElementById('modalPreview');
+    if (prev) {
+      if (e.target.value) { prev.src = e.target.value; prev.style.display = 'block'; }
+      else prev.style.display = 'none';
+    }
+  });
+
+  // Avatar upload
+  safeOn('avatarFileInput', 'change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = await uploadFileAndGetUrl(file);
+    if (url) {
+      const prev = document.getElementById('avatarPreview');
+      if (prev) { prev.src = url; prev.style.display = 'block'; }
+      await fetch(API.settings, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ profile_picture: url })
+      }).catch(() => {});
+      updateAvatarUI(url);
+      showToast('Profile picture updated!', 'success');
+    }
+  });
+
+  // Avatar drop zone
+  const adz = document.getElementById('avatarDropZone');
+  if (adz) {
+    adz.addEventListener('dragover', e => { e.preventDefault(); adz.classList.add('drag-over'); });
+    adz.addEventListener('dragleave', () => adz.classList.remove('drag-over'));
+    adz.addEventListener('drop', e => {
+      e.preventDefault(); adz.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        const dt = new DataTransfer(); dt.items.add(file);
+        const inp = document.getElementById('avatarFileInput');
+        inp.files = dt.files;
+        inp.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+
+  // Close modals on backdrop click
+  safeOn('modalBackdrop', 'click', (e) => { if (e.target.id === 'modalBackdrop') closeModal(); });
+  safeOn('confirmBackdrop', 'click', (e) => { if (e.target.id === 'confirmBackdrop') closeConfirm(); });
 }
 
-// ================== UI WIRING ==================
-document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('mobile-open'));
-document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.removeItem('adminToken'); window.location.href = '/admin.html'; });
-document.getElementById('refreshBtn').addEventListener('click', () => { if (['quotes','stories','blogs'].includes(state.tab)) loadList(true); else loadCurrentTab(); });
-document.getElementById('addBtn').addEventListener('click', () => openModalForAdd());
-document.getElementById('searchInput').addEventListener('input', (e) => { state.search = e.target.value || ''; state.page = 1; renderList(); });
-document.getElementById('pageSize').addEventListener('change', (e) => { state.pageSize = Number(e.target.value); state.page = 1; renderList(); });
-document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-document.getElementById('closeModalBtn2').addEventListener('click', closeModal);
+// ================== HELPERS ==================
+function safeOn(id, event, handler) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(event, handler);
+  else console.warn(`[QuoteMe] Element #${id} not found for event '${event}'`);
+}
+
+function esc(s) {
+  return (s || '').toString().replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ================== DARK MODE ==================
+function applyDark(on) {
+  document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
+  const toggle = document.getElementById('darkModeToggle');
+  if (toggle) toggle.checked = on;
+  const knob = document.getElementById('darkKnob');
+  const slider = document.getElementById('darkModeSlider');
+  if (knob) knob.style.transform = on ? 'translateX(22px)' : 'translateX(0)';
+  if (slider) slider.style.background = on ? 'var(--accent)' : 'var(--border)';
+}
 
 // ================== TABS ==================
+// Exposed globally for inline onclick handlers in the HTML
 function switchTab(tab) {
   state.tab = tab;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
-  // Hide all panels
-  ['tab-content','tab-comments','tab-forum','tab-settings'].forEach(id => {
+
+  // Hide all tab panels
+  ['tab-content', 'tab-comments', 'tab-forum', 'tab-settings'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  if (['quotes','stories','blogs'].includes(tab)) {
-    document.getElementById('tab-content').style.display = 'block';
-    document.getElementById('sectionTitle').textContent = `Manage ${tab.charAt(0).toUpperCase() + tab.slice(1)}`;
-    // Toggle form fields
+
+  if (['quotes', 'stories', 'blogs'].includes(tab)) {
+    const panel = document.getElementById('tab-content');
+    if (panel) panel.style.display = 'block';
+    const title = document.getElementById('sectionTitle');
+    if (title) title.textContent = `Manage ${tab.charAt(0).toUpperCase() + tab.slice(1)}`;
+    // Toggle form fields for modal context
     const isQuote = tab === 'quotes';
-    document.getElementById('contentGroup').style.display = isQuote ? 'none' : 'block';
-    document.getElementById('authorGroup').style.display = isQuote ? 'block' : 'none';
-    document.getElementById('titleLabel').textContent = isQuote ? 'Quote Text' : 'Title';
+    const cg = document.getElementById('contentGroup');
+    const ag = document.getElementById('authorGroup');
+    const tl = document.getElementById('titleLabel');
+    if (cg) cg.style.display = isQuote ? 'none' : 'block';
+    if (ag) ag.style.display = isQuote ? 'block' : 'none';
+    if (tl) tl.textContent = isQuote ? 'Quote Text' : 'Title';
     state.page = 1;
+    state.search = '';
+    const si = document.getElementById('searchInput');
+    if (si) si.value = '';
     loadList(true);
   } else if (tab === 'comments') {
-    document.getElementById('tab-comments').style.display = 'block';
+    const panel = document.getElementById('tab-comments');
+    if (panel) panel.style.display = 'block';
     loadAllComments();
   } else if (tab === 'forum') {
-    document.getElementById('tab-forum').style.display = 'block';
+    const panel = document.getElementById('tab-forum');
+    if (panel) panel.style.display = 'block';
     loadForum();
   } else if (tab === 'settings') {
-    document.getElementById('tab-settings').style.display = 'block';
+    const panel = document.getElementById('tab-settings');
+    if (panel) panel.style.display = 'block';
   }
 }
 
 function loadCurrentTab() {
   if (state.tab === 'comments') loadAllComments();
   else if (state.tab === 'forum') loadForum();
-  else if (['quotes','stories','blogs'].includes(state.tab)) loadList(true);
+  else if (['quotes', 'stories', 'blogs'].includes(state.tab)) loadList(true);
 }
 
-// ================== FETCH ==================
+// ================== FETCH LIST ==================
 async function fetchItemsFromApi() {
   try {
     const res = await fetch(API[state.tab], { headers: authHeaders() });
-    if (!res.ok) throw new Error(`Failed: ${res.status}`);
+    if (res.status === 401) { window.location.href = '/admin.html'; return []; }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const items = await res.json();
-    return items.map((it, i) => ({...it, id: it.id || i + 1}));
+    return Array.isArray(items) ? items : [];
   } catch (e) {
-    console.error(e);
+    console.error('[QuoteMe] fetchItemsFromApi:', e);
     showToast('Failed to load items', 'error');
     return [];
   }
 }
 
 async function loadList(forceReload = false) {
-  document.getElementById('listContainer').innerHTML =
-    '<div style="padding:32px;text-align:center;color:var(--muted)">Loading…</div>';
-
+  const container = document.getElementById('listContainer');
+  if (container) container.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted)">Loading…</div>';
   state.items = await fetchItemsFromApi();
   renderList();
 }
@@ -544,7 +662,9 @@ async function loadList(forceReload = false) {
 // ================== RENDER ==================
 function renderList() {
   const container = document.getElementById('listContainer');
-  const searchLower = state.search.trim().toLowerCase();
+  if (!container) return;
+
+  const searchLower = (state.search || '').trim().toLowerCase();
   const filtered = state.items.filter(it => {
     const title = (it.title || it.text || '').toLowerCase();
     const content = (it.content || '').toLowerCase();
@@ -556,19 +676,20 @@ function renderList() {
   const pageItems = filtered.slice(start, start + perPage);
 
   if (!pageItems.length) {
-    container.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p>No ${state.tab} found.</p><button class="btn btn-primary" onclick="openModalForAdd()">+ Add your first ${state.tab.slice(0,-1)}</button></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p>No ${state.tab} found.</p><button class="btn btn-primary" onclick="openModalForAdd()">+ Add your first ${state.tab.slice(0, -1)}</button></div>`;
   } else {
     container.innerHTML = pageItems.map(it => renderCardHtml(it)).join('');
   }
-
   renderPagination(pages);
 }
 
 function renderCardHtml(it) {
   const title = esc(it.title || it.text || '(no title)');
-  const meta = it.author ? `<div class="card-meta">by ${esc(it.author)}</div>` : (it.created_at ? `<div class="card-meta">${new Date(it.created_at).toLocaleDateString()}</div>` : '');
+  const meta = it.author
+    ? `<div class="card-meta">by ${esc(it.author)}</div>`
+    : (it.created_at ? `<div class="card-meta">${new Date(it.created_at).toLocaleDateString()}</div>` : '');
   const excerpt = esc((it.content || '').slice(0, 120));
-  const imgHtml = it.image_url ? `<img class="card-img" src="${esc(it.image_url)}" alt="" loading="lazy">` : '';
+  const imgHtml = it.image_url ? `<img class="card-img" src="${esc(it.image_url)}" alt="" loading="lazy" onerror="this.style.display='none'">` : '';
   const likes = it.likes || 0;
   const isQuote = state.tab === 'quotes';
   return `
@@ -581,27 +702,26 @@ function renderCardHtml(it) {
       </div>
       <div class="card-stats">
         <div class="stat-pill">❤️ <span>${likes}</span></div>
-        <div class="stat-pill">💬 <span id="cc-${it.id}">—</span></div>
       </div>
       <div class="card-actions">
-        <button class="btn btn-ghost" style="font-size:12px;padding:6px 10px" onclick="viewComments(${it.id},'${state.tab.slice(0,-1)}')">💭 Comments</button>
+        <button class="btn btn-ghost" style="font-size:12px;padding:6px 10px" onclick="viewComments(${it.id},'${state.tab.slice(0, -1)}')">💭 Comments</button>
         <button class="btn btn-ghost" style="font-size:12px;padding:6px 10px" onclick="openModalForEdit(${it.id})">✏️ Edit</button>
         <button class="btn btn-danger" style="font-size:12px;padding:6px 10px" onclick="confirmDelete(${it.id})">🗑️</button>
       </div>
     </div>`;
 }
-function esc(s) { return (s||'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function renderPagination(pages) {
   const pag = document.getElementById('pagination');
+  if (!pag) return;
   pag.innerHTML = '';
   if (pages <= 1) return;
   const mk = (txt, disabled, cb) => {
     const b = document.createElement('button');
-    b.className = 'page-btn' + (disabled ? '' : '');
+    b.className = 'page-btn';
     b.textContent = txt;
     b.disabled = disabled;
-    b.addEventListener('click', cb);
+    if (!disabled) b.addEventListener('click', cb);
     return b;
   };
   pag.appendChild(mk('← Prev', state.page === 1, () => { state.page--; renderList(); }));
@@ -613,389 +733,476 @@ function renderPagination(pages) {
   pag.appendChild(mk('Next →', state.page === pages, () => { state.page++; renderList(); }));
 }
 
-// ================== MODAL ==================
-let modalState = { id: null, isAdd: true };
-
+// ================== MODAL (Add/Edit) ==================
 function openModalForAdd() {
   modalState = { id: null, isAdd: true };
+  const isQuote = state.tab === 'quotes';
+  const cg = document.getElementById('contentGroup');
+  const ag = document.getElementById('authorGroup');
+  const tl = document.getElementById('titleLabel');
+  if (cg) cg.style.display = isQuote ? 'none' : 'block';
+  if (ag) ag.style.display = isQuote ? 'block' : 'none';
+  if (tl) tl.textContent = isQuote ? 'Quote Text' : 'Title';
   document.getElementById('modalTitle').textContent = `Add new ${state.tab.slice(0, -1)}`;
   document.getElementById('itemTitle').value = '';
   document.getElementById('itemContent').value = '';
   document.getElementById('itemAuthor').value = '';
   document.getElementById('itemImageUrl').value = '';
-  document.getElementById('itemFile').value = '';
-  document.getElementById('modalPreview').style.display = 'none';
+  const fi = document.getElementById('itemFile');
+  if (fi) fi.value = '';
+  const prev = document.getElementById('modalPreview');
+  if (prev) prev.style.display = 'none';
   document.getElementById('modalBackdrop').classList.add('show');
   document.getElementById('itemTitle').focus();
 }
 
 function openModalForEdit(id) {
   const existing = state.items.find(x => Number(x.id) === Number(id));
-  if (!existing) { showToast('Item not found; refresh first', 'error'); return; }
+  if (!existing) { showToast('Item not found — refresh first', 'error'); return; }
   modalState = { id, isAdd: false };
+  const isQuote = state.tab === 'quotes';
+  const cg = document.getElementById('contentGroup');
+  const ag = document.getElementById('authorGroup');
+  const tl = document.getElementById('titleLabel');
+  if (cg) cg.style.display = isQuote ? 'none' : 'block';
+  if (ag) ag.style.display = isQuote ? 'block' : 'none';
+  if (tl) tl.textContent = isQuote ? 'Quote Text' : 'Title';
   document.getElementById('modalTitle').textContent = `Edit ${state.tab.slice(0, -1)} #${id}`;
   document.getElementById('itemTitle').value = existing.title || existing.text || '';
   document.getElementById('itemContent').value = existing.content || '';
   document.getElementById('itemAuthor').value = existing.author || '';
   document.getElementById('itemImageUrl').value = existing.image_url || '';
   const prev = document.getElementById('modalPreview');
-  if (existing.image_url) { prev.src = existing.image_url; prev.style.display = 'block'; }
-  else prev.style.display = 'none';
+  if (prev) {
+    if (existing.image_url) { prev.src = existing.image_url; prev.style.display = 'block'; }
+    else prev.style.display = 'none';
+  }
   document.getElementById('modalBackdrop').classList.add('show');
 }
 
-function closeModal() { document.getElementById('modalBackdrop').classList.remove('show'); }
-
-// Drop zone
-const dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('click', () => document.getElementById('itemFile').click());
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault(); dropZone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) previewFile(file);
-});
-document.getElementById('itemFile').addEventListener('change', e => { if (e.target.files[0]) previewFile(e.target.files[0]); });
-
-function previewFile(file) {
-  const reader = new FileReader();
-  reader.onload = evt => {
-    const prev = document.getElementById('modalPreview');
-    prev.src = evt.target.result;
-    prev.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
+function closeModal() {
+  document.getElementById('modalBackdrop').classList.remove('show');
 }
-document.getElementById('itemImageUrl').addEventListener('input', e => {
-  const prev = document.getElementById('modalPreview');
-  if (e.target.value) { prev.src = e.target.value; prev.style.display = 'block'; }
-  else prev.style.display = 'none';
-});
 
-document.getElementById('saveModalBtn').addEventListener('click', async () => {
+async function handleSaveModal() {
   const title = document.getElementById('itemTitle').value.trim();
   const content = document.getElementById('itemContent').value.trim();
   const author = document.getElementById('itemAuthor').value.trim();
   let image_url = document.getElementById('itemImageUrl').value.trim();
-  if (!title) { showToast('Title/Quote text is required', 'warn'); return; }
+  if (!title) { showToast('Title / Quote text is required', 'warn'); return; }
 
-  // Upload file if chosen
-  const fileInput = document.getElementById('itemFile');
-  if (fileInput.files.length > 0) {
-    showToast('Uploading image…', 'info');
-    const uploaded = await uploadFileAndGetUrl(fileInput.files[0]);
-    if (uploaded) image_url = uploaded;
+  const saveBtn = document.getElementById('saveModalBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
+  try {
+    // Upload file if chosen
+    const fileInput = document.getElementById('itemFile');
+    if (fileInput && fileInput.files.length > 0) {
+      showToast('Uploading image…', 'info');
+      const uploaded = await uploadFileAndGetUrl(fileInput.files[0]);
+      if (uploaded) image_url = uploaded;
+    }
+
+    let payload;
+    if (state.tab === 'quotes') {
+      payload = { text: title, author: author || null, image_url: image_url || null };
+    } else {
+      payload = { title, content, image_url: image_url || null };
+    }
+
+    const endpoint = API[state.tab];
+    const isAdd = modalState.isAdd;
+    const url = isAdd ? endpoint : `${endpoint}/${modalState.id}`;
+    const method = isAdd ? 'POST' : 'PUT';
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      showToast(isAdd ? '✅ Created successfully!' : '✅ Updated!', 'success');
+      closeModal();
+      await loadList(true);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.detail || 'Save failed', 'error');
+    }
+  } catch (e) {
+    console.error('[QuoteMe] handleSaveModal:', e);
+    showToast('Network error — please try again', 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = '💾 Save';
   }
+}
 
-  let payload;
-  if (state.tab === 'quotes') {
-    payload = { text: title, author: author || null, image_url: image_url || null };
-  } else {
-    payload = { title, content, image_url: image_url || null };
-  }
+// ================== IMAGE PREVIEW / UPLOAD ==================
+function previewFile(file) {
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const prev = document.getElementById('modalPreview');
+    if (prev) { prev.src = evt.target.result; prev.style.display = 'block'; }
+  };
+  reader.readAsDataURL(file);
+}
 
-  const endpoint = API[state.tab];
-  const isAdd = modalState.isAdd;
-  const url = isAdd ? endpoint : `${endpoint}/${modalState.id}`;
-  const method = isAdd ? 'POST' : 'PUT';
-
-  const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(payload) });
-  if (res.ok) {
-    showToast(isAdd ? '✅ Created successfully!' : '✅ Updated!', 'success');
-    closeModal();
-    await loadList(true);
-  } else {
-    const txt = await res.text();
-    console.error('save failed', txt);
-    showToast('Save failed — check console', 'error');
-  }
-});
-
-// ================== UPLOAD ==================
 async function uploadFileAndGetUrl(file) {
   try {
     const fd = new FormData();
     fd.append('file', file);
     const res = await fetch(API.upload, { method: 'POST', headers: authHeaders(), body: fd });
-    if (!res.ok) { showToast('Upload failed', 'error'); return null; }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.detail || 'Upload failed', 'error');
+      return null;
+    }
     const data = await res.json();
-    return data.url;
+    return data.url || null;
   } catch (e) {
-    console.error(e);
+    console.error('[QuoteMe] upload:', e);
     showToast('Upload error', 'error');
     return null;
   }
 }
 
-// Avatar upload
-document.getElementById('avatarFileInput').addEventListener('change', async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = await uploadFileAndGetUrl(file);
-  if (url) {
-    document.getElementById('avatarPreview').src = url;
-    document.getElementById('avatarPreview').style.display = 'block';
-    await fetch(API.settings, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ profile_picture: url })
-    });
-    updateAvatarUI(url);
-    showToast('Profile picture updated!', 'success');
-  }
-});
-const adz = document.getElementById('avatarDropZone');
-adz.addEventListener('dragover', e => { e.preventDefault(); adz.classList.add('drag-over'); });
-adz.addEventListener('dragleave', () => adz.classList.remove('drag-over'));
-adz.addEventListener('drop', e => {
-  e.preventDefault(); adz.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) {
-    const dt = new DataTransfer(); dt.items.add(file);
-    document.getElementById('avatarFileInput').files = dt.files;
-    document.getElementById('avatarFileInput').dispatchEvent(new Event('change'));
-  }
-});
-
 function updateAvatarUI(url) {
   const ab = document.getElementById('avatarBubble');
   const pl = document.getElementById('profileAvatarLg');
-  ab.innerHTML = `<img src="${url}" alt="avatar">`;
-  pl.innerHTML = `<img src="${url}" alt="avatar">`;
+  if (ab) ab.innerHTML = `<img src="${url}" alt="avatar">`;
+  if (pl) pl.innerHTML = `<img src="${url}" alt="avatar">`;
 }
 
 // ================== DELETE ==================
 function confirmDelete(id) {
   document.getElementById('confirmTitle').textContent = 'Delete Item';
-  document.getElementById('confirmMsg').textContent = `Are you sure you want to delete this ${state.tab.slice(0,-1)}? This cannot be undone.`;
+  document.getElementById('confirmMsg').textContent = `Are you sure you want to delete this ${state.tab.slice(0, -1)}? This cannot be undone.`;
   document.getElementById('confirmBackdrop').classList.add('show');
   pendingDeleteFn = () => doDelete(id);
 }
+
 function closeConfirm() {
   document.getElementById('confirmBackdrop').classList.remove('show');
   pendingDeleteFn = null;
 }
-document.getElementById('confirmOkBtn').addEventListener('click', () => {
-  if (pendingDeleteFn) pendingDeleteFn();
-  closeConfirm();
-});
 
 async function doDelete(id) {
-  const res = await fetch(`${API[state.tab]}/${id}`, { method: 'DELETE', headers: authHeaders() });
-  if (res.ok) { showToast('🗑️ Deleted', 'success'); await loadList(true); }
-  else { showToast('Delete failed', 'error'); }
+  try {
+    const res = await fetch(`${API[state.tab]}/${id}`, { method: 'DELETE', headers: authHeaders() });
+    if (res.ok) { showToast('🗑️ Deleted', 'success'); await loadList(true); }
+    else {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.detail || 'Delete failed', 'error');
+    }
+  } catch (e) {
+    console.error('[QuoteMe] doDelete:', e);
+    showToast('Network error during delete', 'error');
+  }
 }
 
 // ================== COMMENTS ==================
-async function viewComments(itemId, itemType) {
-  const data = await fetch(`${API.comments}/${itemType}/${itemId}`)
-    .then(r => r.json())
-    .catch(() => []);
+// Opens a comments view inside a dedicated overlay (not the add/edit modal)
+function viewComments(itemId, itemType) {
+  // Build or reuse a comments overlay
+  let overlay = document.getElementById('commentsOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'commentsOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,5,15,.55);display:flex;justify-content:center;align-items:flex-start;z-index:95;padding:40px 16px;overflow-y:auto;backdrop-filter:blur(4px)';
+    document.body.appendChild(overlay);
+  }
 
-  const defaultView = document.getElementById('modalDefaultView');
-  const commentsView = document.getElementById('modalCommentsView');
+  const sentimentEmoji = { positive: '😊', neutral: '😐', negative: '😠' };
 
-  // hide form
-  defaultView.style.display = 'none';
+  overlay.innerHTML = `
+    <div style="background:var(--card);width:100%;max-width:640px;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:modalIn .22s ease">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid var(--border)">
+        <h3 style="font-size:20px;color:var(--accent)">💭 Comments</h3>
+        <button class="btn-icon" onclick="closeCommentsView()">✕</button>
+      </div>
+      <div style="padding:22px" id="commentsBody">
+        <div style="color:var(--muted);text-align:center;padding:24px">Loading comments…</div>
+      </div>
+    </div>`;
 
-  commentsView.style.display = 'block';
+  overlay.style.display = 'flex';
 
-  const sentimentEmoji = {
-    positive: '😊',
-    neutral: '😐',
-    negative: '😠'
-  };
+  // Close on backdrop click
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCommentsView(); }, { once: true });
 
-  commentsView.innerHTML = `
-    <h3 style="margin-bottom:10px">💭 Comments</h3>
-
-    <div class="comment-thread">
-      ${
-        data.length === 0
-          ? `<div style="color:var(--muted);text-align:center;padding:20px">No comments yet.</div>`
-          : data.map(c => `
-              <div class="comment-item">
-                <div class="comment-user">
-                  ${esc(c.username)}
-                  <span class="sentiment-badge ${c.sentiment}">
-                    ${sentimentEmoji[c.sentiment] || ''} ${c.sentiment}
-                  </span>
-                </div>
-                <div class="comment-text">${esc(c.content)}</div>
+  // Load comments async
+  fetch(`${API.comments}/${itemType}/${itemId}`)
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      const body = document.getElementById('commentsBody');
+      if (!body) return;
+      const commentsHtml = data.length === 0
+        ? `<div style="color:var(--muted);text-align:center;padding:20px">No comments yet.</div>`
+        : `<div class="comment-thread">${data.map(c => `
+            <div class="comment-item">
+              <div class="comment-user">
+                ${esc(c.username)}
+                <span class="sentiment-badge ${c.sentiment}">${sentimentEmoji[c.sentiment] || ''} ${c.sentiment}</span>
+                <button class="btn-icon" style="margin-left:auto;float:right;color:var(--danger);font-size:13px" onclick="deleteCommentFromView(${c.id}, ${itemId}, '${itemType}')">🗑️</button>
               </div>
-            `).join('')
-      }
-    </div>
+              <div class="comment-text">${esc(c.content)}</div>
+              ${c.created_at ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${new Date(c.created_at).toLocaleString()}</div>` : ''}
+            </div>`).join('')}</div>`;
 
-    <div style="margin-top:16px;display:flex;gap:8px">
-      <input id="inlineCommentUser" class="form-control" placeholder="Your name" style="flex:.4">
-      <input id="inlineCommentText" class="form-control" placeholder="Write a comment…" style="flex:1">
-      <button class="btn btn-primary" onclick="submitInlineComment(${itemId},'${itemType}')">Post</button>
-    </div>
-
-    <button class="btn btn-ghost" style="margin-top:12px" onclick="closeCommentsView()">
-      ← Back
-    </button>
-  `;
+      body.innerHTML = `
+        ${commentsHtml}
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+          <input id="inlineCommentUser" class="form-control" placeholder="Your name" style="flex:.4;min-width:100px">
+          <input id="inlineCommentText" class="form-control" placeholder="Write a comment…" style="flex:1;min-width:140px">
+          <button class="btn btn-primary" onclick="submitInlineComment(${itemId},'${itemType}')">Post</button>
+        </div>
+        <button class="btn btn-ghost" style="margin-top:12px" onclick="closeCommentsView()">← Back</button>`;
+    })
+    .catch(err => {
+      console.error('[QuoteMe] viewComments fetch:', err);
+      const body = document.getElementById('commentsBody');
+      if (body) body.innerHTML = `<div style="color:var(--danger);padding:20px">Failed to load comments.</div>`;
+    });
 }
 
+function closeCommentsView() {
+  const overlay = document.getElementById('commentsOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+async function submitInlineComment(itemId, itemType) {
+  const userEl = document.getElementById('inlineCommentUser');
+  const textEl = document.getElementById('inlineCommentText');
+  if (!userEl || !textEl) return;
+  const username = userEl.value.trim();
+  const content = textEl.value.trim();
+  if (!username || !content) { showToast('Name and comment are required', 'warn'); return; }
+
+  try {
+    const res = await fetch(`${BASE}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, username, item_type: itemType, item_id: itemId })
+    });
+    if (res.ok) {
+      showToast('Comment posted!', 'success');
+      viewComments(itemId, itemType); // refresh view
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.detail || 'Failed to post comment', 'error');
+    }
+  } catch (e) {
+    console.error('[QuoteMe] submitInlineComment:', e);
+    showToast('Network error', 'error');
+  }
+}
+
+async function deleteCommentFromView(commentId, itemId, itemType) {
+  const res = await fetch(`${BASE}/comments/${commentId}`, { method: 'DELETE', headers: authHeaders() });
+  if (res.ok) {
+    showToast('Comment deleted', 'success');
+    viewComments(itemId, itemType); // refresh the comments view
+  } else {
+    showToast('Failed to delete comment', 'error');
+  }
+}
+
+// ================== ALL COMMENTS TAB ==================
 async function loadAllComments() {
   const container = document.getElementById('allCommentsList');
+  if (!container) return;
   container.innerHTML = '<div style="padding:24px;color:var(--muted)">Loading…</div>';
-  // Load comments from all types
+
   try {
     const [quotes, stories, blogs] = await Promise.all([
-      fetch(API.quotes).then(r=>r.json()).catch(()=>[]),
-      fetch(API.stories).then(r=>r.json()).catch(()=>[]),
-      fetch(API.blogs).then(r=>r.json()).catch(()=>[]),
+      fetch(API.quotes).then(r => r.json()).catch(() => []),
+      fetch(API.stories).then(r => r.json()).catch(() => []),
+      fetch(API.blogs).then(r => r.json()).catch(() => []),
     ]);
     const sentimentEmoji = { positive: '😊', neutral: '😐', negative: '😠' };
-    let html = '';
-    for (const [type, items] of [['quote',quotes],['story',stories],['blog',blogs]]) {
-      for (const item of items.slice(0, 5)) {
-        const comments = await fetch(`${API.comments}/${type}/${item.id}`).then(r=>r.json()).catch(()=>[]);
-        if (comments.length) {
-          html += `<div class="panel" style="margin-bottom:14px">
-            <div class="panel-header" style="padding:12px 16px"><h4 style="font-size:15px">${esc(item.title||item.text||'')} <span style="font-size:12px;color:var(--muted)">(${type} #${item.id})</span></h4></div>
-            <div class="panel-body" style="padding:12px 16px">
-              ${comments.map(c => `
-                <div class="comment-item" style="margin-bottom:8px">
-                  <div class="comment-user">${esc(c.username)} <span class="sentiment-badge ${c.sentiment}">${sentimentEmoji[c.sentiment]||''} ${c.sentiment}</span>
-                    <button class="btn-icon" style="margin-left:auto;float:right;color:var(--danger)" onclick="deleteComment(${c.id})">🗑️</button>
-                  </div>
-                  <div class="comment-text">${esc(c.content)}</div>
-                </div>`).join('')}
-            </div>
-          </div>`;
-        }
+
+    // Fetch comments for all items in parallel (limited to first 10 per type to avoid hammering)
+    const allFetches = [];
+    for (const [type, items] of [['quote', quotes], ['story', stories], ['blog', blogs]]) {
+      for (const item of (Array.isArray(items) ? items : []).slice(0, 10)) {
+        allFetches.push(
+          fetch(`${API.comments}/${type}/${item.id}`)
+            .then(r => r.json())
+            .then(comments => ({ type, item, comments }))
+            .catch(() => ({ type, item, comments: [] }))
+        );
       }
+    }
+    const results = await Promise.all(allFetches);
+
+    let html = '';
+    for (const { type, item, comments } of results) {
+      if (!comments.length) continue;
+      html += `<div class="panel" style="margin-bottom:14px">
+        <div class="panel-header" style="padding:12px 16px">
+          <h4 style="font-size:15px">${esc(item.title || item.text || '')} <span style="font-size:12px;color:var(--muted)">(${type} #${item.id})</span></h4>
+        </div>
+        <div class="panel-body" style="padding:12px 16px">
+          ${comments.map(c => `
+            <div class="comment-item" style="margin-bottom:8px">
+              <div class="comment-user">
+                ${esc(c.username)}
+                <span class="sentiment-badge ${c.sentiment}">${sentimentEmoji[c.sentiment] || ''} ${c.sentiment}</span>
+                <button class="btn-icon" style="margin-left:auto;float:right;color:var(--danger)" onclick="deleteComment(${c.id})">🗑️</button>
+              </div>
+              <div class="comment-text">${esc(c.content)}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
     }
     container.innerHTML = html || '<div class="empty-state"><div class="emoji">💭</div><p>No comments yet.</p></div>';
   } catch (e) {
+    console.error('[QuoteMe] loadAllComments:', e);
     container.innerHTML = '<div style="padding:24px;color:var(--muted)">Failed to load comments.</div>';
   }
 }
 
 async function deleteComment(id) {
-  const res = await fetch(`${API.comments}/${id}`, { method: 'DELETE', headers: authHeaders() });
-  if (res.ok) { showToast('Comment deleted', 'success'); loadAllComments(); }
-  else showToast('Failed to delete comment', 'error');
+  try {
+    const res = await fetch(`${BASE}/comments/${id}`, { method: 'DELETE', headers: authHeaders() });
+    if (res.ok) { showToast('Comment deleted', 'success'); loadAllComments(); }
+    else showToast('Failed to delete comment', 'error');
+  } catch (e) {
+    showToast('Network error', 'error');
+  }
 }
 
 // ================== FORUM ==================
 async function loadForum() {
   const container = document.getElementById('forumList');
+  if (!container) return;
   container.innerHTML = '<div style="padding:24px;color:var(--muted)">Loading…</div>';
-  const posts = await fetch(API.forum).then(r => r.json()).catch(() => []);
-  if (!posts.length) {
-    container.innerHTML = '<div class="empty-state"><div class="emoji">🗣️</div><p>No forum posts yet.</p></div>';
-    return;
+  try {
+    const posts = await fetch(API.forum).then(r => r.json()).catch(() => []);
+    if (!Array.isArray(posts) || !posts.length) {
+      container.innerHTML = '<div class="empty-state"><div class="emoji">🗣️</div><p>No forum posts yet.</p></div>';
+      return;
+    }
+    container.innerHTML = posts.map(p => `
+      <div class="comment-item" style="margin-bottom:10px">
+        <div class="comment-user">${esc(p.name)}</div>
+        <div class="comment-text">${esc(p.message)}</div>
+        ${p.created_at ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${new Date(p.created_at).toLocaleString()}</div>` : ''}
+      </div>`).join('');
+  } catch (e) {
+    console.error('[QuoteMe] loadForum:', e);
+    container.innerHTML = '<div style="padding:24px;color:var(--muted)">Failed to load forum posts.</div>';
   }
-  container.innerHTML = posts.map(p => `
-    <div class="comment-item" style="margin-bottom:10px">
-      <div class="comment-user">${esc(p.name)}</div>
-      <div class="comment-text">${esc(p.message)}</div>
-      ${p.created_at ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${new Date(p.created_at).toLocaleString()}</div>` : ''}
-    </div>`).join('');
 }
 
 // ================== SETTINGS ==================
 async function loadSettings() {
   try {
-    const settings = await fetch(API.settings, { headers: authHeaders() }).then(r => r.json());
-    if (settings.site_title) document.getElementById('siteTitle').value = settings.site_title;
-    if (settings.site_logo) document.getElementById('siteLogo').value = settings.site_logo;
+    const res = await fetch(API.settings, { headers: authHeaders() });
+    if (!res.ok) return;
+    const settings = await res.json();
+    const st = document.getElementById('siteTitle');
+    const sl = document.getElementById('siteLogo');
+    if (st && settings.site_title) st.value = settings.site_title;
+    if (sl && settings.site_logo) sl.value = settings.site_logo;
     if (settings.dark_mode === 1) applyDark(true);
     if (settings.profile_picture) {
       updateAvatarUI(settings.profile_picture);
       const prev = document.getElementById('avatarPreview');
-      prev.src = settings.profile_picture; prev.style.display = 'block';
+      if (prev) { prev.src = settings.profile_picture; prev.style.display = 'block'; }
     }
   } catch (e) { /* settings not critical */ }
 }
 
 async function saveBranding() {
-  const site_title = document.getElementById('siteTitle').value.trim();
-  const site_logo = document.getElementById('siteLogo').value.trim();
-  const res = await fetch(API.settings, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ site_title, site_logo })
-  });
-  if (res.ok) showToast('Branding saved!', 'success');
-  else showToast('Failed to save branding', 'error');
+  const site_title = (document.getElementById('siteTitle')?.value || '').trim();
+  const site_logo = (document.getElementById('siteLogo')?.value || '').trim();
+  try {
+    const res = await fetch(API.settings, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ site_title, site_logo })
+    });
+    if (res.ok) showToast('Branding saved!', 'success');
+    else showToast('Failed to save branding', 'error');
+  } catch (e) {
+    showToast('Network error', 'error');
+  }
 }
 
 async function changePassword() {
-  const current_password = document.getElementById('currentPwd').value;
-  const new_password = document.getElementById('newPwd').value;
+  const current_password = document.getElementById('currentPwd')?.value || '';
+  const new_password = document.getElementById('newPwd')?.value || '';
   if (!current_password || !new_password) { showToast('Fill in both password fields', 'warn'); return; }
   if (new_password.length < 6) { showToast('New password must be at least 6 characters', 'warn'); return; }
-  const res = await fetch(API.changePwd, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ current_password, new_password })
-  });
-  if (res.ok) {
-    document.getElementById('currentPwd').value = '';
-    document.getElementById('newPwd').value = '';
-    showToast('✅ Password updated!', 'success');
-  } else {
-    const data = await res.json().catch(() => ({}));
-    showToast(data.detail || 'Failed to update password', 'error');
+  try {
+    const res = await fetch(API.changePwd, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ current_password, new_password })
+    });
+    if (res.ok) {
+      document.getElementById('currentPwd').value = '';
+      document.getElementById('newPwd').value = '';
+      showToast('✅ Password updated!', 'success');
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.detail || 'Failed to update password', 'error');
+    }
+  } catch (e) {
+    showToast('Network error', 'error');
   }
 }
 
 async function changeUsername() {
-  const new_username = document.getElementById('newUsername').value.trim();
+  const new_username = (document.getElementById('newUsername')?.value || '').trim();
   if (!new_username) { showToast('Enter a new username', 'warn'); return; }
-  const res = await fetch(API.changeUser, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ new_username })
-  });
-  if (res.ok) {
-    const data = await res.json();
-    localStorage.setItem('adminToken', data.token);
-    document.getElementById('sidebarUser').textContent = new_username;
-    document.getElementById('profileName').textContent = new_username;
-    document.getElementById('avatarBubble').textContent = new_username.charAt(0).toUpperCase();
-    document.getElementById('profileAvatarLg').textContent = new_username.charAt(0).toUpperCase();
-    document.getElementById('newUsername').value = '';
-    showToast('✅ Username updated!', 'success');
-  } else {
-    const data = await res.json().catch(() => ({}));
-    showToast(data.detail || 'Failed to update username', 'error');
+  try {
+    const res = await fetch(API.changeUser, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ new_username })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.token) localStorage.setItem('adminToken', data.token);
+      const su = document.getElementById('sidebarUser');
+      const pn = document.getElementById('profileName');
+      const ab = document.getElementById('avatarBubble');
+      const pl = document.getElementById('profileAvatarLg');
+      if (su) su.textContent = new_username;
+      if (pn) pn.textContent = new_username;
+      if (ab && !ab.querySelector('img')) ab.textContent = new_username.charAt(0).toUpperCase();
+      if (pl && !pl.querySelector('img')) pl.textContent = new_username.charAt(0).toUpperCase();
+      document.getElementById('newUsername').value = '';
+      showToast('✅ Username updated!', 'success');
+    } else {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.detail || 'Failed to update username', 'error');
+    }
+  } catch (e) {
+    showToast('Network error', 'error');
   }
 }
-
-// Dark mode toggle synced from settings
-document.getElementById('darkModeToggle').addEventListener('change', async e => {
-  await fetch(API.settings, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ dark_mode: e.target.checked ? 1 : 0 })
-  });
-});
 
 // ================== TOAST ==================
 function showToast(msg, type = 'info') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
   el.textContent = msg;
-  document.getElementById('toastContainer').appendChild(el);
+  const container = document.getElementById('toastContainer');
+  if (!container) { console.warn(msg); return; }
+  container.appendChild(el);
   setTimeout(() => {
     el.style.animation = 'toastOut .4s ease forwards';
     setTimeout(() => el.remove(), 400);
   }, 2600);
 }
-
-// ================== INIT ==================
-window.addEventListener('load', () => {
-  switchTab('quotes');
-  loadList(true);
-});
 </script>
 </body>
 </html>
