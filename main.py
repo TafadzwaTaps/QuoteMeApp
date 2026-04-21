@@ -14,6 +14,7 @@ from jose import jwt
 import shutil, os, uuid
 from typing import List, Optional
 from datetime import datetime
+import os
 
 logger = logging_setup.logger
 pwd_context = CryptContext(
@@ -82,10 +83,8 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
 @app.get("/")
-def serve_home():
-    if os.path.exists(FRONTEND_HTML):
-        return FileResponse(FRONTEND_HTML)
-    raise HTTPException(status_code=404, detail="Frontend HTML not found")
+def home():
+    return FileResponse("static/index.html")
 
 @app.get("/admin.html")
 def admin_page():
@@ -479,15 +478,3 @@ def send_contact(message: ContactSchema, db: Session = Depends(get_db)):
     db.add(new_msg)
     db.commit()
     return {"success": True}
-
-@app.get("/")
-def serve_home():
-    return FileResponse("static/index.html")
-
-@app.get("/admin")
-def serve_admin():
-    return FileResponse("static/admin.html")
-
-@app.get("/dashboard")
-def serve_dashboard():
-    return FileResponse("static/dashboard.html")
