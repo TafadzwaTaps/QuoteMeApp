@@ -90,3 +90,38 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-04-20 19:37:08,128 [ERROR] Unexpected login error for admin 'Ruvarashe': module 'jwt' has no attribute 'encode'
 2026-04-20 19:40:50,291 [INFO] Admin 'Ruvarashe' logged in successfully.
 2026-04-20 19:42:33,837 [INFO] Quote added by admin: Ruvarashe
+2026-04-20 22:31:05,027 [WARNING] (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "c:\Users\manix\QuoteMeApp\QuoteMeApp\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-04-20 22:31:05,035 [ERROR] Unexpected login error for admin 'Ruvarashe': password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+2026-04-20 22:31:05,845 [WARNING] (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "c:\Users\manix\QuoteMeApp\QuoteMeApp\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-04-20 22:31:05,853 [ERROR] Unexpected login error for admin 'Ruvarashe': password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+2026-04-20 22:39:22,289 [WARNING] (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "c:\Users\manix\QuoteMeApp\QuoteMeApp\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-04-20 22:39:22,295 [ERROR] Password verification failed: password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+2026-04-20 22:39:38,041 [WARNING] (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "c:\Users\manix\QuoteMeApp\QuoteMeApp\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-04-20 22:39:38,050 [ERROR] Password verification failed: password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+2026-04-20 22:40:08,905 [WARNING] (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\manix\QuoteMeApp\QuoteMeApp\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2026-04-20 22:40:08,910 [ERROR] Error creating admin: password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])

@@ -534,8 +534,9 @@ async function fetchItemsFromApi() {
 }
 
 async function loadList(forceReload = false) {
-  if (!forceReload && state.items.length > 0) return;
-  document.getElementById('listContainer').innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted)">Loading…</div>';
+  document.getElementById('listContainer').innerHTML =
+    '<div style="padding:32px;text-align:center;color:var(--muted)">Loading…</div>';
+
   state.items = await fetchItemsFromApi();
   renderList();
 }
@@ -991,7 +992,10 @@ function showToast(msg, type = 'info') {
 }
 
 // ================== INIT ==================
-switchTab('quotes');
+window.addEventListener('load', () => {
+  switchTab('quotes');
+  loadList(true);
+});
 </script>
 </body>
 </html>

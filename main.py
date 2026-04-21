@@ -16,7 +16,11 @@ from typing import List, Optional
 from datetime import datetime
 
 logger = logging_setup.logger
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    bcrypt__rounds=12,
+    deprecated="auto"
+)
 
 # ===== CONFIG =====
 SECRET_KEY = "supersecretkey"  # Replace with environment variable in production
@@ -116,19 +120,27 @@ def require_admin(authorization: str = Header(...)) -> str:
 def login(admin: AdminLogin, db: Session = Depends(get_db)):
     try:
         user = db.query(Admin).filter(Admin.username == admin.username).first()
+
         if not user:
-            logger.warning(f"Failed login attempt for admin {admin.username}.")
             raise HTTPException(status_code=401, detail="Invalid credentials")
-        if not pwd_context.verify(admin.password, user.password_hash):
-            logger.warning(f"Failed login attempt for admin {admin.username}.")
+
+        try:
+            valid = pwd_context.verify(admin.password, user.password_hash)
+        except Exception as e:
+            logger.error(f"Password verification failed: {e}")
+            raise HTTPException(status_code=500, detail="Auth system error")
+
+        if not valid:
             raise HTTPException(status_code=401, detail="Invalid credentials")
+
         token = jwt.encode({"username": user.username}, SECRET_KEY, algorithm="HS256")
-        logger.info(f"Admin '{admin.username}' logged in successfully.")
+
         return {"token": token}
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Unexpected login error for admin '{admin.username}': {e}")
+        logger.error(f"Login crash: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 # ===== ADMIN SETTINGS =====
