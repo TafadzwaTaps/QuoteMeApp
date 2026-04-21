@@ -19,7 +19,6 @@ import os
 logger = logging_setup.logger
 pwd_context = CryptContext(
     schemes=["bcrypt"],
-    bcrypt__rounds=12,
     deprecated="auto"
 )
 
@@ -51,6 +50,8 @@ def seed_admin():
             db.add(admin)
             db.commit()
             print("Admin seeded successfully")
+    except Exception as e:
+        print("Seed error:", e)
     finally:
         db.close()
 
@@ -136,28 +137,30 @@ def require_admin(authorization: str = Header(...)) -> str:
 # ===== ADMIN LOGIN =====
 @app.post("/admin/login")
 def login(admin: AdminLogin, db: Session = Depends(get_db)):
+    user = db.query(Admin).filter(Admin.username == admin.username).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if not user.password_hash:
+        raise HTTPException(status_code=500, detail="Admin password not set")
+
     try:
-        user = db.query(Admin).filter(Admin.username == admin.username).first()
-
-        if not user or not user.password_hash:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-
         valid = pwd_context.verify(admin.password, user.password_hash)
-
-        if not valid:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-
-        token = jwt.encode(
-            {"username": user.username},
-            SECRET_KEY,
-            algorithm="HS256"
-        )
-
-        return {"token": token}
-
     except Exception as e:
-        logger.error(f"Login crash: {e}")
+        logger.error(f"bcrypt crash: {e}")
         raise HTTPException(status_code=500, detail="Auth system error")
+
+    if not valid:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = jwt.encode(
+        {"username": user.username},
+        SECRET_KEY,
+        algorithm="HS256"
+    )
+
+    return {"token": token}
 
 # ===== ADMIN SETTINGS =====
 @app.get("/admin/settings", response_model=AdminSettingsOut)
