@@ -38,6 +38,23 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base.metadata.create_all(bind=engine)
+def seed_admin():
+    db = SessionLocal()
+    try:
+        existing = db.query(Admin).filter(Admin.username == "Ruvarashe").first()
+
+        if not existing:
+            admin = Admin(
+                username="Ruvarashe",
+                password_hash=pwd_context.hash("Ruva123$")
+            )
+            db.add(admin)
+            db.commit()
+            print("Admin seeded successfully")
+    finally:
+        db.close()
+
+seed_admin()
 
 def init_db():
     from sqlalchemy import inspect, text
@@ -122,27 +139,25 @@ def login(admin: AdminLogin, db: Session = Depends(get_db)):
     try:
         user = db.query(Admin).filter(Admin.username == admin.username).first()
 
-        if not user:
+        if not user or not user.password_hash:
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        try:
-            valid = pwd_context.verify(admin.password, user.password_hash)
-        except Exception as e:
-            logger.error(f"Password verification failed: {e}")
-            raise HTTPException(status_code=500, detail="Auth system error")
+        valid = pwd_context.verify(admin.password, user.password_hash)
 
         if not valid:
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        token = jwt.encode({"username": user.username}, SECRET_KEY, algorithm="HS256")
+        token = jwt.encode(
+            {"username": user.username},
+            SECRET_KEY,
+            algorithm="HS256"
+        )
 
         return {"token": token}
 
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Login crash: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail="Auth system error")
 
 # ===== ADMIN SETTINGS =====
 @app.get("/admin/settings", response_model=AdminSettingsOut)
