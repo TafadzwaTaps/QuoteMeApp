@@ -178,6 +178,191 @@ textarea.form-control{resize:vertical;min-height:100px}
   .controls-row{flex-direction:column;align-items:stretch}
   .panel-header{flex-direction:column;align-items:flex-start}
 }
+
+/* ══════════════════════════════════════════════
+   ENHANCEMENTS  —  QuoteMe Admin v2
+   All rules are additive; nothing overrides existing ones
+   ══════════════════════════════════════════════ */
+
+/* ── SMOOTH THEME TRANSITION ── */
+*,*::before,*::after{transition:background-color .25s,border-color .25s,color .25s,box-shadow .25s}
+/* But don't slow down interactive hover/focus feedback */
+.btn,.btn-icon,.nav-item,.page-btn,.form-control,.item-card{transition:all .18s!important}
+
+/* ── HERO STATS STRIP (Quick Stats) ── */
+.hero-stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:12px;
+  margin-bottom:22px;
+}
+.hstat{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  position:relative;
+  overflow:hidden;
+  cursor:pointer;
+  transition:box-shadow .2s,transform .2s!important;
+}
+.hstat:hover{box-shadow:0 6px 22px rgba(200,33,95,0.14);transform:translateY(-2px)}
+.hstat-icon{font-size:22px;margin-bottom:4px}
+.hstat-num{font-family:'DM Serif Display',serif;font-size:28px;font-weight:700;color:var(--accent);line-height:1}
+.hstat-label{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.03em}
+.hstat-bar{position:absolute;bottom:0;left:0;height:3px;background:var(--accent);width:0%;transition:width .8s cubic-bezier(.4,0,.2,1)!important;opacity:.5;border-radius:0 2px 2px 0}
+/* Skeleton pulse for stats */
+.hstat.loading .hstat-num{background:var(--border);border-radius:6px;color:transparent;animation:skelPulse 1.2s infinite}
+.hstat.loading .hstat-label{background:var(--border);border-radius:4px;color:transparent;width:60%;animation:skelPulse 1.2s infinite .2s}
+@keyframes skelPulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* ── SKELETON LOADER for card grid ── */
+.skel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.skel-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;height:200px;position:relative}
+.skel-card::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.06) 50%,transparent 100%);animation:shimmer 1.4s infinite;background-size:200% 100%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-img{background:var(--border);height:110px;width:100%;animation:skelPulse 1.2s infinite}
+.skel-body{padding:12px;display:flex;flex-direction:column;gap:8px}
+.skel-line{background:var(--border);border-radius:5px;animation:skelPulse 1.2s infinite}
+.skel-line.lg{height:14px;width:85%}
+.skel-line.sm{height:11px;width:55%}
+
+/* ── CONTROLS ROW ENHANCEMENTS ── */
+.sort-select{padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--input-bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;min-width:130px}
+
+/* ── BULK ACTION BAR ── */
+.bulk-bar{
+  display:none;align-items:center;gap:10px;
+  background:var(--accent);color:#fff;
+  padding:10px 16px;border-radius:10px;
+  margin-bottom:14px;font-size:14px;font-weight:600;
+  animation:fadeUp .2s ease;
+}
+.bulk-bar.visible{display:flex}
+.bulk-bar .bulk-count{flex:1}
+.bulk-bar button{background:rgba(255,255,255,.2);border:0;border-radius:8px;color:#fff;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:600;transition:background .15s!important}
+.bulk-bar button:hover{background:rgba(255,255,255,.35)}
+
+/* ── CHECKBOX ON CARDS ── */
+.card-select{
+  position:absolute;top:8px;left:8px;
+  width:20px;height:20px;
+  accent-color:var(--accent);
+  cursor:pointer;
+  opacity:0;
+  transition:opacity .15s!important;
+  z-index:2;
+}
+.item-card{position:relative}
+.item-card:hover .card-select,
+.item-card.selected .card-select{opacity:1}
+.item-card.selected{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ── FORM VALIDATION ── */
+.form-control.error{border-color:var(--danger)!important}
+.field-error{font-size:12px;color:var(--danger);margin-top:4px;display:none}
+.field-error.show{display:block}
+.form-control.required-field::placeholder::after{content:' *';color:var(--danger)}
+label.required::after{content:' *';color:var(--danger);font-weight:700}
+
+/* ── CHARACTER COUNTER ── */
+.char-counter{font-size:11px;color:var(--muted);text-align:right;margin-top:3px}
+.char-counter.warn{color:var(--warn)}
+.char-counter.over{color:var(--danger)}
+
+/* ── DRAFT PILL ── */
+.draft-pill{
+  display:none;align-items:center;gap:6px;
+  background:var(--warn);color:#fff;
+  font-size:12px;font-weight:700;
+  padding:4px 10px;border-radius:20px;
+  cursor:pointer;
+  animation:fadeUp .25s ease;
+}
+.draft-pill.visible{display:inline-flex}
+
+/* ── WRITING TIPS PANEL ── */
+.writing-tip{
+  background:var(--accent-light);
+  border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;
+  padding:10px 12px;
+  font-size:13px;
+  color:var(--text);
+  margin-top:8px;
+  display:none;
+  animation:fadeUp .2s ease;
+}
+.writing-tip.show{display:block}
+.writing-tip strong{color:var(--accent)}
+
+/* ── UPLOAD PROGRESS ── */
+.upload-progress{margin-top:8px;display:none}
+.upload-progress.show{display:block}
+.upload-progress-bar{height:6px;background:var(--border);border-radius:6px;overflow:hidden}
+.upload-progress-fill{height:100%;background:var(--accent);width:0%;transition:width .3s!important;border-radius:6px}
+.upload-status{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* ── TOOLTIP ── */
+[data-tip]{position:relative}
+[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#1a1025;color:#fff;font-size:12px;font-weight:500;
+  padding:5px 9px;border-radius:7px;white-space:nowrap;
+  pointer-events:none;opacity:0;transition:opacity .15s!important;z-index:300;
+}
+[data-tip]::before{
+  content:'';position:absolute;bottom:calc(100% + 1px);left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:#1a1025;
+  pointer-events:none;opacity:0;transition:opacity .15s!important;z-index:300;
+}
+[data-tip]:hover::after,[data-tip]:hover::before{opacity:1}
+
+/* ── CONFIRM MODAL ENHANCED ── */
+.confirm-icon{font-size:40px;text-align:center;margin-bottom:12px}
+.confirm-detail{font-size:13px;color:var(--muted);margin-top:6px;font-style:italic}
+
+/* ── OVERVIEW PANEL (home tab) ── */
+#tab-overview{display:none}
+.overview-welcome{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:var(--radius);
+  padding:28px 28px 24px;
+  color:#fff;
+  margin-bottom:20px;
+}
+.overview-welcome h2{font-size:24px;margin-bottom:6px;color:#fff}
+.overview-welcome p{opacity:.85;font-size:15px}
+
+/* ── ACTIVITY FEED ── */
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:0}
+.activity-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0}
+.activity-text{font-size:13px;color:var(--text)}
+.activity-time{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── NAV BADGE COUNTS ── */
+.nav-item .nav-badge{transition:all .3s!important}
+
+/* ── SORT INDICATOR ON CARDS ── */
+.sort-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--accent-light);color:var(--accent);
+  font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
+  margin-left:8px;vertical-align:middle;
+}
+
+/* ── RESPONSIVE additions ── */
+@media(max-width:600px){
+  .hero-stats{grid-template-columns:1fr 1fr}
+  .hstat-num{font-size:22px}
+  .bulk-bar{flex-wrap:wrap}
+}
+
 </style>
 </head>
 <body>
@@ -207,6 +392,8 @@ textarea.form-control{resize:vertical;min-height:100px}
     <div class="nav-section-label">Engagement</div>
     <div class="nav-item" data-tab="comments" onclick="switchTab('comments')"><span class="icon">💭</span> Comments</div>
     <div class="nav-item" data-tab="forum" onclick="switchTab('forum')"><span class="icon">🗣️</span> Forum</div>
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item" data-tab="overview" onclick="switchTab('overview')"><span class="icon">🏠</span> Overview</div>
     <div class="nav-section-label">Account</div>
     <div class="nav-item" data-tab="settings" onclick="switchTab('settings')"><span class="icon">⚙️</span> Settings</div>
     <div style="flex:1"></div>
@@ -218,19 +405,82 @@ textarea.form-control{resize:vertical;min-height:100px}
   <!-- MAIN -->
   <main class="main" id="mainArea">
 
+
+    <!-- ===== OVERVIEW TAB ===== -->
+    <div id="tab-overview" style="display:none">
+      <div class="overview-welcome">
+        <h2 id="overviewGreeting">Good morning! 👋</h2>
+        <p>Here's what's happening on your QuoteMe dashboard today.</p>
+      </div>
+      <!-- Quick Stats -->
+      <div class="hero-stats" id="heroStats">
+        <div class="hstat loading" data-goto="quotes" onclick="switchTab('quotes')">
+          <div class="hstat-icon">💬</div>
+          <div class="hstat-num" id="stat-quotes">—</div>
+          <div class="hstat-label">Quotes</div>
+          <div class="hstat-bar" id="statbar-quotes"></div>
+        </div>
+        <div class="hstat loading" data-goto="stories" onclick="switchTab('stories')">
+          <div class="hstat-icon">📖</div>
+          <div class="hstat-num" id="stat-stories">—</div>
+          <div class="hstat-label">Stories</div>
+          <div class="hstat-bar" id="statbar-stories"></div>
+        </div>
+        <div class="hstat loading" data-goto="blogs" onclick="switchTab('blogs')">
+          <div class="hstat-icon">✍️</div>
+          <div class="hstat-num" id="stat-blogs">—</div>
+          <div class="hstat-label">Blog Posts</div>
+          <div class="hstat-bar" id="statbar-blogs"></div>
+        </div>
+        <div class="hstat loading" data-goto="comments" onclick="switchTab('comments')">
+          <div class="hstat-icon">💭</div>
+          <div class="hstat-num" id="stat-comments">—</div>
+          <div class="hstat-label">Comments</div>
+          <div class="hstat-bar" id="statbar-comments"></div>
+        </div>
+        <div class="hstat loading" data-goto="forum" onclick="switchTab('forum')">
+          <div class="hstat-icon">🗣️</div>
+          <div class="hstat-num" id="stat-forum">—</div>
+          <div class="hstat-label">Forum Posts</div>
+          <div class="hstat-bar" id="statbar-forum"></div>
+        </div>
+      </div>
+      <!-- Recent Activity -->
+      <div class="panel">
+        <div class="panel-header"><h2>Recent Activity</h2></div>
+        <div class="panel-body" id="activityFeed">
+          <div style="color:var(--muted);text-align:center;padding:20px">Loading activity…</div>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== QUOTES / STORIES / BLOGS TAB ===== -->
     <div id="tab-content" class="panel" style="display:none">
       <div class="panel-header">
         <h2 id="sectionTitle">Manage Quotes</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <input id="searchInput" class="search-input" placeholder="Search…" style="width:180px">
+          <select id="sortSelect" class="sort-select" title="Sort items">
+            <option value="default">⇅ Default</option>
+            <option value="newest">🕐 Newest first</option>
+            <option value="oldest">🕰 Oldest first</option>
+            <option value="liked">❤️ Most liked</option>
+            <option value="az">A → Z</option>
+          </select>
           <select id="pageSize" class="select-sm">
             <option value="6">6/page</option>
             <option value="12" selected>12/page</option>
             <option value="24">24/page</option>
           </select>
-          <button class="btn btn-primary" id="addBtn">+ Add</button>
+          <span class="draft-pill" id="draftPill" title="You have an unsaved draft">📝 Draft saved</span>
+          <button class="btn btn-primary" id="addBtn" data-tip="Create a new item">+ Add</button>
         </div>
+      </div>
+      <!-- BULK ACTION BAR -->
+      <div class="bulk-bar" id="bulkBar">
+        <span class="bulk-count" id="bulkCount">0 selected</span>
+        <button onclick="bulkDelete()">🗑️ Delete Selected</button>
+        <button onclick="clearSelection()">✕ Cancel</button>
       </div>
       <div class="panel-body">
         <div id="listContainer" class="item-grid"></div>
@@ -344,12 +594,19 @@ textarea.form-control{resize:vertical;min-height:100px}
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label id="titleLabel">Quote Text</label>
-        <input id="itemTitle" class="form-control" placeholder="Enter text…">
+        <label id="titleLabel" class="required">Quote Text</label>
+        <input id="itemTitle" class="form-control" placeholder="Enter text…" maxlength="400">
+        <div class="char-counter" id="titleCounter">0 / 400</div>
+        <div class="field-error" id="titleError">This field is required.</div>
+        <div class="writing-tip" id="writingTip">
+          <strong>💡 Tip:</strong> <span id="writingTipText">A great quote is concise, authentic, and sparks emotion.</span>
+        </div>
       </div>
       <div class="form-group" id="contentGroup">
-        <label>Content / Details</label>
-        <textarea id="itemContent" class="form-control" placeholder="Enter content…"></textarea>
+        <label class="required">Content / Details</label>
+        <textarea id="itemContent" class="form-control" placeholder="Enter content…" maxlength="5000"></textarea>
+        <div class="char-counter" id="contentCounter">0 / 5000</div>
+        <div class="field-error" id="contentError">Content is required for stories and blogs.</div>
       </div>
       <div class="form-group" id="authorGroup">
         <label>Author (optional)</label>
@@ -363,6 +620,10 @@ textarea.form-control{resize:vertical;min-height:100px}
           <input type="file" id="itemFile" accept="image/*" style="display:none">
         </div>
         <img id="modalPreview" class="img-preview" alt="Preview">
+        <div class="upload-progress" id="uploadProgress">
+          <div class="upload-progress-bar"><div class="upload-progress-fill" id="uploadFill"></div></div>
+          <div class="upload-status" id="uploadStatus">Uploading…</div>
+        </div>
         <input id="itemImageUrl" class="form-control" placeholder="Or paste image URL" style="margin-top:8px">
       </div>
     </div>
@@ -380,10 +641,14 @@ textarea.form-control{resize:vertical;min-height:100px}
       <h3 id="confirmTitle">Confirm Action</h3>
       <button class="btn-icon" onclick="closeConfirm()">✕</button>
     </div>
-    <div class="modal-body"><p id="confirmMsg"></p></div>
+    <div class="modal-body">
+      <div class="confirm-icon" id="confirmIcon">⚠️</div>
+      <p id="confirmMsg"></p>
+      <p class="confirm-detail" id="confirmDetail"></p>
+    </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
-      <button class="btn btn-danger" id="confirmOkBtn">Delete</button>
+      <button class="btn btn-ghost" onclick="closeConfirm()">No, keep it</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Yes, delete</button>
     </div>
   </div>
 </div>
@@ -392,19 +657,25 @@ textarea.form-control{resize:vertical;min-height:100px}
 <div id="toastContainer"></div>
 
 <script>
+// ╔══════════════════════════════════════════════════════════╗
+// ║  QuoteMe Admin Dashboard  — Enhanced v2                 ║
+// ║  All original functions preserved + extended            ║
+// ╚══════════════════════════════════════════════════════════╝
+
 // ================== CONFIG ==================
 const BASE = 'http://127.0.0.1:8000';
 const API = {
-  quotes: `${BASE}/quotes`,
-  stories: `${BASE}/stories`,
-  blogs: `${BASE}/blogs`,
-  upload: `${BASE}/upload-image`,
-  settings: `${BASE}/admin/settings`,
-  changePwd: `${BASE}/admin/change-password`,
+  quotes:     `${BASE}/quotes`,
+  stories:    `${BASE}/stories`,
+  blogs:      `${BASE}/blogs`,
+  upload:     `${BASE}/upload-image`,
+  settings:   `${BASE}/admin/settings`,
+  changePwd:  `${BASE}/admin/change-password`,
   changeUser: `${BASE}/admin/change-username`,
-  comments: `${BASE}/comments`,
-  forum: `${BASE}/forum/posts`,
-  like: `${BASE}/like`,
+  comments:   `${BASE}/comments`,
+  forum:      `${BASE}/forum/posts`,
+  like:       `${BASE}/like`,
+  stats:      `${BASE}/admin/stats`,
 };
 
 // ================== STATE ==================
@@ -414,9 +685,15 @@ let state = {
   page: 1,
   pageSize: 12,
   search: '',
+  sort: 'default',
+  selected: new Set(),   // bulk selection
 };
 let pendingDeleteFn = null;
 let modalState = { id: null, isAdd: true };
+
+// Draft auto-save keys
+const DRAFT_KEY = 'qm_draft';
+const DM_KEY    = 'dm';
 
 // ================== AUTH ==================
 const getToken = () => localStorage.getItem('adminToken') || '';
@@ -435,98 +712,146 @@ function decodeJwt(token) {
 
 // ================== INIT ==================
 document.addEventListener('DOMContentLoaded', function () {
-
-  // Guard: redirect if no token
   const token = getToken();
   if (!token) {
-    setTimeout(() => window.location.href = '/admin.html', 800);
+    showToast('Session expired. Redirecting…', 'warn');
+    setTimeout(() => window.location.href = '/admin.html', 900);
     return;
   }
   const payload = decodeJwt(token);
   const uname = payload?.username || 'admin';
-  document.getElementById('sidebarUser').textContent = uname;
-  document.getElementById('profileName').textContent = uname;
+
+  // Populate user identity
+  safeSet('sidebarUser', uname);
+  safeSet('profileName', uname);
+  const initials = uname.charAt(0).toUpperCase();
   const ab = document.getElementById('avatarBubble');
   const pl = document.getElementById('profileAvatarLg');
-  ab.textContent = uname.charAt(0).toUpperCase();
-  pl.textContent = uname.charAt(0).toUpperCase();
-  loadSettings();
+  if (ab) ab.textContent = initials;
+  if (pl) pl.textContent = initials;
 
-  // Dark mode init
-  const saved = localStorage.getItem('dm');
+  // Greeting
+  setGreeting();
+
+  // Dark mode (reliable: check localStorage first)
+  const saved = localStorage.getItem(DM_KEY);
   if (saved === '1') applyDark(true);
 
-  // Wire up static event listeners safely
+  // Wire all event listeners
   wireEventListeners();
 
-  // Initial tab load
-  switchTab('quotes');
+  // Load settings in background
+  loadSettings();
+
+  // Start on overview
+  switchTab('overview');
 });
 
-function wireEventListeners() {
-  // Topbar controls
-  safeOn('menuToggle', 'click', () => document.getElementById('sidebar').classList.toggle('mobile-open'));
-  safeOn('logoutBtn', 'click', () => { localStorage.removeItem('adminToken'); window.location.href = '/admin.html'; });
-  safeOn('refreshBtn', 'click', () => {
-    if (['quotes', 'stories', 'blogs'].includes(state.tab)) loadList(true);
-    else loadCurrentTab();
-  });
-  safeOn('addBtn', 'click', () => openModalForAdd());
-  safeOn('searchInput', 'input', (e) => { state.search = e.target.value || ''; state.page = 1; renderList(); });
-  safeOn('pageSize', 'change', (e) => { state.pageSize = Number(e.target.value); state.page = 1; renderList(); });
+function setGreeting() {
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const el = document.getElementById('overviewGreeting');
+  if (el) el.textContent = `${g}! 👋`;
+}
 
-  // Dark mode toggles
+// ================== EVENT WIRING ==================
+function wireEventListeners() {
+  safeOn('menuToggle', 'click', () =>
+    document.getElementById('sidebar')?.classList.toggle('mobile-open'));
+
+  safeOn('logoutBtn', 'click', () => {
+    localStorage.removeItem('adminToken');
+    window.location.href = '/admin.html';
+  });
+
+  safeOn('refreshBtn', 'click', () => {
+    if (['quotes','stories','blogs'].includes(state.tab)) loadList(true);
+    else loadCurrentTab();
+    showToast('Refreshed', 'info');
+  });
+
+  safeOn('addBtn', 'click', () => openModalForAdd());
+
+  safeOn('searchInput', 'input', (e) => {
+    state.search = e.target.value || '';
+    state.page = 1;
+    renderList();
+  });
+
+  safeOn('sortSelect', 'change', (e) => {
+    state.sort = e.target.value;
+    state.page = 1;
+    renderList();
+  });
+
+  safeOn('pageSize', 'change', (e) => {
+    state.pageSize = Number(e.target.value);
+    state.page = 1;
+    renderList();
+  });
+
+  // Modal
+  safeOn('closeModalBtn',  'click', closeModal);
+  safeOn('closeModalBtn2', 'click', closeModal);
+  safeOn('saveModalBtn',   'click', handleSaveModal);
+
+  // Confirm modal
+  safeOn('confirmOkBtn', 'click', () => { if (pendingDeleteFn) pendingDeleteFn(); closeConfirm(); });
+
+  // Dark mode toggles (topbar + settings page)
   safeOn('darkToggle', 'click', () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     applyDark(!isDark);
-    localStorage.setItem('dm', isDark ? '0' : '1');
+    localStorage.setItem(DM_KEY, isDark ? '0' : '1');
   });
   safeOn('darkModeToggle', 'change', async (e) => {
     applyDark(e.target.checked);
-    localStorage.setItem('dm', e.target.checked ? '1' : '0');
+    localStorage.setItem(DM_KEY, e.target.checked ? '1' : '0');
     try {
       await fetch(API.settings, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ dark_mode: e.target.checked ? 1 : 0 })
       });
-    } catch (err) { /* non-critical */ }
+    } catch { /* non-critical */ }
   });
 
-  // Modal close buttons
-  safeOn('closeModalBtn', 'click', closeModal);
-  safeOn('closeModalBtn2', 'click', closeModal);
-  safeOn('saveModalBtn', 'click', handleSaveModal);
-
-  // Confirm modal
-  safeOn('confirmOkBtn', 'click', () => {
-    if (pendingDeleteFn) pendingDeleteFn();
-    closeConfirm();
-  });
-
-  // Image drop zone in modal
+  // Drop zone
   const dropZone = document.getElementById('dropZone');
   if (dropZone) {
-    dropZone.addEventListener('click', () => document.getElementById('itemFile').click());
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('click', () => document.getElementById('itemFile')?.click());
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
     dropZone.addEventListener('drop', e => {
       e.preventDefault(); dropZone.classList.remove('drag-over');
       const file = e.dataTransfer.files[0];
-      if (file) previewFile(file);
+      if (file) previewAndStageFile(file);
     });
   }
-  safeOn('itemFile', 'change', (e) => { if (e.target.files[0]) previewFile(e.target.files[0]); });
-  safeOn('itemImageUrl', 'input', (e) => {
+  safeOn('itemFile', 'change', e => { if (e.target.files[0]) previewAndStageFile(e.target.files[0]); });
+
+  // Image URL preview
+  safeOn('itemImageUrl', 'input', e => {
     const prev = document.getElementById('modalPreview');
-    if (prev) {
-      if (e.target.value) { prev.src = e.target.value; prev.style.display = 'block'; }
-      else prev.style.display = 'none';
-    }
+    if (!prev) return;
+    if (e.target.value) { prev.src = e.target.value; prev.style.display = 'block'; }
+    else prev.style.display = 'none';
   });
 
+  // Character counters
+  safeOn('itemTitle', 'input', e => {
+    updateCharCounter('titleCounter', e.target.value.length, 400);
+    debounceDraftSave();
+    showWritingTip(e.target.value);
+  });
+  safeOn('itemContent', 'input', e => {
+    updateCharCounter('contentCounter', e.target.value.length, 5000);
+    debounceDraftSave();
+  });
+  safeOn('itemAuthor', 'input', () => debounceDraftSave());
+
   // Avatar upload
-  safeOn('avatarFileInput', 'change', async (e) => {
+  safeOn('avatarFileInput', 'change', async e => {
     const file = e.target.files[0];
     if (!file) return;
     const url = await uploadFileAndGetUrl(file);
@@ -539,14 +864,14 @@ function wireEventListeners() {
         body: JSON.stringify({ profile_picture: url })
       }).catch(() => {});
       updateAvatarUI(url);
-      showToast('Profile picture updated!', 'success');
+      showToast('✅ Profile picture updated!', 'success');
     }
   });
 
   // Avatar drop zone
   const adz = document.getElementById('avatarDropZone');
   if (adz) {
-    adz.addEventListener('dragover', e => { e.preventDefault(); adz.classList.add('drag-over'); });
+    adz.addEventListener('dragover',  e => { e.preventDefault(); adz.classList.add('drag-over'); });
     adz.addEventListener('dragleave', () => adz.classList.remove('drag-over'));
     adz.addEventListener('drop', e => {
       e.preventDefault(); adz.classList.remove('drag-over');
@@ -561,19 +886,32 @@ function wireEventListeners() {
   }
 
   // Close modals on backdrop click
-  safeOn('modalBackdrop', 'click', (e) => { if (e.target.id === 'modalBackdrop') closeModal(); });
-  safeOn('confirmBackdrop', 'click', (e) => { if (e.target.id === 'confirmBackdrop') closeConfirm(); });
+  safeOn('modalBackdrop',  'click', e => { if (e.target.id === 'modalBackdrop')  closeModal(); });
+  safeOn('confirmBackdrop','click', e => { if (e.target.id === 'confirmBackdrop') closeConfirm(); });
+
+  // Keyboard: Escape closes any open modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeModal();
+      closeConfirm();
+      closeCommentsView();
+    }
+  });
 }
 
 // ================== HELPERS ==================
 function safeOn(id, event, handler) {
   const el = document.getElementById(id);
   if (el) el.addEventListener(event, handler);
-  else console.warn(`[QuoteMe] Element #${id} not found for event '${event}'`);
+  else console.warn(`[QuoteMe] #${id} not found for '${event}'`);
 }
-
+function safeSet(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
 function esc(s) {
-  return (s || '').toString().replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  return (s || '').toString().replace(/[&<>"']/g,
+    c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
 // ================== DARK MODE ==================
@@ -581,82 +919,237 @@ function applyDark(on) {
   document.documentElement.setAttribute('data-theme', on ? 'dark' : 'light');
   const toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = on;
-  const knob = document.getElementById('darkKnob');
+  const knob   = document.getElementById('darkKnob');
   const slider = document.getElementById('darkModeSlider');
-  if (knob) knob.style.transform = on ? 'translateX(22px)' : 'translateX(0)';
+  if (knob)   knob.style.transform   = on ? 'translateX(22px)' : 'translateX(0)';
   if (slider) slider.style.background = on ? 'var(--accent)' : 'var(--border)';
 }
 
 // ================== TABS ==================
-// Exposed globally for inline onclick handlers in the HTML
+// Globally accessible — called from inline onclick handlers in HTML
 function switchTab(tab) {
   state.tab = tab;
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
+  state.selected.clear();
+  updateBulkBar();
 
-  // Hide all tab panels
-  ['tab-content', 'tab-comments', 'tab-forum', 'tab-settings'].forEach(id => {
+  document.querySelectorAll('.nav-item').forEach(n =>
+    n.classList.toggle('active', n.dataset.tab === tab));
+
+  const allPanels = ['tab-overview','tab-content','tab-comments','tab-forum','tab-settings'];
+  allPanels.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
 
-  if (['quotes', 'stories', 'blogs'].includes(tab)) {
-    const panel = document.getElementById('tab-content');
-    if (panel) panel.style.display = 'block';
+  if (tab === 'overview') {
+    document.getElementById('tab-overview').style.display = 'block';
+    loadStats();
+    loadActivityFeed();
+
+  } else if (['quotes','stories','blogs'].includes(tab)) {
+    document.getElementById('tab-content').style.display = 'block';
     const title = document.getElementById('sectionTitle');
     if (title) title.textContent = `Manage ${tab.charAt(0).toUpperCase() + tab.slice(1)}`;
-    // Toggle form fields for modal context
-    const isQuote = tab === 'quotes';
-    const cg = document.getElementById('contentGroup');
-    const ag = document.getElementById('authorGroup');
-    const tl = document.getElementById('titleLabel');
-    if (cg) cg.style.display = isQuote ? 'none' : 'block';
-    if (ag) ag.style.display = isQuote ? 'block' : 'none';
-    if (tl) tl.textContent = isQuote ? 'Quote Text' : 'Title';
+    // Adjust modal fields for content type
+    configureModalFields(tab);
     state.page = 1;
     state.search = '';
     const si = document.getElementById('searchInput');
     if (si) si.value = '';
+    const ss = document.getElementById('sortSelect');
+    if (ss) { ss.value = 'default'; state.sort = 'default'; }
     loadList(true);
+
   } else if (tab === 'comments') {
-    const panel = document.getElementById('tab-comments');
-    if (panel) panel.style.display = 'block';
+    document.getElementById('tab-comments').style.display = 'block';
     loadAllComments();
+
   } else if (tab === 'forum') {
-    const panel = document.getElementById('tab-forum');
-    if (panel) panel.style.display = 'block';
+    document.getElementById('tab-forum').style.display = 'block';
     loadForum();
+
   } else if (tab === 'settings') {
-    const panel = document.getElementById('tab-settings');
-    if (panel) panel.style.display = 'block';
+    document.getElementById('tab-settings').style.display = 'block';
   }
+
+  // Close mobile sidebar
+  document.getElementById('sidebar')?.classList.remove('mobile-open');
+}
+
+function configureModalFields(tab) {
+  const isQuote = tab === 'quotes';
+  const cg = document.getElementById('contentGroup');
+  const ag = document.getElementById('authorGroup');
+  const tl = document.getElementById('titleLabel');
+  if (cg) cg.style.display = isQuote ? 'none' : 'block';
+  if (ag) ag.style.display = isQuote ? 'block' : 'none';
+  if (tl) tl.textContent  = isQuote ? 'Quote Text' : 'Title';
 }
 
 function loadCurrentTab() {
-  if (state.tab === 'comments') loadAllComments();
-  else if (state.tab === 'forum') loadForum();
-  else if (['quotes', 'stories', 'blogs'].includes(state.tab)) loadList(true);
+  if      (state.tab === 'overview')  { loadStats(); loadActivityFeed(); }
+  else if (state.tab === 'comments')  loadAllComments();
+  else if (state.tab === 'forum')     loadForum();
+  else if (['quotes','stories','blogs'].includes(state.tab)) loadList(true);
 }
 
-// ================== FETCH LIST ==================
+// ================== STATS ==================
+async function loadStats() {
+  // Show skeleton loaders
+  const statIds = ['quotes','stories','blogs','comments','forum'];
+  statIds.forEach(k => {
+    document.getElementById(`hstat-${k}`)?.classList.add('loading');
+  });
+
+  try {
+    const res = await fetch(API.stats, { headers: authHeaders() });
+    let stats = {};
+    if (res.ok) {
+      const json = await res.json();
+      stats = json.data || json; // unwrap {success,data:{...}} or accept flat
+    } else {
+      // Fallback: fetch counts individually if /admin/stats not available yet
+      const [q, s, b, fp] = await Promise.all([
+        fetch(API.quotes  + '?limit=200').then(r=>r.json()).catch(()=>[]),
+        fetch(API.stories + '?limit=200').then(r=>r.json()).catch(()=>[]),
+        fetch(API.blogs   + '?limit=200').then(r=>r.json()).catch(()=>[]),
+        fetch(API.forum               ).then(r=>r.json()).catch(()=>[]),
+      ]);
+      stats = {
+        quotes:   Array.isArray(q)  ? q.length  : 0,
+        stories:  Array.isArray(s)  ? s.length  : 0,
+        blogs:    Array.isArray(b)  ? b.length  : 0,
+        comments: 0,
+        forum:    Array.isArray(fp) ? fp.length : 0,
+      };
+    }
+
+    // Animate numbers in
+    const map = { quotes: stats.quotes||0, stories: stats.stories||0,
+                  blogs: stats.blogs||0, comments: stats.comments||0,
+                  forum: stats.forum||0 };
+    const total = Object.values(map).reduce((a,b)=>a+b,0) || 1;
+
+    for (const [key, val] of Object.entries(map)) {
+      const numEl = document.getElementById(`stat-${key}`);
+      const barEl = document.getElementById(`statbar-${key}`);
+      const card  = numEl?.closest('.hstat');
+      if (card) card.classList.remove('loading');
+      if (numEl) animateCount(numEl, val);
+      if (barEl) {
+        setTimeout(() => { barEl.style.width = `${Math.max(5, (val/total)*100)}%`; }, 300);
+      }
+    }
+
+    // Update sidebar nav badges
+    updateNavBadge('quotes',   map.quotes);
+    updateNavBadge('stories',  map.stories);
+    updateNavBadge('blogs',    map.blogs);
+    updateNavBadge('comments', map.comments);
+
+  } catch (e) {
+    console.error('[QuoteMe] loadStats:', e);
+  }
+}
+
+function animateCount(el, target) {
+  const duration = 700;
+  const start = performance.now();
+  const from = 0;
+  function step(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3); // ease-out-cubic
+    el.textContent = Math.round(from + (target - from) * ease);
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function updateNavBadge(tab, count) {
+  const navEl = document.querySelector(`.nav-item[data-tab="${tab}"]`);
+  if (!navEl) return;
+  let badge = navEl.querySelector('.nav-badge');
+  if (count > 0) {
+    if (!badge) { badge = document.createElement('span'); badge.className = 'nav-badge'; navEl.appendChild(badge); }
+    badge.textContent = count;
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+// ================== ACTIVITY FEED ==================
+async function loadActivityFeed() {
+  const feed = document.getElementById('activityFeed');
+  if (!feed) return;
+  try {
+    const [quotes, stories, blogs] = await Promise.all([
+      fetch(API.quotes  + '?limit=3').then(r=>r.json()).catch(()=>[]),
+      fetch(API.stories + '?limit=3').then(r=>r.json()).catch(()=>[]),
+      fetch(API.blogs   + '?limit=3').then(r=>r.json()).catch(()=>[]),
+    ]);
+
+    const items = [
+      ...(Array.isArray(quotes)  ? quotes.map(x=>({...x,_type:'Quote'}))  : []),
+      ...(Array.isArray(stories) ? stories.map(x=>({...x,_type:'Story'})) : []),
+      ...(Array.isArray(blogs)   ? blogs.map(x=>({...x,_type:'Blog'}))    : []),
+    ].sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0)).slice(0,8);
+
+    if (!items.length) {
+      feed.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">No content yet. Start by adding a quote!</div>';
+      return;
+    }
+    feed.innerHTML = items.map(it => {
+      const title = esc(it.title || it.text || '(untitled)').slice(0, 60);
+      const ts    = it.created_at ? new Date(it.created_at).toLocaleString() : 'recently';
+      const icon  = it._type === 'Quote' ? '💬' : it._type === 'Story' ? '📖' : '✍️';
+      return `<div class="activity-item">
+        <div class="activity-dot"></div>
+        <div>
+          <div class="activity-text">${icon} <strong>${it._type}</strong> — ${title}</div>
+          <div class="activity-time">Added ${ts}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    if (feed) feed.innerHTML = '<div style="color:var(--muted);padding:20px">Could not load activity.</div>';
+  }
+}
+
+// ================== LIST LOADING ==================
 async function fetchItemsFromApi() {
   try {
-    const res = await fetch(API[state.tab], { headers: authHeaders() });
+    const res = await fetch(API[state.tab] + '?limit=200', { headers: authHeaders() });
     if (res.status === 401) { window.location.href = '/admin.html'; return []; }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const items = await res.json();
     return Array.isArray(items) ? items : [];
   } catch (e) {
     console.error('[QuoteMe] fetchItemsFromApi:', e);
-    showToast('Failed to load items', 'error');
+    showToast('Failed to load items. Check your connection.', 'error');
     return [];
   }
 }
 
 async function loadList(forceReload = false) {
   const container = document.getElementById('listContainer');
-  if (container) container.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted)">Loading…</div>';
+  if (container) container.innerHTML = renderSkeletons(6);
   state.items = await fetchItemsFromApi();
+  state.selected.clear();
+  updateBulkBar();
   renderList();
+}
+
+function renderSkeletons(n) {
+  return `<div class="skel-grid" style="grid-column:1/-1">${
+    Array.from({length: n}, () =>
+      `<div class="skel-card">
+        <div class="skel-img"></div>
+        <div class="skel-body">
+          <div class="skel-line lg"></div>
+          <div class="skel-line sm"></div>
+        </div>
+      </div>`).join('')
+  }</div>`;
 }
 
 // ================== RENDER ==================
@@ -665,35 +1158,68 @@ function renderList() {
   if (!container) return;
 
   const searchLower = (state.search || '').trim().toLowerCase();
-  const filtered = state.items.filter(it => {
-    const title = (it.title || it.text || '').toLowerCase();
+  let filtered = state.items.filter(it => {
+    const title   = (it.title || it.text || '').toLowerCase();
     const content = (it.content || '').toLowerCase();
     return !searchLower || title.includes(searchLower) || content.includes(searchLower);
   });
-  const total = filtered.length, perPage = state.pageSize, pages = Math.max(1, Math.ceil(total / perPage));
+
+  // Sorting
+  filtered = sortItems(filtered, state.sort);
+
+  const total   = filtered.length;
+  const perPage = state.pageSize;
+  const pages   = Math.max(1, Math.ceil(total / perPage));
   if (state.page > pages) state.page = pages;
-  const start = (state.page - 1) * perPage;
+  const start     = (state.page - 1) * perPage;
   const pageItems = filtered.slice(start, start + perPage);
 
   if (!pageItems.length) {
-    container.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p>No ${state.tab} found.</p><button class="btn btn-primary" onclick="openModalForAdd()">+ Add your first ${state.tab.slice(0, -1)}</button></div>`;
+    const tabName  = state.tab.slice(0, -1); // 'quote', 'story', 'blog'
+    const empty    = state.search
+      ? `<div class="empty-state"><div class="emoji">🔍</div><p>No ${state.tab} match "<strong>${esc(state.search)}</strong>".</p><button class="btn btn-ghost" onclick="document.getElementById('searchInput').value='';state.search='';renderList()">Clear search</button></div>`
+      : `<div class="empty-state"><div class="emoji">${tabEmoji(state.tab)}</div><p>No ${state.tab} yet.</p><p style="font-size:13px;margin-top:4px">Click <strong>+ Add</strong> to create your first ${tabName}.</p><button class="btn btn-primary" style="margin-top:8px" onclick="openModalForAdd()">+ Add ${tabName}</button></div>`;
+    container.innerHTML = empty;
   } else {
     container.innerHTML = pageItems.map(it => renderCardHtml(it)).join('');
   }
-  renderPagination(pages);
+
+  renderPagination(pages, total);
+}
+
+function tabEmoji(tab) {
+  return { quotes:'💬', stories:'📖', blogs:'✍️' }[tab] || '📭';
+}
+
+function sortItems(items, sort) {
+  const copy = [...items];
+  switch (sort) {
+    case 'newest': return copy.sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0));
+    case 'oldest': return copy.sort((a,b) => new Date(a.created_at||0) - new Date(b.created_at||0));
+    case 'liked':  return copy.sort((a,b) => (b.likes||0) - (a.likes||0));
+    case 'az':     return copy.sort((a,b) => (a.title||a.text||'').localeCompare(b.title||b.text||''));
+    default:       return copy;
+  }
 }
 
 function renderCardHtml(it) {
-  const title = esc(it.title || it.text || '(no title)');
-  const meta = it.author
+  const title   = esc(it.title || it.text || '(no title)');
+  const meta    = it.author
     ? `<div class="card-meta">by ${esc(it.author)}</div>`
     : (it.created_at ? `<div class="card-meta">${new Date(it.created_at).toLocaleDateString()}</div>` : '');
   const excerpt = esc((it.content || '').slice(0, 120));
-  const imgHtml = it.image_url ? `<img class="card-img" src="${esc(it.image_url)}" alt="" loading="lazy" onerror="this.style.display='none'">` : '';
-  const likes = it.likes || 0;
-  const isQuote = state.tab === 'quotes';
+  const imgHtml = it.image_url
+    ? `<img class="card-img" src="${esc(it.image_url)}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : '';
+  const likes    = it.likes || 0;
+  const isQuote  = state.tab === 'quotes';
+  const isSelected = state.selected.has(it.id);
+
   return `
-    <div class="item-card" data-id="${it.id}">
+    <div class="item-card${isSelected ? ' selected' : ''}" data-id="${it.id}">
+      <input type="checkbox" class="card-select" title="Select for bulk action"
+             ${isSelected ? 'checked' : ''}
+             onchange="toggleSelect(${it.id}, this.checked)">
       ${imgHtml}
       <div class="card-body">
         <div class="card-title">${title}</div>
@@ -704,21 +1230,30 @@ function renderCardHtml(it) {
         <div class="stat-pill">❤️ <span>${likes}</span></div>
       </div>
       <div class="card-actions">
-        <button class="btn btn-ghost" style="font-size:12px;padding:6px 10px" onclick="viewComments(${it.id},'${state.tab.slice(0, -1)}')">💭 Comments</button>
-        <button class="btn btn-ghost" style="font-size:12px;padding:6px 10px" onclick="openModalForEdit(${it.id})">✏️ Edit</button>
-        <button class="btn btn-danger" style="font-size:12px;padding:6px 10px" onclick="confirmDelete(${it.id})">🗑️</button>
+        <button class="btn btn-ghost" style="font-size:12px;padding:6px 10px"
+                data-tip="View comments"
+                onclick="viewComments(${it.id},'${state.tab.slice(0,-1)}')">💭</button>
+        <button class="btn btn-ghost" style="font-size:12px;padding:6px 10px"
+                data-tip="Edit this item"
+                onclick="openModalForEdit(${it.id})">✏️ Edit</button>
+        <button class="btn btn-danger" style="font-size:12px;padding:6px 10px"
+                data-tip="Delete permanently"
+                onclick="confirmDelete(${it.id})">🗑️</button>
       </div>
     </div>`;
 }
 
-function renderPagination(pages) {
+function renderPagination(pages, total) {
   const pag = document.getElementById('pagination');
   if (!pag) return;
   pag.innerHTML = '';
-  if (pages <= 1) return;
-  const mk = (txt, disabled, cb) => {
+  if (pages <= 1) {
+    pag.innerHTML = `<span style="font-size:12px;color:var(--muted)">${total} item${total!==1?'s':''}</span>`;
+    return;
+  }
+  const mk = (txt, disabled, cb, active) => {
     const b = document.createElement('button');
-    b.className = 'page-btn';
+    b.className = 'page-btn' + (active ? ' active' : '');
     b.textContent = txt;
     b.disabled = disabled;
     if (!disabled) b.addEventListener('click', cb);
@@ -726,52 +1261,121 @@ function renderPagination(pages) {
   };
   pag.appendChild(mk('← Prev', state.page === 1, () => { state.page--; renderList(); }));
   for (let p = 1; p <= Math.min(pages, 8); p++) {
-    const b = mk(p, false, () => { state.page = p; renderList(); });
-    if (p === state.page) b.classList.add('active');
-    pag.appendChild(b);
+    pag.appendChild(mk(p, false, () => { state.page = p; renderList(); }, p === state.page));
   }
+  if (pages > 8) pag.appendChild(mk('…', true, null));
   pag.appendChild(mk('Next →', state.page === pages, () => { state.page++; renderList(); }));
+  pag.insertAdjacentHTML('beforeend',
+    `<span style="font-size:12px;color:var(--muted);margin-left:6px">${total} total</span>`);
+}
+
+// ================== BULK SELECTION ==================
+function toggleSelect(id, checked) {
+  if (checked) state.selected.add(id);
+  else         state.selected.delete(id);
+  // Update card visual
+  const card = document.querySelector(`.item-card[data-id="${id}"]`);
+  if (card) card.classList.toggle('selected', checked);
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar   = document.getElementById('bulkBar');
+  const count = document.getElementById('bulkCount');
+  if (!bar) return;
+  const n = state.selected.size;
+  if (n > 0) {
+    bar.classList.add('visible');
+    if (count) count.textContent = `${n} item${n!==1?'s':''} selected`;
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function clearSelection() {
+  state.selected.clear();
+  document.querySelectorAll('.item-card.selected').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.card-select').forEach(cb => cb.checked = false);
+  updateBulkBar();
+}
+
+function bulkDelete() {
+  const n = state.selected.size;
+  if (!n) return;
+  document.getElementById('confirmTitle').textContent = 'Delete Multiple Items';
+  document.getElementById('confirmIcon').textContent  = '🗑️';
+  document.getElementById('confirmMsg').textContent   =
+    `You are about to permanently delete ${n} item${n!==1?'s':''}. This cannot be undone.`;
+  document.getElementById('confirmDetail').textContent =
+    'All associated data will be removed.';
+  document.getElementById('confirmBackdrop').classList.add('show');
+  pendingDeleteFn = async () => {
+    const ids = [...state.selected];
+    let failed = 0;
+    await Promise.all(ids.map(id =>
+      fetch(`${API[state.tab]}/${id}`, { method: 'DELETE', headers: authHeaders() })
+        .then(r => { if (!r.ok) failed++; })
+        .catch(() => failed++)
+    ));
+    state.selected.clear();
+    updateBulkBar();
+    if (failed) showToast(`Deleted with ${failed} error(s)`, 'warn');
+    else        showToast(`🗑️ ${ids.length} item${ids.length!==1?'s':''} deleted`, 'success');
+    await loadList(true);
+    loadStats();
+  };
 }
 
 // ================== MODAL (Add/Edit) ==================
 function openModalForAdd() {
   modalState = { id: null, isAdd: true };
-  const isQuote = state.tab === 'quotes';
-  const cg = document.getElementById('contentGroup');
-  const ag = document.getElementById('authorGroup');
-  const tl = document.getElementById('titleLabel');
-  if (cg) cg.style.display = isQuote ? 'none' : 'block';
-  if (ag) ag.style.display = isQuote ? 'block' : 'none';
-  if (tl) tl.textContent = isQuote ? 'Quote Text' : 'Title';
+  configureModalFields(state.tab);
   document.getElementById('modalTitle').textContent = `Add new ${state.tab.slice(0, -1)}`;
-  document.getElementById('itemTitle').value = '';
-  document.getElementById('itemContent').value = '';
-  document.getElementById('itemAuthor').value = '';
-  document.getElementById('itemImageUrl').value = '';
+
+  // Clear fields
+  ['itemTitle','itemContent','itemAuthor','itemImageUrl'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   const fi = document.getElementById('itemFile');
   if (fi) fi.value = '';
   const prev = document.getElementById('modalPreview');
   if (prev) prev.style.display = 'none';
+
+  // Reset counters & errors
+  updateCharCounter('titleCounter',   0, 400);
+  updateCharCounter('contentCounter', 0, 5000);
+  clearFieldErrors();
+  hideWritingTip();
+  hideUploadProgress();
+
+  // Restore draft if available
+  restoreDraft();
+
   document.getElementById('modalBackdrop').classList.add('show');
-  document.getElementById('itemTitle').focus();
+  document.getElementById('itemTitle')?.focus();
 }
 
 function openModalForEdit(id) {
   const existing = state.items.find(x => Number(x.id) === Number(id));
-  if (!existing) { showToast('Item not found — refresh first', 'error'); return; }
+  if (!existing) { showToast('Item not found — try refreshing', 'error'); return; }
   modalState = { id, isAdd: false };
-  const isQuote = state.tab === 'quotes';
-  const cg = document.getElementById('contentGroup');
-  const ag = document.getElementById('authorGroup');
-  const tl = document.getElementById('titleLabel');
-  if (cg) cg.style.display = isQuote ? 'none' : 'block';
-  if (ag) ag.style.display = isQuote ? 'block' : 'none';
-  if (tl) tl.textContent = isQuote ? 'Quote Text' : 'Title';
-  document.getElementById('modalTitle').textContent = `Edit ${state.tab.slice(0, -1)} #${id}`;
-  document.getElementById('itemTitle').value = existing.title || existing.text || '';
-  document.getElementById('itemContent').value = existing.content || '';
-  document.getElementById('itemAuthor').value = existing.author || '';
+  configureModalFields(state.tab);
+  document.getElementById('modalTitle').textContent = `Edit ${state.tab.slice(0,-1)} #${id}`;
+
+  const titleVal = existing.title || existing.text || '';
+  const contVal  = existing.content || '';
+  document.getElementById('itemTitle').value   = titleVal;
+  document.getElementById('itemContent').value = contVal;
+  document.getElementById('itemAuthor').value  = existing.author || '';
   document.getElementById('itemImageUrl').value = existing.image_url || '';
+
+  updateCharCounter('titleCounter',   titleVal.length,  400);
+  updateCharCounter('contentCounter', contVal.length, 5000);
+  clearFieldErrors();
+  hideWritingTip();
+  hideUploadProgress();
+
   const prev = document.getElementById('modalPreview');
   if (prev) {
     if (existing.image_url) { prev.src = existing.image_url; prev.style.display = 'block'; }
@@ -782,39 +1386,49 @@ function openModalForEdit(id) {
 
 function closeModal() {
   document.getElementById('modalBackdrop').classList.remove('show');
+  hideUploadProgress();
 }
 
 async function handleSaveModal() {
-  const title = document.getElementById('itemTitle').value.trim();
-  const content = document.getElementById('itemContent').value.trim();
-  const author = document.getElementById('itemAuthor').value.trim();
-  let image_url = document.getElementById('itemImageUrl').value.trim();
-  if (!title) { showToast('Title / Quote text is required', 'warn'); return; }
+  const title   = document.getElementById('itemTitle')?.value.trim()   || '';
+  const content = document.getElementById('itemContent')?.value.trim() || '';
+  const author  = document.getElementById('itemAuthor')?.value.trim()  || '';
+  let   image_url = document.getElementById('itemImageUrl')?.value.trim() || '';
+
+  // Validation
+  let valid = true;
+  clearFieldErrors();
+  if (!title) {
+    showFieldError('titleError', 'This field is required.');
+    document.getElementById('itemTitle')?.classList.add('error');
+    valid = false;
+  }
+  if (state.tab !== 'quotes' && !content) {
+    showFieldError('contentError', 'Content is required.');
+    document.getElementById('itemContent')?.classList.add('error');
+    valid = false;
+  }
+  if (!valid) { showToast('Please fill in the required fields', 'warn'); return; }
 
   const saveBtn = document.getElementById('saveModalBtn');
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving…';
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Saving…'; }
 
   try {
-    // Upload file if chosen
+    // Upload file if staged
     const fileInput = document.getElementById('itemFile');
-    if (fileInput && fileInput.files.length > 0) {
-      showToast('Uploading image…', 'info');
+    if (fileInput?.files.length > 0) {
       const uploaded = await uploadFileAndGetUrl(fileInput.files[0]);
       if (uploaded) image_url = uploaded;
     }
 
-    let payload;
-    if (state.tab === 'quotes') {
-      payload = { text: title, author: author || null, image_url: image_url || null };
-    } else {
-      payload = { title, content, image_url: image_url || null };
-    }
+    const payload = state.tab === 'quotes'
+      ? { text: title, author: author || null, image_url: image_url || null }
+      : { title, content, image_url: image_url || null };
 
     const endpoint = API[state.tab];
-    const isAdd = modalState.isAdd;
-    const url = isAdd ? endpoint : `${endpoint}/${modalState.id}`;
-    const method = isAdd ? 'POST' : 'PUT';
+    const isAdd    = modalState.isAdd;
+    const url      = isAdd ? endpoint : `${endpoint}/${modalState.id}`;
+    const method   = isAdd ? 'POST' : 'PUT';
 
     const res = await fetch(url, {
       method,
@@ -824,46 +1438,179 @@ async function handleSaveModal() {
 
     if (res.ok) {
       showToast(isAdd ? '✅ Created successfully!' : '✅ Updated!', 'success');
+      clearDraft();
       closeModal();
       await loadList(true);
+      loadStats(); // refresh stat cards
     } else {
       const data = await res.json().catch(() => ({}));
-      showToast(data.detail || 'Save failed', 'error');
+      showToast(data.detail || 'Save failed — please try again', 'error');
     }
   } catch (e) {
     console.error('[QuoteMe] handleSaveModal:', e);
-    showToast('Network error — please try again', 'error');
+    showToast('Network error — check your connection', 'error');
   } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = '💾 Save';
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save'; }
   }
 }
 
-// ================== IMAGE PREVIEW / UPLOAD ==================
-function previewFile(file) {
+// ================== FORM UX ==================
+function updateCharCounter(elId, count, max) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = `${count} / ${max}`;
+  el.className = 'char-counter' +
+    (count > max * 0.9 ? (count >= max ? ' over' : ' warn') : '');
+}
+
+function showFieldError(elId, msg) {
+  const el = document.getElementById(elId);
+  if (el) { el.textContent = msg; el.classList.add('show'); }
+}
+
+function clearFieldErrors() {
+  ['titleError','contentError'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+  });
+  ['itemTitle','itemContent'].forEach(id => {
+    document.getElementById(id)?.classList.remove('error');
+  });
+}
+
+// ================== WRITING TIPS ==================
+const TIPS = [
+  "A great quote is concise, authentic, and sparks emotion.",
+  "Start with a strong hook — the first few words matter most.",
+  "Use active voice for more impact and clarity.",
+  "Keep it under 150 characters for maximum shareability.",
+  "Read it aloud — if it flows naturally, it's good!",
+  "Attribute quotes accurately to build trust with your audience.",
+];
+
+function showWritingTip(text) {
+  const tip     = document.getElementById('writingTip');
+  const tipText = document.getElementById('writingTipText');
+  if (!tip || !tipText) return;
+  if (state.tab !== 'quotes') { tip.classList.remove('show'); return; }
+  if (text.length > 10 && text.length % 30 === 0) {
+    tipText.textContent = TIPS[Math.floor(text.length / 30) % TIPS.length];
+    tip.classList.add('show');
+  } else if (text.length === 0) {
+    tip.classList.remove('show');
+  }
+}
+
+function hideWritingTip() {
+  document.getElementById('writingTip')?.classList.remove('show');
+}
+
+// ================== DRAFT SYSTEM ==================
+let draftTimer = null;
+function debounceDraftSave() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(saveDraft, 1200);
+}
+
+function saveDraft() {
+  const title   = document.getElementById('itemTitle')?.value   || '';
+  const content = document.getElementById('itemContent')?.value || '';
+  const author  = document.getElementById('itemAuthor')?.value  || '';
+  if (!title && !content) return;
+  const draft = { tab: state.tab, title, content, author, ts: Date.now() };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  const pill = document.getElementById('draftPill');
+  if (pill) pill.classList.add('visible');
+}
+
+function restoreDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    // Only restore if draft is for same tab and less than 24h old
+    if (draft.tab !== state.tab) return;
+    if (Date.now() - draft.ts > 86400000) { clearDraft(); return; }
+    if (draft.title || draft.content) {
+      const titleEl   = document.getElementById('itemTitle');
+      const contentEl = document.getElementById('itemContent');
+      const authorEl  = document.getElementById('itemAuthor');
+      if (titleEl   && draft.title)   { titleEl.value   = draft.title;   updateCharCounter('titleCounter',   draft.title.length,   400);  }
+      if (contentEl && draft.content) { contentEl.value = draft.content; updateCharCounter('contentCounter', draft.content.length, 5000); }
+      if (authorEl  && draft.author)  { authorEl.value  = draft.author; }
+      const pill = document.getElementById('draftPill');
+      if (pill) pill.classList.add('visible');
+      showToast('📝 Draft restored', 'info');
+    }
+  } catch { /* ignore corrupt draft */ }
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+  const pill = document.getElementById('draftPill');
+  if (pill) pill.classList.remove('visible');
+}
+
+// ================== IMAGE / UPLOAD ==================
+function previewAndStageFile(file) {
+  const prev = document.getElementById('modalPreview');
   const reader = new FileReader();
   reader.onload = evt => {
-    const prev = document.getElementById('modalPreview');
     if (prev) { prev.src = evt.target.result; prev.style.display = 'block'; }
   };
   reader.readAsDataURL(file);
 }
 
+function hideUploadProgress() {
+  const el = document.getElementById('uploadProgress');
+  if (el) el.classList.remove('show');
+  const fill = document.getElementById('uploadFill');
+  if (fill) fill.style.width = '0%';
+}
+
 async function uploadFileAndGetUrl(file) {
+  const progress = document.getElementById('uploadProgress');
+  const fill     = document.getElementById('uploadFill');
+  const status   = document.getElementById('uploadStatus');
+
+  if (progress) progress.classList.add('show');
+  if (fill)   fill.style.width  = '15%';
+  if (status) status.textContent = 'Uploading…';
+
   try {
     const fd = new FormData();
     fd.append('file', file);
+
+    // Simulate progress ticks while uploading
+    let pct = 15;
+    const ticker = setInterval(() => {
+      pct = Math.min(pct + 10, 85);
+      if (fill) fill.style.width = `${pct}%`;
+    }, 200);
+
     const res = await fetch(API.upload, { method: 'POST', headers: authHeaders(), body: fd });
+    clearInterval(ticker);
+
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      showToast(data.detail || 'Upload failed', 'error');
+      if (fill)   fill.style.width    = '100%';
+      if (fill)   fill.style.background = 'var(--danger)';
+      if (status) status.textContent   = 'Upload failed';
+      showToast(data.detail || 'Image upload failed', 'error');
+      setTimeout(hideUploadProgress, 1500);
       return null;
     }
+
+    if (fill)   fill.style.width    = '100%';
+    if (status) status.textContent   = '✅ Upload complete!';
+    setTimeout(hideUploadProgress, 1000);
     const data = await res.json();
     return data.url || null;
+
   } catch (e) {
     console.error('[QuoteMe] upload:', e);
-    showToast('Upload error', 'error');
+    hideUploadProgress();
+    showToast('Upload error — check your connection', 'error');
     return null;
   }
 }
@@ -877,8 +1624,12 @@ function updateAvatarUI(url) {
 
 // ================== DELETE ==================
 function confirmDelete(id) {
-  document.getElementById('confirmTitle').textContent = 'Delete Item';
-  document.getElementById('confirmMsg').textContent = `Are you sure you want to delete this ${state.tab.slice(0, -1)}? This cannot be undone.`;
+  const item    = state.items.find(x => Number(x.id) === Number(id));
+  const name    = esc((item?.title || item?.text || `item #${id}`).slice(0, 60));
+  document.getElementById('confirmTitle').textContent  = 'Delete Item';
+  document.getElementById('confirmIcon').textContent   = '⚠️';
+  document.getElementById('confirmMsg').textContent    = `Are you sure you want to delete "${name}"?`;
+  document.getElementById('confirmDetail').textContent = 'This action is permanent and cannot be undone.';
   document.getElementById('confirmBackdrop').classList.add('show');
   pendingDeleteFn = () => doDelete(id);
 }
@@ -891,8 +1642,11 @@ function closeConfirm() {
 async function doDelete(id) {
   try {
     const res = await fetch(`${API[state.tab]}/${id}`, { method: 'DELETE', headers: authHeaders() });
-    if (res.ok) { showToast('🗑️ Deleted', 'success'); await loadList(true); }
-    else {
+    if (res.ok) {
+      showToast('🗑️ Deleted successfully', 'success');
+      await loadList(true);
+      loadStats();
+    } else {
       const data = await res.json().catch(() => ({}));
       showToast(data.detail || 'Delete failed', 'error');
     }
@@ -902,10 +1656,8 @@ async function doDelete(id) {
   }
 }
 
-// ================== COMMENTS ==================
-// Opens a comments view inside a dedicated overlay (not the add/edit modal)
+// ================== COMMENTS VIEW ==================
 function viewComments(itemId, itemType) {
-  // Build or reuse a comments overlay
   let overlay = document.getElementById('commentsOverlay');
   if (!overlay) {
     overlay = document.createElement('div');
@@ -913,8 +1665,7 @@ function viewComments(itemId, itemType) {
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,5,15,.55);display:flex;justify-content:center;align-items:flex-start;z-index:95;padding:40px 16px;overflow-y:auto;backdrop-filter:blur(4px)';
     document.body.appendChild(overlay);
   }
-
-  const sentimentEmoji = { positive: '😊', neutral: '😐', negative: '😠' };
+  const sentimentEmoji = { positive:'😊', neutral:'😐', negative:'😠' };
 
   overlay.innerHTML = `
     <div style="background:var(--card);width:100%;max-width:640px;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:modalIn .22s ease">
@@ -923,39 +1674,33 @@ function viewComments(itemId, itemType) {
         <button class="btn-icon" onclick="closeCommentsView()">✕</button>
       </div>
       <div style="padding:22px" id="commentsBody">
-        <div style="color:var(--muted);text-align:center;padding:24px">Loading comments…</div>
+        <div style="color:var(--muted);text-align:center;padding:24px">Loading…</div>
       </div>
     </div>`;
-
   overlay.style.display = 'flex';
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeCommentsView(); }, { once: true });
 
-  // Close on backdrop click
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCommentsView(); }, { once: true });
-
-  // Load comments async
   fetch(`${API.comments}/${itemType}/${itemId}`)
-    .then(r => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    })
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then(data => {
       const body = document.getElementById('commentsBody');
       if (!body) return;
-      const commentsHtml = data.length === 0
-        ? `<div style="color:var(--muted);text-align:center;padding:20px">No comments yet.</div>`
+      const threadsHtml = data.length === 0
+        ? `<div style="color:var(--muted);text-align:center;padding:20px">No comments yet — be the first!</div>`
         : `<div class="comment-thread">${data.map(c => `
             <div class="comment-item">
               <div class="comment-user">
                 ${esc(c.username)}
-                <span class="sentiment-badge ${c.sentiment}">${sentimentEmoji[c.sentiment] || ''} ${c.sentiment}</span>
-                <button class="btn-icon" style="margin-left:auto;float:right;color:var(--danger);font-size:13px" onclick="deleteCommentFromView(${c.id}, ${itemId}, '${itemType}')">🗑️</button>
+                <span class="sentiment-badge ${c.sentiment}">${sentimentEmoji[c.sentiment]||''} ${c.sentiment}</span>
+                <button class="btn-icon" style="margin-left:auto;float:right;color:var(--danger);font-size:13px"
+                        data-tip="Delete comment"
+                        onclick="deleteCommentFromView(${c.id},${itemId},'${itemType}')">🗑️</button>
               </div>
               <div class="comment-text">${esc(c.content)}</div>
               ${c.created_at ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${new Date(c.created_at).toLocaleString()}</div>` : ''}
             </div>`).join('')}</div>`;
-
       body.innerHTML = `
-        ${commentsHtml}
+        ${threadsHtml}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
           <input id="inlineCommentUser" class="form-control" placeholder="Your name" style="flex:.4;min-width:100px">
           <input id="inlineCommentText" class="form-control" placeholder="Write a comment…" style="flex:1;min-width:140px">
@@ -964,7 +1709,7 @@ function viewComments(itemId, itemType) {
         <button class="btn btn-ghost" style="margin-top:12px" onclick="closeCommentsView()">← Back</button>`;
     })
     .catch(err => {
-      console.error('[QuoteMe] viewComments fetch:', err);
+      console.error('[QuoteMe] viewComments:', err);
       const body = document.getElementById('commentsBody');
       if (body) body.innerHTML = `<div style="color:var(--danger);padding:20px">Failed to load comments.</div>`;
     });
@@ -980,87 +1725,76 @@ async function submitInlineComment(itemId, itemType) {
   const textEl = document.getElementById('inlineCommentText');
   if (!userEl || !textEl) return;
   const username = userEl.value.trim();
-  const content = textEl.value.trim();
-  if (!username || !content) { showToast('Name and comment are required', 'warn'); return; }
-
+  const content  = textEl.value.trim();
+  if (!username || !content) { showToast('Name and comment are both required', 'warn'); return; }
   try {
     const res = await fetch(`${BASE}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, username, item_type: itemType, item_id: itemId })
     });
-    if (res.ok) {
-      showToast('Comment posted!', 'success');
-      viewComments(itemId, itemType); // refresh view
-    } else {
+    if (res.ok) { showToast('✅ Comment posted!', 'success'); viewComments(itemId, itemType); }
+    else {
       const data = await res.json().catch(() => ({}));
       showToast(data.detail || 'Failed to post comment', 'error');
     }
   } catch (e) {
-    console.error('[QuoteMe] submitInlineComment:', e);
     showToast('Network error', 'error');
   }
 }
 
 async function deleteCommentFromView(commentId, itemId, itemType) {
   const res = await fetch(`${BASE}/comments/${commentId}`, { method: 'DELETE', headers: authHeaders() });
-  if (res.ok) {
-    showToast('Comment deleted', 'success');
-    viewComments(itemId, itemType); // refresh the comments view
-  } else {
-    showToast('Failed to delete comment', 'error');
-  }
+  if (res.ok) { showToast('Comment deleted', 'success'); viewComments(itemId, itemType); }
+  else showToast('Failed to delete comment', 'error');
 }
 
 // ================== ALL COMMENTS TAB ==================
 async function loadAllComments() {
   const container = document.getElementById('allCommentsList');
   if (!container) return;
-  container.innerHTML = '<div style="padding:24px;color:var(--muted)">Loading…</div>';
-
+  container.innerHTML = renderSkeletons(3);
   try {
     const [quotes, stories, blogs] = await Promise.all([
-      fetch(API.quotes).then(r => r.json()).catch(() => []),
-      fetch(API.stories).then(r => r.json()).catch(() => []),
-      fetch(API.blogs).then(r => r.json()).catch(() => []),
+      fetch(API.quotes  + '?limit=200').then(r=>r.json()).catch(()=>[]),
+      fetch(API.stories + '?limit=200').then(r=>r.json()).catch(()=>[]),
+      fetch(API.blogs   + '?limit=200').then(r=>r.json()).catch(()=>[]),
     ]);
-    const sentimentEmoji = { positive: '😊', neutral: '😐', negative: '😠' };
-
-    // Fetch comments for all items in parallel (limited to first 10 per type to avoid hammering)
+    const sentimentEmoji = { positive:'😊', neutral:'😐', negative:'😠' };
     const allFetches = [];
-    for (const [type, items] of [['quote', quotes], ['story', stories], ['blog', blogs]]) {
+    for (const [type, items] of [['quote',quotes],['story',stories],['blog',blogs]]) {
       for (const item of (Array.isArray(items) ? items : []).slice(0, 10)) {
         allFetches.push(
           fetch(`${API.comments}/${type}/${item.id}`)
-            .then(r => r.json())
-            .then(comments => ({ type, item, comments }))
-            .catch(() => ({ type, item, comments: [] }))
+            .then(r=>r.json()).then(comments=>({type,item,comments})).catch(()=>({type,item,comments:[]}))
         );
       }
     }
     const results = await Promise.all(allFetches);
-
     let html = '';
     for (const { type, item, comments } of results) {
       if (!comments.length) continue;
       html += `<div class="panel" style="margin-bottom:14px">
         <div class="panel-header" style="padding:12px 16px">
-          <h4 style="font-size:15px">${esc(item.title || item.text || '')} <span style="font-size:12px;color:var(--muted)">(${type} #${item.id})</span></h4>
+          <h4 style="font-size:15px">${esc(item.title||item.text||'')}
+            <span style="font-size:12px;color:var(--muted)">(${type} #${item.id})</span></h4>
         </div>
         <div class="panel-body" style="padding:12px 16px">
           ${comments.map(c => `
             <div class="comment-item" style="margin-bottom:8px">
               <div class="comment-user">
                 ${esc(c.username)}
-                <span class="sentiment-badge ${c.sentiment}">${sentimentEmoji[c.sentiment] || ''} ${c.sentiment}</span>
-                <button class="btn-icon" style="margin-left:auto;float:right;color:var(--danger)" onclick="deleteComment(${c.id})">🗑️</button>
+                <span class="sentiment-badge ${c.sentiment}">${sentimentEmoji[c.sentiment]||''} ${c.sentiment}</span>
+                <button class="btn-icon" style="margin-left:auto;float:right;color:var(--danger)"
+                        onclick="deleteComment(${c.id})">🗑️</button>
               </div>
               <div class="comment-text">${esc(c.content)}</div>
             </div>`).join('')}
         </div>
       </div>`;
     }
-    container.innerHTML = html || '<div class="empty-state"><div class="emoji">💭</div><p>No comments yet.</p></div>';
+    container.innerHTML = html ||
+      '<div class="empty-state"><div class="emoji">💭</div><p>No comments yet.</p></div>';
   } catch (e) {
     console.error('[QuoteMe] loadAllComments:', e);
     container.innerHTML = '<div style="padding:24px;color:var(--muted)">Failed to load comments.</div>';
@@ -1072,9 +1806,7 @@ async function deleteComment(id) {
     const res = await fetch(`${BASE}/comments/${id}`, { method: 'DELETE', headers: authHeaders() });
     if (res.ok) { showToast('Comment deleted', 'success'); loadAllComments(); }
     else showToast('Failed to delete comment', 'error');
-  } catch (e) {
-    showToast('Network error', 'error');
-  }
+  } catch { showToast('Network error', 'error'); }
 }
 
 // ================== FORUM ==================
@@ -1083,7 +1815,7 @@ async function loadForum() {
   if (!container) return;
   container.innerHTML = '<div style="padding:24px;color:var(--muted)">Loading…</div>';
   try {
-    const posts = await fetch(API.forum).then(r => r.json()).catch(() => []);
+    const posts = await fetch(API.forum).then(r=>r.json()).catch(()=>[]);
     if (!Array.isArray(posts) || !posts.length) {
       container.innerHTML = '<div class="empty-state"><div class="emoji">🗣️</div><p>No forum posts yet.</p></div>';
       return;
@@ -1105,40 +1837,38 @@ async function loadSettings() {
   try {
     const res = await fetch(API.settings, { headers: authHeaders() });
     if (!res.ok) return;
-    const settings = await res.json();
+    const s = await res.json();
     const st = document.getElementById('siteTitle');
     const sl = document.getElementById('siteLogo');
-    if (st && settings.site_title) st.value = settings.site_title;
-    if (sl && settings.site_logo) sl.value = settings.site_logo;
-    if (settings.dark_mode === 1) applyDark(true);
-    if (settings.profile_picture) {
-      updateAvatarUI(settings.profile_picture);
+    if (st && s.site_title) st.value = s.site_title;
+    if (sl && s.site_logo)  sl.value = s.site_logo;
+    if (s.dark_mode === 1)  applyDark(true);
+    if (s.profile_picture) {
+      updateAvatarUI(s.profile_picture);
       const prev = document.getElementById('avatarPreview');
-      if (prev) { prev.src = settings.profile_picture; prev.style.display = 'block'; }
+      if (prev) { prev.src = s.profile_picture; prev.style.display = 'block'; }
     }
-  } catch (e) { /* settings not critical */ }
+  } catch { /* settings not critical on load */ }
 }
 
 async function saveBranding() {
-  const site_title = (document.getElementById('siteTitle')?.value || '').trim();
-  const site_logo = (document.getElementById('siteLogo')?.value || '').trim();
+  const site_title = document.getElementById('siteTitle')?.value.trim() || '';
+  const site_logo  = document.getElementById('siteLogo')?.value.trim()  || '';
   try {
     const res = await fetch(API.settings, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ site_title, site_logo })
     });
-    if (res.ok) showToast('Branding saved!', 'success');
-    else showToast('Failed to save branding', 'error');
-  } catch (e) {
-    showToast('Network error', 'error');
-  }
+    if (res.ok) showToast('✅ Branding saved!', 'success');
+    else        showToast('Failed to save branding', 'error');
+  } catch { showToast('Network error', 'error'); }
 }
 
 async function changePassword() {
   const current_password = document.getElementById('currentPwd')?.value || '';
-  const new_password = document.getElementById('newPwd')?.value || '';
-  if (!current_password || !new_password) { showToast('Fill in both password fields', 'warn'); return; }
+  const new_password     = document.getElementById('newPwd')?.value     || '';
+  if (!current_password || !new_password) { showToast('Please fill in both password fields', 'warn'); return; }
   if (new_password.length < 6) { showToast('New password must be at least 6 characters', 'warn'); return; }
   try {
     const res = await fetch(API.changePwd, {
@@ -1148,20 +1878,18 @@ async function changePassword() {
     });
     if (res.ok) {
       document.getElementById('currentPwd').value = '';
-      document.getElementById('newPwd').value = '';
+      document.getElementById('newPwd').value     = '';
       showToast('✅ Password updated!', 'success');
     } else {
       const data = await res.json().catch(() => ({}));
       showToast(data.detail || 'Failed to update password', 'error');
     }
-  } catch (e) {
-    showToast('Network error', 'error');
-  }
+  } catch { showToast('Network error', 'error'); }
 }
 
 async function changeUsername() {
-  const new_username = (document.getElementById('newUsername')?.value || '').trim();
-  if (!new_username) { showToast('Enter a new username', 'warn'); return; }
+  const new_username = document.getElementById('newUsername')?.value.trim() || '';
+  if (!new_username) { showToast('Please enter a new username', 'warn'); return; }
   try {
     const res = await fetch(API.changeUser, {
       method: 'PUT',
@@ -1171,12 +1899,10 @@ async function changeUsername() {
     if (res.ok) {
       const data = await res.json();
       if (data.token) localStorage.setItem('adminToken', data.token);
-      const su = document.getElementById('sidebarUser');
-      const pn = document.getElementById('profileName');
+      safeSet('sidebarUser', new_username);
+      safeSet('profileName', new_username);
       const ab = document.getElementById('avatarBubble');
       const pl = document.getElementById('profileAvatarLg');
-      if (su) su.textContent = new_username;
-      if (pn) pn.textContent = new_username;
       if (ab && !ab.querySelector('img')) ab.textContent = new_username.charAt(0).toUpperCase();
       if (pl && !pl.querySelector('img')) pl.textContent = new_username.charAt(0).toUpperCase();
       document.getElementById('newUsername').value = '';
@@ -1185,23 +1911,22 @@ async function changeUsername() {
       const data = await res.json().catch(() => ({}));
       showToast(data.detail || 'Failed to update username', 'error');
     }
-  } catch (e) {
-    showToast('Network error', 'error');
-  }
+  } catch { showToast('Network error', 'error'); }
 }
 
 // ================== TOAST ==================
 function showToast(msg, type = 'info') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.textContent = msg;
+  const icons = { success:'✅', error:'❌', warn:'⚠️', info:'ℹ️' };
+  el.innerHTML = `<span style="font-size:16px">${icons[type]||''}</span><span>${msg}</span>`;
   const container = document.getElementById('toastContainer');
-  if (!container) { console.warn(msg); return; }
+  if (!container) { console.warn('[Toast]', msg); return; }
   container.appendChild(el);
   setTimeout(() => {
     el.style.animation = 'toastOut .4s ease forwards';
     setTimeout(() => el.remove(), 400);
-  }, 2600);
+  }, type === 'error' ? 4000 : 2800);
 }
 </script>
 </body>

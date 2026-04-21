@@ -205,6 +205,30 @@ def change_username(data: AdminUsernameUpdate, username: str = Depends(require_a
     logger.info(f"Admin '{username}' changed username to '{data.new_username}'.")
     return {"success": True, "token": new_token}
 
+# ===== ADMIN STATS =====
+@app.get("/admin/stats")
+def get_stats(username: str = Depends(require_admin), db: Session = Depends(get_db)):
+    """Returns counts for the Quick Stats dashboard cards."""
+    try:
+        quotes   = db.query(Quote).count()
+        stories  = db.query(Story).count()
+        blogs    = db.query(Blog).count()
+        comments = db.query(Comment).count()
+        forum    = db.query(ForumPost).count()
+        return {
+            "success": True,
+            "data": {
+                "quotes":   quotes,
+                "stories":  stories,
+                "blogs":    blogs,
+                "comments": comments,
+                "forum":    forum,
+            }
+        }
+    except Exception as e:
+        logger.error(f"Stats fetch error: {e}")
+        raise HTTPException(status_code=500, detail="Could not fetch stats")
+
 # ===== IMAGE UPLOAD =====
 @app.post("/upload-image")
 def upload_image(file: UploadFile = File(...), username: str = Depends(require_admin)):
