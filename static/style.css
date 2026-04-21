@@ -116,6 +116,7 @@ body.dark .nav-links.show {
     padding: 60px 20px;
     background: linear-gradient(135deg, #ffb3d9, #ffe6f2);
     border-bottom: 5px solid #d63384;
+    gap: 40px;  /* 👈 ADD THIS */
 }
 
 .hero-content {
@@ -123,10 +124,23 @@ body.dark .nav-links.show {
 }
 
 .hero-logo {
-    width: 450px;
+    width: 350px;
     max-width: 100%;
-    border-radius: 20px;
-    box-shadow: 0px 6px 15px rgba(0,0,0,0.1);
+    height: 350px;
+
+    border-radius: 50%;   /* keep it rectangular */
+    object-fit: cover;
+
+    display: block;        /* IMPORTANT */
+    margin: 0 auto;        /* centers it nicely */
+
+    box-shadow: 0 20px 45px rgba(0,0,0,0.25);
+
+    transition: transform 0.3s ease;
+}
+
+.hero-logo:hover {
+    transform: scale(1.05);
 }
 
 /* ===== SECTIONS ===== */

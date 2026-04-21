@@ -1,71 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuoteMe ZW Admin Login</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body {
-            background: #ffeaf4;
-            font-family: 'Poppins', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        .login-container h2 {
-            color: #d63384;
-            margin-bottom: 20px;
-        }
-        .login-container input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 10px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-        }
-        .login-container button {
-            background: #d63384;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .login-container button:hover {
-            background: #b12a6f;
-        }
-        .error-msg {
-            color: #ff0033;
-            margin-top: 10px;
-            display: none;
-            font-weight: 500;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuoteMe ZW Admin Login</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(-45deg, #ffdee9, #b5fffc, #fbc2eb, #a6c1ee);
+        background-size: 400% 400%;
+        animation: gradientBG 12s ease infinite;
+    }
+
+    @keyframes gradientBG {
+        0% {background-position: 0% 50%;}
+        50% {background-position: 100% 50%;}
+        100% {background-position: 0% 50%;}
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 420px;
+        padding: 40px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+        text-align: center;
+        animation: fadeIn 0.8s ease;
+    }
+
+    @keyframes fadeIn {
+        from {opacity: 0; transform: translateY(20px);}
+        to {opacity: 1; transform: translateY(0);}
+    }
+
+    h2 {
+        color: #fff;
+        margin-bottom: 25px;
+        font-weight: 600;
+        letter-spacing: 1px;
+    }
+
+    .input-group {
+        position: relative;
+        margin: 15px 0;
+    }
+
+    input {
+        width: 100%;
+        padding: 14px 15px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.3);
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+        outline: none;
+        font-size: 15px;
+        transition: 0.3s;
+    }
+
+    input::placeholder {
+        color: rgba(255,255,255,0.7);
+    }
+
+    input:focus {
+        border-color: #ffffff;
+        background: rgba(255,255,255,0.3);
+        transform: scale(1.02);
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 15px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #ff4d8d, #7c4dff);
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 25px rgba(0,0,0,0.25);
+    }
+
+    .error-msg {
+        color: #ff4d4d;
+        margin-top: 12px;
+        font-size: 14px;
+        display: none;
+    }
+
+    .toggle-pass {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: rgba(230, 10, 138, 0.8);
+        font-size: 13px;
+        user-select: none;
+    }
+</style>
 </head>
+
 <body>
 
 <div class="login-container">
     <h2>Admin Login</h2>
+
     <form id="adminLoginForm">
-        <input type="text" id="username" placeholder="Username" required>
-        <input type="password" id="password" placeholder="Password" required>
+
+        <div class="input-group">
+            <input type="text" id="username" placeholder="Username" required>
+        </div>
+
+        <div class="input-group">
+            <input type="password" id="password" placeholder="Password" required>
+            <span class="toggle-pass" onclick="togglePassword()">Show</span>
+        </div>
+
         <button type="submit">Login</button>
+
         <div class="error-msg" id="loginError"></div>
     </form>
 </div>
@@ -97,16 +173,27 @@
             const data = await res.json();
             loginError.style.display = 'none';
 
-            // Store token (if needed) and redirect to dashboard
             localStorage.setItem('adminToken', data.token);
             window.location.href = '/dashboard.html';
 
         } catch (err) {
             loginError.style.display = 'block';
             loginError.textContent = 'Server error. Please try again.';
-            console.error(err);
         }
     });
+
+    function togglePassword() {
+        const pass = document.getElementById('password');
+        const toggle = document.querySelector('.toggle-pass');
+
+        if (pass.type === "password") {
+            pass.type = "text";
+            toggle.textContent = "Hide";
+        } else {
+            pass.type = "password";
+            toggle.textContent = "Show";
+        }
+    }
 </script>
 
 </body>
