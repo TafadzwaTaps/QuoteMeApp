@@ -80,6 +80,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
+
 @app.get("/")
 def serve_home():
     if os.path.exists(FRONTEND_HTML):
@@ -93,6 +94,7 @@ def admin_page():
 @app.get("/dashboard.html")
 def dashboard_page():
     return FileResponse("static/dashboard.html")
+
 
 # ===== AUTH =====
 def verify_token(token: str) -> Optional[str]:
@@ -477,3 +479,15 @@ def send_contact(message: ContactSchema, db: Session = Depends(get_db)):
     db.add(new_msg)
     db.commit()
     return {"success": True}
+
+@app.get("/")
+def serve_home():
+    return FileResponse("static/index.html")
+
+@app.get("/admin")
+def serve_admin():
+    return FileResponse("static/admin.html")
+
+@app.get("/dashboard")
+def serve_dashboard():
+    return FileResponse("static/dashboard.html")

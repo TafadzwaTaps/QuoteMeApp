@@ -135,3 +135,25 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2026-04-21 05:53:23,325 [INFO] Story added by admin: Ruvarashe
 2026-04-21 05:53:58,250 [INFO] Story ID 3 deleted by admin Ruvarashe
 2026-04-21 05:54:03,036 [INFO] Story ID 4 deleted by admin Ruvarashe
+2026-04-21 18:49:35,982 [INFO] HTTP Request: HEAD https://huggingface.co/unitary/toxic-bert/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-21 18:49:35,999 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/unitary/toxic-bert/4d6c22e74ba2fdd26bc4f7238f50766b045a0d94/config.json "HTTP/1.1 200 OK"
+2026-04-21 18:49:36,019 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/unitary/toxic-bert/4d6c22e74ba2fdd26bc4f7238f50766b045a0d94/config.json "HTTP/1.1 200 OK"
+2026-04-21 18:49:36,211 [INFO] HTTP Request: HEAD https://huggingface.co/unitary/toxic-bert/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+2026-04-21 18:49:36,389 [INFO] HTTP Request: GET https://huggingface.co/api/models/unitary/toxic-bert/xet-read-token/4d6c22e74ba2fdd26bc4f7238f50766b045a0d94 "HTTP/1.1 200 OK"
+2026-04-21 18:49:43,919 [INFO] HTTP Request: HEAD https://huggingface.co/unitary/toxic-bert/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-21 18:49:43,920 [WARNING] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-21 18:49:43,936 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/unitary/toxic-bert/4d6c22e74ba2fdd26bc4f7238f50766b045a0d94/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-21 18:49:43,956 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/unitary/toxic-bert/4d6c22e74ba2fdd26bc4f7238f50766b045a0d94/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-21 18:49:44,103 [INFO] HTTP Request: GET https://huggingface.co/api/models/unitary/toxic-bert/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-21 18:49:44,239 [INFO] HTTP Request: GET https://huggingface.co/api/models/unitary/toxic-bert/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-21 18:49:44,376 [INFO] HTTP Request: HEAD https://huggingface.co/unitary/toxic-bert/resolve/main/vocab.txt "HTTP/1.1 307 Temporary Redirect"
+2026-04-21 18:49:44,394 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/unitary/toxic-bert/4d6c22e74ba2fdd26bc4f7238f50766b045a0d94/vocab.txt "HTTP/1.1 200 OK"
+2026-04-21 18:49:44,414 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/unitary/toxic-bert/4d6c22e74ba2fdd26bc4f7238f50766b045a0d94/vocab.txt "HTTP/1.1 200 OK"
+2026-04-21 18:49:44,569 [INFO] HTTP Request: HEAD https://huggingface.co/unitary/toxic-bert/resolve/main/tokenizer.json "HTTP/1.1 404 Not Found"
+2026-04-21 18:49:44,709 [INFO] HTTP Request: HEAD https://huggingface.co/unitary/toxic-bert/resolve/main/added_tokens.json "HTTP/1.1 404 Not Found"
+2026-04-21 18:49:44,848 [INFO] HTTP Request: HEAD https://huggingface.co/unitary/toxic-bert/resolve/main/special_tokens_map.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-21 18:49:44,866 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/unitary/toxic-bert/4d6c22e74ba2fdd26bc4f7238f50766b045a0d94/special_tokens_map.json "HTTP/1.1 200 OK"
+2026-04-21 18:49:44,884 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/unitary/toxic-bert/4d6c22e74ba2fdd26bc4f7238f50766b045a0d94/special_tokens_map.json "HTTP/1.1 200 OK"
+2026-04-21 18:49:45,024 [INFO] HTTP Request: HEAD https://huggingface.co/unitary/toxic-bert/resolve/main/chat_template.jinja "HTTP/1.1 404 Not Found"
+2026-04-21 19:00:20,690 [INFO] Comment ID 2 deleted by admin Ruvarashe
+2026-04-21 19:00:34,024 [INFO] Comment ID 1 deleted by admin Ruvarashe
