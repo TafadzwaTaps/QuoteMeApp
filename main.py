@@ -45,7 +45,7 @@ def seed_admin():
         if not existing:
             admin = Admin(
                 username="Ruvarashe",
-                password_hash=pwd_context.hash("Ruva123$")
+                password_hash=pwd_context.hash("Ruva123$"[:72])
             )
             db.add(admin)
             db.commit()
@@ -146,7 +146,7 @@ def login(admin: AdminLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Admin password not set")
 
     try:
-        valid = pwd_context.verify(admin.password, user.password_hash)
+        valid = pwd_context.verify(admin.password[:72], user.password_hash)
     except Exception as e:
         logger.error(f"bcrypt crash: {e}")
         raise HTTPException(status_code=500, detail="Auth system error")
