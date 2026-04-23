@@ -2,10 +2,11 @@ import os
 import uuid
 import shutil
 
-from fastapi import FastAPI, HTTPException, Depends, Header, File, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, Header, File, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordBearer
 
 
 from supabase import create_client
@@ -31,7 +32,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # =========================
 # APP
@@ -45,6 +46,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def handle_head_requests(request, call_next):
+    if request.method == "HEAD":
+        response = await call_next(request)
+        return Response(
+            content=None,
+            status_code=response.status_code,
+            headers=response.headers,
+            media_type=response.media_type,
+        )
+    return await call_next(request)
+
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
@@ -57,7 +70,9 @@ def home():
 def admin_page():
     return FileResponse("static/admin.html")
 
-
+@app.get("/dashboard")
+def dashboard_page():
+    return FileResponse("static/dashboard.html")
 
 # =========================
 # AUTH HELPERS
@@ -77,10 +92,15 @@ def require_admin(authorization: str = Header(...)):
         raise HTTPException(status_code=401, detail="Unauthorized")
     return user
 
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    username = payload.get("username")
 
-@app.get("/dashboard")
-def dashboard_page():
-    return FileResponse("static/dashboard.html")
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    return {"username": username}
+
 # ==============================
 # 💬 SENTIMENT
 # ==============================
@@ -112,7 +132,7 @@ def admin_login(data: dict):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     try:
-        if not pwd_context.verify(password[:72], user["password_hash"]):
+        if not pwd_context.verify(password, user["password_hash"]):
             raise HTTPException(status_code=401, detail="Invalid credentials")
     except Exception:
         raise HTTPException(status_code=500, detail="Auth error")
@@ -125,6 +145,7 @@ def admin_login(data: dict):
 # =========================
 # SETTINGS
 # =========================
+
 
 
 @app.get("/settings")
@@ -215,7 +236,11 @@ def upload(
 # =========================
 @app.get("/quotes")
 def get_quotes():
-    return supabase.table("quotes").select("*").execute().data
+    try:
+        res = supabase.table("quotes").select("*").execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 @app.post("/quotes")
@@ -326,7 +351,7 @@ def create_post(data: dict):
 # CONTACT
 # =========================
 @app.post("/contact/send")
-def contact(data: dict):
+def contact(data: dict, username: str = Depends(require_admin)):
     return supabase.table("contactmessage").insert(data).execute().data
 
 

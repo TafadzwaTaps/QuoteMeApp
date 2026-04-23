@@ -658,21 +658,24 @@ label.required::after{content:' *';color:var(--danger);font-weight:700}
 <div id="toastContainer"></div>
 
 <script>
- const token = localStorage.getItem("adminToken");
+function checkSession() {
+  const token = getToken();
 
-fetch("/admin/stats", {
-    headers: {
-        "Authorization": "Bearer " + token
-    }
-})
-.then(res => {
+  fetch("/admin/stats", {
+    headers: authHeaders()
+  })
+  .then(res => {
     if (res.status === 401) {
-        localStorage.removeItem("adminToken");
-        window.location.href = "/admin";
+      localStorage.removeItem("adminToken");
+      window.location.href = "/admin";
+      return;
     }
     return res.json();
-})
-.then(data => console.log(data));
+  })
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
+}
+
 // ╔══════════════════════════════════════════════════════════╗
 // ║  QuoteMe Admin Dashboard  — Enhanced v2                 ║
 // ║  All original functions preserved + extended            ║
