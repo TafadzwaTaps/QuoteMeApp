@@ -121,23 +121,23 @@ def sentiment(text):
 # =========================
 @app.post("/admin/login")
 def admin_login(data: dict):
-    username = (data.get("username") or "").lower().strip()
+    username_input = data.get("username")
     password = data.get("password")
 
-    # 👇 DEBUG 1: right after receiving input
-    print("LOGIN ATTEMPT:", username, password)
-
-    if not username or not password:
+    if not username_input or not password:
         raise HTTPException(status_code=400, detail="Missing credentials")
 
-    res = supabase.table("admins").select("*").eq("username", username).execute()
-    user = res.data[0] if res.data else None
+    username = username_input.strip().lower()
 
-    # 👇 DEBUG 2: right after database lookup
-    print("USER FOUND:", user)
+    res = supabase.table("admins")\
+        .select("*")\
+        .ilike("username", username)\
+        .execute()
 
-    if not user:
+    if not res.data:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    user = res.data[0]
 
     if not pwd_context.verify(password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -149,7 +149,6 @@ def admin_login(data: dict):
 
     return {"token": token}
 
-
 # =========================
 # SETTINGS
 # =========================
@@ -160,6 +159,22 @@ def admin_login(data: dict):
 def settings_alias():
     res = supabase.table("admin_settings").select("*").limit(1).execute()
     return res.data[0] if res.data else {}
+
+@app.get("/admin/settings")
+def get_admin_settings(username: str = Depends(require_admin)):
+    admin = supabase.table("admins").select("*").eq("username", username).execute().data
+
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin not found")
+
+    admin_id = admin[0]["id"]
+
+    res = supabase.table("admin_settings")\
+        .select("*")\
+        .eq("admin_id", admin_id)\
+        .execute()
+
+    return res.data[0] if res.data else {}    
 
 
 @app.put("/admin/settings")
