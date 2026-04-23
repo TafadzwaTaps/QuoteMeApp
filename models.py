@@ -56,7 +56,7 @@ class Comment(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class ForumPost(Base):
-    __tablename__ = "forum_posts"
+    __tablename__ = "forumpost"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     message = Column(String, nullable=False)

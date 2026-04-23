@@ -1,498 +1,444 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header, Query
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy import create_engine
-from models import Base, Admin, AdminSettings, Quote, Story, Blog, ForumPost, ContactMessage, Comment
-from schemas import (AdminLogin, AdminPasswordUpdate, AdminUsernameUpdate, AdminSettingsUpdate, AdminSettingsOut,
-                     QuoteOut, StoryOut, BlogOut, CommentCreate, CommentOut,
-                     ForumPostSchema, ContactSchema)
-from passlib.context import CryptContext
-import logging_setup
-from jose import jwt
-import shutil, os, uuid
-from typing import List, Optional
-from datetime import datetime
 import os
+import uuid
+import shutil
 
-logger = logging_setup.logger
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
+from fastapi import FastAPI, HTTPException, Depends, Header, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
-# ===== CONFIG =====
-SECRET_KEY = "supersecretkey"  # Replace with environment variable in production
-DATABASE_URL = "sqlite:///./database.db"
+from supabase import create_client
+from jose import jwt
+from passlib.context import CryptContext
+
+# =========================
+# CONFIG
+# =========================
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 UPLOAD_DIR = "./uploads"
 STATIC_DIR = "./static"
-FRONTEND_HTML = "index.html"
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
-
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 
-# ===== DATABASE =====
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-Base.metadata.create_all(bind=engine)
-def seed_admin():
-    db = SessionLocal()
-    try:
-        existing = db.query(Admin).filter(Admin.username == "Ruvarashe").first()
+SECRET_KEY = os.getenv("SECRET_KEY", "#QuoteMeZW@2026")
+ALGORITHM = "HS256"
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
-        if not existing:
-            admin = Admin(
-                username="Ruvarashe",
-                password_hash=pwd_context.hash("Ruva123$"[:72])
-            )
-            db.add(admin)
-            db.commit()
-            print("Admin seeded successfully")
-    except Exception as e:
-        print("Seed error:", e)
-    finally:
-        db.close()
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-seed_admin()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def init_db():
-    from sqlalchemy import inspect, text
-    inspector = inspect(engine)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-    # Ensure likes column exists on quotes, stories, blogs
-    for table_name in ("quotes", "stories", "blogs"):
-        columns = {col["name"] for col in inspector.get_columns(table_name)}
-        if "likes" not in columns:
-            with engine.begin() as conn:
-                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN likes INTEGER DEFAULT 0"))
+# =========================
+# APP
+# =========================
+app = FastAPI(title="QuoteMe Supabase API")
 
-init_db()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# ===== SENTIMENT ANALYSIS (rule-based) =====
-POSITIVE_WORDS = {"love","great","amazing","wonderful","inspiring","beautiful","excellent","fantastic","awesome","good","brilliant","perfect","happy","joy","thank","best","outstanding"}
-NEGATIVE_WORDS = {"hate","terrible","awful","bad","horrible","worst","ugly","boring","disappointing","sad","angry","useless","poor","disgusting","failed","wrong"}
-
-def analyze_sentiment(text: str) -> str:
-    words = set(text.lower().split())
-    pos = len(words & POSITIVE_WORDS)
-    neg = len(words & NEGATIVE_WORDS)
-    if pos > neg:
-        return "positive"
-    elif neg > pos:
-        return "negative"
-    return "neutral"
-
-# ===== FASTAPI APP =====
-app = FastAPI(title="QuoteMe App Backend")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
-# ===== STATIC FILES =====
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-
-@app.get("/")
-def home():
-    return FileResponse("static/index.html")
-
-@app.get("/admin.html")
-def admin_page():
-    return FileResponse("static/admin.html")
-
-@app.get("/dashboard.html")
-def dashboard_page():
-    return FileResponse("static/dashboard.html")
-
-
-# ===== AUTH =====
-def verify_token(token: str) -> Optional[str]:
+# =========================
+# AUTH HELPERS
+# =========================
+def verify_token(token: str):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload.get("username")
     except:
         return None
 
-def extract_token(authorization: str) -> str:
-    if authorization.startswith("Bearer "):
-        return authorization.split(" ", 1)[1]
-    return authorization  # fallback: raw token
 
-def require_admin(authorization: str = Header(...)) -> str:
-    token = extract_token(authorization)
-    username = verify_token(token)
-    if not username:
-        logger.warning("Unauthorized access attempt")
+def require_admin(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    user = verify_token(token)
+    if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    return username
+    return user
 
-# ===== ADMIN LOGIN =====
+
+# =========================
+# HOME
+# =========================
+@app.get("/")
+def home():
+    return {"message": "QuoteMe Supabase Backend Running 🚀"}
+
+
+# ==============================
+# 💬 SENTIMENT
+# ==============================
+POS = {"good","great","love","amazing","happy"}
+NEG = {"bad","hate","awful","sad"}
+
+def sentiment(text):
+    words = set(text.lower().split())
+    if len(words & POS) > len(words & NEG):
+        return "positive"
+    elif len(words & NEG) > len(words & POS):
+        return "negative"
+    return "neutral"
+
+# =========================
+# ADMIN LOGIN
+# =========================
 @app.post("/admin/login")
-def login(admin: AdminLogin, db: Session = Depends(get_db)):
-    user = db.query(Admin).filter(Admin.username == admin.username).first()
+def admin_login(data: dict):
+    username = data.get("username")
+    password = data.get("password")
+
+    res = supabase.table("admins").select("*").eq("username", username).execute()
+    if not res.data:
+     raise HTTPException(401, "Invalid credentials")
+    user = res.data[0]
 
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not user.password_hash:
-        raise HTTPException(status_code=500, detail="Admin password not set")
-
     try:
-        valid = pwd_context.verify(admin.password[:72], user.password_hash)
-    except Exception as e:
-        logger.error(f"bcrypt crash: {e}")
-        raise HTTPException(status_code=500, detail="Auth system error")
+        if not pwd_context.verify(password[:72], user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Auth error")
 
-    if not valid:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    token = jwt.encode(
-        {"username": user.username},
-        SECRET_KEY,
-        algorithm="HS256"
-    )
+    token = jwt.encode({"username": username}, SECRET_KEY, algorithm=ALGORITHM)
 
     return {"token": token}
 
-# ===== ADMIN SETTINGS =====
-@app.get("/admin/settings", response_model=AdminSettingsOut)
-def get_settings(username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    admin = db.query(Admin).filter(Admin.username == username).first()
-    settings = db.query(AdminSettings).filter(AdminSettings.admin_id == admin.id).first()
-    if not settings:
-        settings = AdminSettings(admin_id=admin.id, site_title="QuoteMe ZW")
-        db.add(settings)
-        db.commit()
-        db.refresh(settings)
-    return settings
+
+# =========================
+# SETTINGS
+# =========================
+@app.get("/admin/settings")
+def public_settings():
+    res = supabase.table("admin_settings").select("*").limit(1).execute()
+    return res.data[0] if res.data else {}
+
 
 @app.put("/admin/settings")
-def update_settings(data: AdminSettingsUpdate, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    admin = db.query(Admin).filter(Admin.username == username).first()
-    settings = db.query(AdminSettings).filter(AdminSettings.admin_id == admin.id).first()
-    if not settings:
-        settings = AdminSettings(admin_id=admin.id)
-        db.add(settings)
-    if data.site_title is not None:
-        settings.site_title = data.site_title
-    if data.site_logo is not None:
-        settings.site_logo = data.site_logo
-    if data.dark_mode is not None:
-        settings.dark_mode = data.dark_mode
-    if data.profile_picture is not None:
-        settings.profile_picture = data.profile_picture
-    db.commit()
-    db.refresh(settings)
-    return {"success": True, "settings": settings}
+def update_settings(data: dict, username: str = Depends(require_admin)):
+    # get admin id first
+    admin = supabase.table("admins").select("*").eq("username", username).execute().data
 
-@app.put("/admin/change-password")
-def change_password(data: AdminPasswordUpdate, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    admin = db.query(Admin).filter(Admin.username == username).first()
     if not admin:
         raise HTTPException(status_code=404, detail="Admin not found")
-    try:
-        valid = pwd_context.verify(data.current_password, admin.password_hash)
-    except Exception as e:
-        logger.error(f"Password verification error for '{username}': {e}")
-        raise HTTPException(status_code=500, detail="Auth system error")
-    if not valid:
-        raise HTTPException(status_code=401, detail="Current password is incorrect")
-    if len(data.new_password) < 6:
-        raise HTTPException(status_code=422, detail="New password must be at least 6 characters")
-    admin.password_hash = pwd_context.hash(data.new_password[:72])
-    db.commit()
-    logger.info(f"Admin '{username}' changed their password.")
-    return {"success": True, "message": "Password updated"}
 
-@app.put("/admin/change-username")
-def change_username(data: AdminUsernameUpdate, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    existing = db.query(Admin).filter(Admin.username == data.new_username).first()
-    if existing:
-        raise HTTPException(status_code=409, detail="Username already taken")
-    admin = db.query(Admin).filter(Admin.username == username).first()
-    admin.username = data.new_username
-    db.commit()
-    new_token = jwt.encode({"username": data.new_username}, SECRET_KEY, algorithm="HS256")
-    logger.info(f"Admin '{username}' changed username to '{data.new_username}'.")
-    return {"success": True, "token": new_token}
+    admin_id = admin[0]["id"]
 
-# ===== ADMIN STATS =====
+    res = supabase.table("admin_settings")\
+        .update(data)\
+        .eq("admin_id", admin_id)\
+        .execute()
+
+    return {"success": True, "data": res.data}
+
+
+# =========================
+# STATS DASHBOARD
+# =========================
 @app.get("/admin/stats")
-def get_stats(username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    """Returns counts for the Quick Stats dashboard cards."""
-    try:
-        quotes   = db.query(Quote).count()
-        stories  = db.query(Story).count()
-        blogs    = db.query(Blog).count()
-        comments = db.query(Comment).count()
-        forum    = db.query(ForumPost).count()
-        return {
-            "success": True,
-            "data": {
-                "quotes":   quotes,
-                "stories":  stories,
-                "blogs":    blogs,
-                "comments": comments,
-                "forum":    forum,
-            }
-        }
-    except Exception as e:
-        logger.error(f"Stats fetch error: {e}")
-        raise HTTPException(status_code=500, detail="Could not fetch stats")
+def stats(username: str = Depends(require_admin)):
+    return {
+        "quotes": len(supabase.table("quotes").select("*").execute().data),
+        "stories": len(supabase.table("stories").select("*").execute().data),
+        "blogs": len(supabase.table("blogs").select("*").execute().data),
+        "comments": len(supabase.table("comments").select("*").execute().data),
+        "forumpost": len(supabase.table("forumpost").select("*").execute().data),
+    }
 
-# ===== IMAGE UPLOAD =====
+# =========================
+# UPLOAD IMAGE
+# =========================
 @app.post("/upload-image")
-def upload_image(file: UploadFile = File(...), username: str = Depends(require_admin)):
-    ext = os.path.splitext(file.filename or "")[1].lower()
+def upload(
+    file: UploadFile = File(...),
+    username: str = Depends(require_admin)
+):
+    # =========================
+    # VALIDATE FILE NAME
+    # =========================
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    ext = os.path.splitext(file.filename)[1].lower()
+
     if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"File type not allowed. Use: {', '.join(ALLOWED_EXTENSIONS)}")
-    safe_name = f"{uuid.uuid4().hex}{ext}"
-    file_path = os.path.join(UPLOAD_DIR, safe_name)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+
+    # =========================
+    # SAFE FILE NAME GENERATION
+    # =========================
+    filename = f"{uuid.uuid4().hex}{ext}"
+    path = os.path.join(UPLOAD_DIR, filename)
+
+    # =========================
+    # SAVE FILE SAFELY
+    # =========================
     try:
-        with open(file_path, "wb") as buffer:
+        with open(path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        logger.info(f"Image uploaded by admin {username}: {file.filename} -> {safe_name}")
-        return {"url": f"/uploads/{safe_name}", "original_name": file.filename}
     except Exception as e:
-        logger.error(f"Image upload error by admin {username}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to upload image")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
-# ===== QUOTES =====
-@app.get("/quotes", response_model=List[QuoteOut])
-def get_quotes(page: int = Query(1, ge=1), limit: int = Query(100, ge=1, le=200), db: Session = Depends(get_db)):
-    offset = (page - 1) * limit
-    return db.query(Quote).offset(offset).limit(limit).all()
+    # =========================
+    # RETURN PUBLIC URL
+    # =========================
+    return {
+        "success": True,
+        "url": f"/uploads/{filename}"
+    }
 
-@app.get("/quotes/{quote_id}", response_model=QuoteOut)
-def get_quote(quote_id: int, db: Session = Depends(get_db)):
-    q = db.query(Quote).filter(Quote.id == quote_id).first()
-    if not q:
-        raise HTTPException(status_code=404, detail="Quote not found")
-    return q
 
-@app.post("/quotes", response_model=QuoteOut)
-def create_quote(data: dict, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    text = data.get("text")
-    if not text:
-        raise HTTPException(status_code=422, detail="Quote text is required")
-    quote = Quote(text=text, author=data.get("author"), image_url=data.get("image_url"))
-    db.add(quote)
-    db.commit()
-    db.refresh(quote)
-    logger.info(f"Quote added by admin: {username}")
-    return quote
+# =========================
+# QUOTES
+# =========================
+@app.get("/quotes")
+def get_quotes():
+    return supabase.table("quotes").select("*").execute().data
 
-@app.put("/quotes/{quote_id}", response_model=QuoteOut)
-def update_quote(quote_id: int, data: dict, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    quote = db.query(Quote).filter(Quote.id == quote_id).first()
-    if not quote:
-        raise HTTPException(status_code=404, detail="Quote not found")
-    quote.text = data.get("text", quote.text)
-    quote.author = data.get("author", quote.author)
-    quote.image_url = data.get("image_url", quote.image_url)
-    db.commit()
-    db.refresh(quote)
-    return quote
+
+@app.post("/quotes")
+def create_quote(data: dict, username: str = Depends(require_admin)):
+    res = supabase.table("quotes").insert(data).execute()
+    return res.data
+
+
+@app.put("/quotes/{quote_id}")
+def update_quote(quote_id: int, data: dict, username: str = Depends(require_admin)):
+    res = supabase.table("quotes").update(data).eq("id", quote_id).execute()
+    return res.data
+
 
 @app.delete("/quotes/{quote_id}")
-def delete_quote(quote_id: int, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    quote = db.query(Quote).filter(Quote.id == quote_id).first()
-    if not quote:
-        raise HTTPException(status_code=404, detail="Quote not found")
-    db.delete(quote)
-    db.commit()
-    logger.info(f"Quote ID {quote_id} deleted by admin {username}")
-    return {"message": "Deleted successfully"}
-
-# ===== STORIES =====
-@app.get("/stories", response_model=List[StoryOut])
-def get_stories(page: int = Query(1, ge=1), limit: int = Query(100, ge=1, le=200), db: Session = Depends(get_db)):
-    offset = (page - 1) * limit
-    return db.query(Story).order_by(Story.created_at.desc()).offset(offset).limit(limit).all()
-
-@app.get("/stories/{story_id}", response_model=StoryOut)
-def get_story(story_id: int, db: Session = Depends(get_db)):
-    s = db.query(Story).filter(Story.id == story_id).first()
-    if not s:
-        raise HTTPException(status_code=404, detail="Story not found")
-    return s
-
-@app.post("/stories", response_model=StoryOut)
-def create_story(data: dict, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    if not data.get("title") or not data.get("content"):
-        raise HTTPException(status_code=422, detail="Title and content are required")
-    story = Story(title=data["title"], content=data["content"], image_url=data.get("image_url"))
-    db.add(story)
-    db.commit()
-    db.refresh(story)
-    logger.info(f"Story added by admin: {username}")
-    return story
-
-@app.put("/stories/{story_id}", response_model=StoryOut)
-def update_story(story_id: int, data: dict, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    story = db.query(Story).filter(Story.id == story_id).first()
-    if not story:
-        raise HTTPException(status_code=404, detail="Story not found")
-    story.title = data.get("title", story.title)
-    story.content = data.get("content", story.content)
-    story.image_url = data.get("image_url", story.image_url)
-    db.commit()
-    db.refresh(story)
-    return story
-
-@app.delete("/stories/{story_id}")
-def delete_story(story_id: int, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    story = db.query(Story).filter(Story.id == story_id).first()
-    if not story:
-        raise HTTPException(status_code=404, detail="Story not found")
-    db.delete(story)
-    db.commit()
-    logger.info(f"Story ID {story_id} deleted by admin {username}")
-    return {"message": "Deleted successfully"}
-
-# ===== BLOGS =====
-@app.get("/blogs", response_model=List[BlogOut])
-def get_blogs(page: int = Query(1, ge=1), limit: int = Query(100, ge=1, le=200), db: Session = Depends(get_db)):
-    offset = (page - 1) * limit
-    return db.query(Blog).order_by(Blog.created_at.desc()).offset(offset).limit(limit).all()
-
-@app.get("/blogs/{blog_id}", response_model=BlogOut)
-def get_blog(blog_id: int, db: Session = Depends(get_db)):
-    b = db.query(Blog).filter(Blog.id == blog_id).first()
-    if not b:
-        raise HTTPException(status_code=404, detail="Blog not found")
-    return b
-
-@app.post("/blogs", response_model=BlogOut)
-def create_blog(data: dict, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    if not data.get("title") or not data.get("content"):
-        raise HTTPException(status_code=422, detail="Title and content are required")
-    blog = Blog(title=data["title"], content=data["content"], image_url=data.get("image_url"))
-    db.add(blog)
-    db.commit()
-    db.refresh(blog)
-    logger.info(f"Blog added by admin: {username}")
-    return blog
-
-@app.put("/blogs/{blog_id}", response_model=BlogOut)
-def update_blog(blog_id: int, data: dict, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    blog = db.query(Blog).filter(Blog.id == blog_id).first()
-    if not blog:
-        raise HTTPException(status_code=404, detail="Blog not found")
-    blog.title = data.get("title", blog.title)
-    blog.content = data.get("content", blog.content)
-    blog.image_url = data.get("image_url", blog.image_url)
-    db.commit()
-    db.refresh(blog)
-    return blog
-
-@app.delete("/blogs/{blog_id}")
-def delete_blog(blog_id: int, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    blog = db.query(Blog).filter(Blog.id == blog_id).first()
-    if not blog:
-        raise HTTPException(status_code=404, detail="Blog not found")
-    db.delete(blog)
-    db.commit()
-    logger.info(f"Blog ID {blog_id} deleted by admin {username}")
-    return {"message": "Deleted successfully"}
-
-# ===== LIKES =====
-@app.post("/like/{item_type}/{item_id}")
-def like_item(item_type: str, item_id: int, db: Session = Depends(get_db)):
-    model_map = {"quote": Quote, "story": Story, "blog": Blog}
-    model = model_map.get(item_type)
-    if not model:
-        raise HTTPException(status_code=400, detail="Invalid item type")
-    item = db.query(model).filter(model.id == item_id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-    item.likes = (item.likes or 0) + 1
-    db.commit()
-    return {"likes": item.likes}
-
-# ===== COMMENTS =====
-@app.get("/comments/{item_type}/{item_id}", response_model=List[CommentOut])
-def get_comments(item_type: str, item_id: int, db: Session = Depends(get_db)):
-    return db.query(Comment).filter(
-        Comment.item_type == item_type,
-        Comment.item_id == item_id
-    ).order_by(Comment.created_at.desc()).all()
-
-@app.post("/comments", response_model=CommentOut)
-def post_comment(data: CommentCreate, db: Session = Depends(get_db)):
-    if data.item_type not in ("quote", "story", "blog"):
-        raise HTTPException(status_code=400, detail="Invalid item_type")
-    sentiment = analyze_sentiment(data.content)
-    comment = Comment(
-        content=data.content,
-        username=data.username,
-        item_type=data.item_type,
-        item_id=data.item_id,
-        sentiment=sentiment
-    )
-    db.add(comment)
-    db.commit()
-    db.refresh(comment)
-    return comment
-
-@app.delete("/comments/{comment_id}")
-def delete_comment(comment_id: int, username: str = Depends(require_admin), db: Session = Depends(get_db)):
-    comment = db.query(Comment).filter(Comment.id == comment_id).first()
-    if not comment:
-        raise HTTPException(status_code=404, detail="Comment not found")
-    db.delete(comment)
-    db.commit()
-    logger.info(f"Comment ID {comment_id} deleted by admin {username}")
+def delete_quote(quote_id: int, username: str = Depends(require_admin)):
+    supabase.table("quotes").delete().eq("id", quote_id).execute()
     return {"message": "Deleted"}
 
-# ===== CHATBOT =====
-FAQ = {
-    "quote": "We post daily quotes to inspire and motivate. Browse our Quotes section!",
-    "story": "Our Stories section features real empowerment stories from women across Zimbabwe.",
-    "blog": "Check out our Blog for motivational articles and tips.",
-    "contact": "You can reach us via the Contact section on our homepage.",
-    "instagram": "Follow us on Instagram @quoteme_zw for daily inspiration!",
-    "admin": "Admin login is available at /admin.html for authorized personnel only.",
-}
 
-@app.post("/chatbot")
-def chatbot(data: dict):
-    message = (data.get("message") or "").lower().strip()
-    for keyword, response in FAQ.items():
-        if keyword in message:
-            return {"reply": response}
-    # Fallback response
-    if any(w in message for w in ["hello", "hi", "hey"]):
-        return {"reply": "Hello! 👋 Welcome to QuoteMe ZW! How can I help you today? You can ask me about quotes, stories, blogs, or how to contact us."}
-    if any(w in message for w in ["help", "what", "how"]):
-        return {"reply": "I can help you find quotes, stories, blogs, or contact info. Just ask! 😊"}
-    return {"reply": "Thanks for reaching out! For more help, use our Contact form or follow us @quoteme_zw on Instagram. 💖"}
+# =========================
+# STORIES
+# =========================
+@app.get("/stories")
+def get_stories():
+    return supabase.table("stories").select("*").execute().data
 
-# ===== FORUM =====
-@app.get("/forum/posts", response_model=List[ForumPostSchema])
-def get_forum_posts(db: Session = Depends(get_db)):
-    return db.query(ForumPost).order_by(ForumPost.created_at.desc()).all()
+
+@app.post("/stories")
+def create_story(data: dict, username: str = Depends(require_admin)):
+    return supabase.table("stories").insert(data).execute().data
+
+
+# =========================
+# BLOGS
+# =========================
+@app.get("/blogs")
+def get_blogs():
+    return supabase.table("blogs").select("*").execute().data
+
+
+@app.post("/blogs")
+def create_blog(data: dict, username: str = Depends(require_admin)):
+    return supabase.table("blogs").insert(data).execute().data
+
+
+# =========================
+# LIKES
+# =========================
+@app.post("/like/{item_type}/{item_id}")
+def like(item_type: str, item_id: int):
+    table = item_type + "s"  # quotes, stories, blogs
+
+    item = supabase.table(table).select("*").eq("id", item_id).execute().data
+    if not item:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    current = item[0].get("likes", 0)
+
+    supabase.table(table).update({
+        "likes": current + 1
+    }).eq("id", item_id).execute()
+
+    return {"likes": current + 1}
+
+
+# =========================
+# COMMENTS
+# =========================
+@app.get("/comments/{item_type}/{item_id}")
+def get_comments(item_type: str, item_id: int):
+    return supabase.table("comments")\
+        .select("*")\
+        .eq("item_type", item_type)\
+        .eq("item_id", item_id)\
+        .execute().data
+
+
+@app.post("/comments")
+def add_comment(data: dict):
+    content = data.get("content", "")
+    sentiment = "neutral"
+
+    if any(w in content.lower() for w in ["good", "great", "love", "amazing"]):
+        sentiment = "positive"
+    if any(w in content.lower() for w in ["bad", "hate", "worst"]):
+        sentiment = "negative"
+
+    data["sentiment"] = sentiment
+
+    return supabase.table("comments").insert(data).execute().data
+
+
+# =========================
+# FORUM
+# =========================
+@app.get("/forum/posts")
+def get_posts():
+    return supabase.table("forumpost").select("*").execute().data
+
 
 @app.post("/forum/post")
-def post_forum_message(post: ForumPostSchema, db: Session = Depends(get_db)):
-    new_post = ForumPost(name=post.name, message=post.message)
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
-    return {"success": True, "post": new_post}
+def create_post(data: dict):
+    return supabase.table("forumpost").insert(data).execute().data
 
-# ===== CONTACT =====
+
+# =========================
+# CONTACT
+# =========================
 @app.post("/contact/send")
-def send_contact(message: ContactSchema, db: Session = Depends(get_db)):
-    new_msg = ContactMessage(name=message.name, email=message.email, message=message.message)
-    db.add(new_msg)
-    db.commit()
-    return {"success": True}
+def contact(data: dict):
+    return supabase.table("contactmessage").insert(data).execute().data
+
+
+# =========================
+# CHATBOT
+# =========================
+@app.post("/chatbot")
+def chatbot(data: dict):
+    msg = (data.get("message") or "").lower().strip()
+
+    if not msg:
+        return {"reply": "Please type a message 😊"}
+
+    # =========================
+    # GREETINGS
+    # =========================
+    if any(w in msg for w in ["hi", "hello", "hey", "good morning", "good evening"]):
+        return {
+            "reply": "Hey there 👋 Welcome to QuoteMe ZW 💖 I can help you find quotes, stories, blogs, or anything on the platform!"
+        }
+
+    # =========================
+    # QUOTES
+    # =========================
+    if "quote" in msg:
+        quotes = supabase.table("quotes").select("*").limit(3).execute().data
+
+        if quotes:
+            sample = "\n\n".join([f"💬 {q['text']} — {q.get('author','Unknown')}" for q in quotes])
+            return {
+                "reply": f"Here are some inspiring quotes for you ✨\n\n{sample}"
+            }
+
+        return {"reply": "We post daily inspirational quotes ✨"}
+
+    # =========================
+    # STORIES
+    # =========================
+    if "story" in msg:
+        stories = supabase.table("stories").select("*").limit(2).execute().data
+
+        if stories:
+            sample = "\n\n".join([f"📖 {s['title']}\n{s['content'][:120]}..." for s in stories])
+            return {
+                "reply": f"Here are some empowerment stories 💖\n\n{sample}"
+            }
+
+        return {"reply": "We share powerful women empowerment stories 💖"}
+
+    # =========================
+    # BLOGS
+    # =========================
+    if "blog" in msg:
+        blogs = supabase.table("blogs").select("*").limit(2).execute().data
+
+        if blogs:
+            sample = "\n\n".join([f"📰 {b['title']}\n{b['content'][:120]}..." for b in blogs])
+            return {
+                "reply": f"Here are some motivational blogs 🚀\n\n{sample}"
+            }
+
+        return {"reply": "Check our blog section for motivation 🚀"}
+
+    # =========================
+    # CONTACT / SUPPORT
+    # =========================
+    if any(w in msg for w in ["contact", "email", "reach", "support"]):
+        return {
+            "reply": "You can reach us via the Contact form on the homepage 📩 or email us at support@quotemezw.com"
+        }
+
+    # =========================
+    # INSTAGRAM
+    # =========================
+    if "instagram" in msg or "social" in msg:
+        return {
+            "reply": "Follow us on Instagram @quoteme_zw 📸 for daily inspiration and updates!"
+        }
+
+    # =========================
+    # ADMIN HELP
+    # =========================
+    if "admin" in msg:
+        return {
+            "reply": "Admin panel is available at /admin.html 🔐 Only authorized users can log in."
+        }
+
+    # =========================
+    # ABOUT
+    # =========================
+    if any(w in msg for w in ["what is this", "about", "who are you"]):
+        return {
+            "reply": "QuoteMe ZW is a motivational platform sharing quotes, stories, and blogs to inspire women and youth across Zimbabwe 💖"
+        }
+
+    # =========================
+    # HELP
+    # =========================
+    if any(w in msg for w in ["help", "what can you do"]):
+        return {
+            "reply": (
+                "I can help you with:\n"
+                "✨ Quotes\n"
+                "📖 Stories\n"
+                "📰 Blogs\n"
+                "📩 Contact info\n"
+                "📸 Instagram\n\n"
+                "Just ask me anything!"
+            )
+        }
+
+    # =========================
+    # FALLBACK SMART RESPONSE
+    # =========================
+    return {
+        "reply": (
+            "I'm not fully sure what you're asking yet 🤔\n\n"
+            "Try asking about:\n"
+            "- quotes\n"
+            "- stories\n"
+            "- blogs\n"
+            "- contact info\n\n"
+            "Or just say 'help' 😊"
+        )
+    }
