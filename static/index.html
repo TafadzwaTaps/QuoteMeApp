@@ -262,7 +262,7 @@
     // ── LOAD QUOTES ──
     async function loadQuotes() {
         try {
-            const res = await fetch(`${BASE}/quotes`);
+            const res = await fetch(`${BASE}/quotes`, { cache: "no-store" });
             if (!res.ok) throw new Error("Failed to fetch quotes");
             const quotes = await res.json();
             const grid = document.getElementById('quoteGrid');
@@ -283,7 +283,7 @@
     // ── LOAD STORIES ──
     async function loadStories() {
         try {
-            const stories = await fetch(`${BASE}/stories`).then(r => r.json());
+            const stories = await fetch(`${BASE}/stories`, { cache: "no-store" }).then(r => r.json());
             const grid = document.getElementById('storyGrid');
             grid.innerHTML = '';
             if (!stories.length) { grid.innerHTML = '<p style="color:#888">No stories yet.</p>'; return; }
@@ -300,7 +300,7 @@
     // ── LOAD BLOGS ──
     async function loadBlogs() {
         try {
-            const blogs = await fetch(`${BASE}/blogs`).then(r => r.json());
+            const blogs = await fetch(`${BASE}/blogs`, { cache: "no-store" }).then(r => r.json());
             const grid = document.getElementById('blogGrid');
             grid.innerHTML = '';
             if (!blogs.length) { grid.innerHTML = '<p style="color:#888">No blogs yet.</p>'; return; }
@@ -319,24 +319,26 @@
         const res = await fetch(`${BASE}/settings`);
         const settings = await res.json();
 
-        // HERO TEXT
-        if (settings.hero_text) {
-            document.getElementById('qotd').innerText = settings.hero_text;
+        console.log("SETTINGS:", settings); // debug
+
+        // SITE TITLE → navbar
+        if (settings.site_title) {
+            document.querySelector('.logo-text').innerText = settings.site_title;
         }
 
-        // SITE NAME
-        if (settings.site_name) {
-            document.querySelector('.logo-text').innerText = settings.site_name;
+        // LOGO → navbar image
+        if (settings.site_logo) {
+            document.querySelector('.nav-logo').src = settings.site_logo;
         }
 
         // HERO IMAGE
-        if (settings.hero_image) {
-            document.querySelector('.hero-logo').src = settings.hero_image;
+        if (settings.profile_picture) {
+            document.querySelector('.hero-logo').src = settings.profile_picture;
         }
 
-        // OPTIONAL: THEME COLOR
-        if (settings.primary_color) {
-            document.documentElement.style.setProperty('--primary', settings.primary_color);
+        // DARK MODE
+        if (settings.dark_mode) {
+            document.body.classList.add('dark');
         }
 
     } catch (err) {
@@ -346,7 +348,7 @@
 
     // ── FORUM ──
     async function loadPosts() {
-        const res = await fetch(`${BASE}/forum/posts`);
+        const res = await fetch(`${BASE}/forum/posts`, { cache: "no-store" });
         const posts = await res.json();
         const forumPosts = document.getElementById('forumPosts');
         forumPosts.innerHTML = '';
@@ -428,14 +430,22 @@
         });
     });
 
+    
+// 🚀 INITIAL LOAD (VERY IMPORTANT)
+loadQuotes();
+loadSettings();
+loadStories();
+loadBlogs();
+loadPosts();
+
+
     setInterval(() => {
     loadQuotes();
     loadSettings();   // 🔥 ADD THIS
     loadStories();
     loadBlogs();
     loadPosts();
-}, 30000); // every 30s
-
+}, 5000); // every 5s
 
    
     </script>
