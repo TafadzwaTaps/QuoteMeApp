@@ -21,7 +21,7 @@ STATIC_DIR = "./static"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 
-SECRET_KEY = os.getenv("SECRET_KEY", "#QuoteMeZW@2026")
+SECRET_KEY = os.getenv("SECRET_KEY", "!QuoteMe_ZW@2026")
 ALGORITHM = "HS256"
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
