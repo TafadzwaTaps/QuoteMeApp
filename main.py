@@ -79,9 +79,8 @@ def require_admin(authorization: str = Header(...)):
 
 
 @app.get("/dashboard")
-def dashboard_page(username: str = Depends(require_admin)):
+def dashboard_page():
     return FileResponse("static/dashboard.html")
-
 # ==============================
 # 💬 SENTIMENT
 # ==============================
@@ -101,15 +100,13 @@ def sentiment(text):
 # =========================
 @app.post("/admin/login")
 def admin_login(data: dict):
-    username = data.get("username")
+    username = data.get("username").lower()
     password = data.get("password")
 
     res = supabase.table("admins").select("*").eq("username", username).execute()
     if not res.data:
      raise HTTPException(401, "Invalid credentials")
     user = res.data[0]
-    print("LOGIN ATTEMPT:", username)
-    print("PASSWORD HASH IN DB:", user["password_hash"])
 
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
