@@ -18,6 +18,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 UPLOAD_DIR = "./uploads"
 STATIC_DIR = "./static"
+FRONTEND_HTML = "index.html"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 
@@ -45,6 +46,19 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+
+@app.get("/")
+def home():
+    return FileResponse("static/index.html")
+
+@app.get("/admin.html")
+def admin_page():
+    return FileResponse("static/admin.html")
+
+@app.get("/dashboard.html")
+def dashboard_page():
+    return FileResponse("static/dashboard.html")
 
 # =========================
 # AUTH HELPERS
@@ -76,8 +90,8 @@ def home():
 # ==============================
 # 💬 SENTIMENT
 # ==============================
-POS = {"good","great","love","amazing","happy"}
-NEG = {"bad","hate","awful","sad"}
+POS = {"love","great","amazing","wonderful","inspiring","beautiful","excellent","fantastic","awesome","good","brilliant","perfect","happy","joy","thank","best","outstanding"}
+NEG = {"hate","terrible","awful","bad","horrible","worst","ugly","boring","disappointing","sad","angry","useless","poor","disgusting","failed","wrong"}
 
 def sentiment(text):
     words = set(text.lower().split())
