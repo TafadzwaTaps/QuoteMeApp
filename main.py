@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import os
 import uuid
 import shutil
@@ -120,24 +121,31 @@ def sentiment(text):
 # =========================
 @app.post("/admin/login")
 def admin_login(data: dict):
-    username = data.get("username").lower()
+    username = (data.get("username") or "").lower().strip()
     password = data.get("password")
 
+    # 👇 DEBUG 1: right after receiving input
+    print("LOGIN ATTEMPT:", username, password)
+
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Missing credentials")
+
     res = supabase.table("admins").select("*").eq("username", username).execute()
-    if not res.data:
-     raise HTTPException(401, "Invalid credentials")
-    user = res.data[0]
+    user = res.data[0] if res.data else None
+
+    # 👇 DEBUG 2: right after database lookup
+    print("USER FOUND:", user)
 
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    try:
-        if not pwd_context.verify(password, user["password_hash"]):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-    except Exception:
-        raise HTTPException(status_code=500, detail="Auth error")
+    if not pwd_context.verify(password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    token = jwt.encode({"username": username}, SECRET_KEY, algorithm=ALGORITHM)
+    token = jwt.encode({
+        "username": username,
+        "exp": datetime.utcnow() + timedelta(hours=12)
+    }, SECRET_KEY, algorithm=ALGORITHM)
 
     return {"token": token}
 
