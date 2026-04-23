@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+
 from supabase import create_client
 from jose import jwt
 from passlib.context import CryptContext
@@ -52,13 +53,11 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 def home():
     return FileResponse("static/index.html")
 
-@app.get("/admin.html")
+@app.get("/admin")
 def admin_page():
     return FileResponse("static/admin.html")
 
-@app.get("/dashboard.html")
-def dashboard_page():
-    return FileResponse("static/dashboard.html")
+
 
 # =========================
 # AUTH HELPERS
@@ -79,13 +78,9 @@ def require_admin(authorization: str = Header(...)):
     return user
 
 
-# =========================
-# HOME
-# =========================
-@app.get("/")
-def home():
-    return {"message": "QuoteMe Supabase Backend Running 🚀"}
-
+@app.get("/dashboard")
+def dashboard_page(username: str = Depends(require_admin)):
+    return FileResponse("static/dashboard.html")
 
 # ==============================
 # 💬 SENTIMENT
@@ -113,6 +108,8 @@ def admin_login(data: dict):
     if not res.data:
      raise HTTPException(401, "Invalid credentials")
     user = res.data[0]
+    print("LOGIN ATTEMPT:", username)
+    print("PASSWORD HASH IN DB:", user["password_hash"])
 
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -131,8 +128,10 @@ def admin_login(data: dict):
 # =========================
 # SETTINGS
 # =========================
-@app.get("/admin/settings")
-def public_settings():
+
+
+@app.get("/settings")
+def settings_alias():
     res = supabase.table("admin_settings").select("*").limit(1).execute()
     return res.data[0] if res.data else {}
 
