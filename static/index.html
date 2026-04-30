@@ -32,60 +32,55 @@
     .like-btn:hover,.like-btn.liked{background:#d63384;color:#fff}
 
     /* ── COMMENTS ── */
-    .comments-toggle{background:transparent;border:0;color:#888;font-size:13px;cursor:pointer;text-decoration:underline;margin-top:4px;padding:0}
+    .comments-toggle{background:transparent;border:0;color:#888;font-size:13px;cursor:pointer;text-decoration:underline;margin-top:4px;padding:0;display:inline-block}
     .comments-section{margin-top:12px;display:none;border-top:1px solid #f0e0ea;padding-top:10px}
     .comments-section.open{display:block}
     .comment-item{background:#fff5f9;border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:13px}
-    .comment-user{font-weight:700;color:#d63384;font-size:12px;margin-bottom:2px}
-    .sentiment-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:4px}
+    .comment-user{font-weight:700;color:#d63384;font-size:12px;margin-bottom:2px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+    .sentiment-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700}
     .sentiment-badge.positive{background:#e8f5e9;color:#2e7d32}
     .sentiment-badge.neutral{background:#e3f2fd;color:#1565c0}
     .sentiment-badge.negative{background:#ffebee;color:#c62828}
-    .comment-form{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-    .comment-form input,.comment-form textarea{padding:7px 10px;border-radius:8px;border:1px solid #f0c0d8;font-family:'Poppins',sans-serif;font-size:13px;width:100%}
-    .comment-form button{align-self:flex-end;background:#d63384;color:#fff;border:0;padding:6px 14px;border-radius:16px;cursor:pointer;font-size:13px;font-weight:600}
-   
-   /* ── NAVBAR BRAND ── */
-.nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.nav-logo {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    object-fit: cover;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    transition: transform 0.3s ease;
-}
-
-.nav-logo:hover {
-    transform: rotate(8deg) scale(1.05);
-}
-
-.logo-text {
-    font-size: 18px;
-    font-weight: 700;
-    color: #d63384;
-    letter-spacing: 0.5px;
-}
-   
-    /* ── TOXICITY BADGES ── */
-    .tox-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:4px}
+    .tox-badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700}
     .tox-safe{background:#e8f5e9;color:#2e7d32}
     .tox-toxic{background:#fff3e0;color:#e65100}
     .tox-flagged{background:#ffebee;color:#c62828}
-</style>
+    .comment-form{display:flex;flex-direction:column;gap:6px;margin-top:10px;background:#fdf0f7;border-radius:10px;padding:10px}
+    .comment-form input{padding:8px 10px;border-radius:8px;border:1px solid #f0c0d8;font-family:'Poppins',sans-serif;font-size:13px;width:100%;box-sizing:border-box;outline:none}
+    .comment-form input:focus{border-color:#d63384}
+    .comment-form-row{display:flex;gap:6px}
+    .comment-form-row input{flex:1}
+    .comment-post-btn{align-self:flex-end;background:#d63384;color:#fff;border:0;padding:7px 16px;border-radius:16px;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .2s;white-space:nowrap}
+    .comment-post-btn:hover{opacity:.85}
+    .comment-post-btn:disabled{opacity:.5;cursor:not-allowed}
+    .comment-empty{color:#aaa;font-size:12px;padding:6px 0;text-align:center}
+    .comment-error{color:#c62828;font-size:12px;padding:4px 0}
+
+    /* ── TOAST ── */
+    #globalToast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+    #globalToast.show{opacity:1}
+
+    /* ── NAVBAR BRAND ── */
+    .nav-brand{display:flex;align-items:center;gap:10px}
+    .nav-logo{width:42px;height:42px;border-radius:50%;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:transform 0.3s ease}
+    .nav-logo:hover{transform:rotate(8deg) scale(1.05)}
+    .logo-text{font-size:18px;font-weight:700;color:#d63384;letter-spacing:0.5px}
+
+    /* ── READ MORE ── */
+    .read-more-btn{display:inline-block;margin-top:10px;padding:7px 16px;background:#d63384;color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;transition:opacity .2s}
+    .read-more-btn:hover{opacity:.85}
+
+    /* ── STORY IMAGE ── */
+    .story-card img{width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin-bottom:10px}
+    </style>
 </head>
 <body>
 
     <div class="mobile-menu-btn" onclick="toggleMenu()">☰</div>
     <header class="header">
         <div class="nav-brand">
-            <img src="/static/QuoteMe Logo.jpg" alt="QuoteMe Logo" class="nav-logo">
-             <span class="logo-text">QuoteMe ZW</span>
+            <img src="/static/QuoteMe Logo.jpg" alt="QuoteMe Logo" class="nav-logo" onerror="this.style.display='none'">
+            <span class="logo-text">QuoteMe ZW</span>
         </div>
         <nav class="nav" id="navMenu">
             <ul class="nav-links">
@@ -105,7 +100,7 @@
             <p>Daily quotes, powerful stories, and motivational content curated for you.</p>
             <a href="#explore" class="btn">Explore Quotes</a>
         </div>
-       <img src="/static/Founder.png" alt="QuoteMe Herself" class="hero-logo">
+        <img src="/static/Founder.png" alt="QuoteMe Herself" class="hero-logo" onerror="this.style.display='none'">
     </section>
 
     <section id="explore" class="quotes-section fade-in">
@@ -159,7 +154,10 @@
 
     <button id="backToTop" onclick="scrollToTop()">↑</button>
 
-    <!-- ── CHATBOT WIDGET ── -->
+    <!-- TOAST -->
+    <div id="globalToast"></div>
+
+    <!-- CHATBOT WIDGET -->
     <div id="chatWidget">
         <div id="chatBox">
             <div class="chat-header">
@@ -178,15 +176,38 @@
     </div>
 
     <script>
+    // ═══════════════════════════════════════════════
+    // CONFIG — always relative, never hardcoded host
+    // ═══════════════════════════════════════════════
     const BASE = window.location.origin;
 
-    // MOBILE MENU
+    // ── TOAST ──
+    function showToast(msg, duration) {
+        const el = document.getElementById('globalToast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(el._tid);
+        el._tid = setTimeout(() => el.classList.remove('show'), duration || 2800);
+    }
+
+    // ── ESCAPE HTML ──
+    function esc(s) {
+        return (s || '').replace(/[&<>"']/g, c =>
+            ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])
+        );
+    }
+
+    // ── MOBILE MENU ──
     function toggleMenu() { document.getElementById('navMenu').classList.toggle('show'); }
 
-    // DARK MODE
-    function toggleDark() { document.body.classList.toggle('dark'); }
+    // ── DARK MODE (persisted) ──
+    function toggleDark() {
+        document.body.classList.toggle('dark');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark') ? '1' : '0');
+    }
+    if (localStorage.getItem('darkMode') === '1') document.body.classList.add('dark');
 
-    // QUOTE OF THE DAY
+    // ── QUOTE OF THE DAY ──
     const heroQuotes = [
         "Be the energy you want to attract.",
         "You are powerful, beautiful, brilliant, and brave.",
@@ -196,245 +217,399 @@
     ];
     document.getElementById('qotd').innerText = heroQuotes[Math.floor(Math.random() * heroQuotes.length)];
 
-    // ── LIKES ──
+    // ═══════════════════════════════════════════════
+    // LIKES
+    // ═══════════════════════════════════════════════
     const likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
+
     async function toggleLike(type, id, btn) {
-        const key = `${type}-${id}`;
-        if (likedItems[key]) { btn.classList.add('liked'); return; }
+        const key = type + '-' + id;
+        if (likedItems[key]) {
+            btn.classList.add('liked');
+            showToast('You already liked this! 💖');
+            return;
+        }
         try {
-            const res = await fetch(`${BASE}/like/${type}/${id}`, { method: 'POST' });
+            const res = await fetch(BASE + '/like/' + type + '/' + id, { method: 'POST' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
             const data = await res.json();
             likedItems[key] = true;
             localStorage.setItem('likedItems', JSON.stringify(likedItems));
-            btn.innerHTML = `❤️ ${data.likes}`;
+            btn.innerHTML = '❤️ ' + data.likes;
             btn.classList.add('liked');
-        } catch(e) { console.error(e); }
+            showToast('❤️ Liked!');
+        } catch (e) {
+            showToast('Could not update like. Try again.');
+        }
     }
 
-    // ── COMMENTS ──
-    function toggleComments(id) {
+    // ═══════════════════════════════════════════════
+    // COMMENTS  — stays open while user types
+    // ═══════════════════════════════════════════════
+
+    // Track which sections are open so refreshes don't close them
+    const openSections = new Set();
+
+    function toggleComments(id, event) {
+        // Stop the click from bubbling up to any parent that might re-trigger
+        if (event) event.stopPropagation();
+
         const sec = document.getElementById('comments-' + id);
         if (!sec) return;
-        const isOpen = sec.classList.contains('open');
-        if (!isOpen) {
+
+        if (openSections.has(id)) {
+            openSections.delete(id);
+            sec.classList.remove('open');
+        } else {
+            openSections.add(id);
             sec.classList.add('open');
             loadComments(id);
-        } else {
-            // Only close if no input inside is focused
-            const focused = sec.querySelector(':focus');
-            if (!focused) sec.classList.remove('open');
         }
     }
+
     async function loadComments(itemId) {
-        const parts = itemId.split('-');
-        const type = parts[0];
-        const id   = parts.slice(1).join('-');
+        // itemId is like "quote-5" or "story-2"
+        const dash = itemId.indexOf('-');
+        const type = itemId.slice(0, dash);
+        const id   = itemId.slice(dash + 1);
+
         const list = document.getElementById('comment-list-' + itemId);
         if (!list) return;
-        list.innerHTML = '<div style="color:#888;font-size:12px">⏳ Loading…</div>';
+
+        list.innerHTML = '<div class="comment-empty">⏳ Loading comments…</div>';
+
         try {
-            const comments = await fetch(BASE + '/comments/' + type + '/' + id).then(r => r.json());
-            const sentEmoji = { positive:'😊', neutral:'😐', negative:'😠' };
-            function toxBadge(c) {
-                const s = c.toxicity;
-                if (s === undefined || s === null) return '';
-                if (s >= 0.7) return '<span class="tox-badge tox-flagged">🚨 Flagged</span>';
-                if (s >= 0.4) return '<span class="tox-badge tox-toxic">⚠️ Toxic</span>';
-                return '<span class="tox-badge tox-safe">😊 Safe</span>';
+            const res = await fetch(BASE + '/comments/' + type + '/' + id);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const comments = await res.json();
+
+            if (!Array.isArray(comments) || comments.length === 0) {
+                list.innerHTML = '<div class="comment-empty">💬 No comments yet — be the first!</div>';
+                return;
             }
-            if (comments.length === 0) {
-                list.innerHTML = '<div style="color:#888;font-size:12px;padding:6px 0">No comments yet. Be the first!</div>';
-            } else {
-                list.innerHTML = comments.map(function(c) {
-                    const sent = c.sentiment || 'neutral';
-                    return '<div class="comment-item">' +
-                        '<div class="comment-user">' + esc(c.username) +
-                        ' <span class="sentiment-badge ' + sent + '">' + (sentEmoji[sent]||'') + ' ' + sent + '</span>' +
-                        toxBadge(c) +
-                        '</div><div>' + esc(c.content) + '</div></div>';
-                }).join('');
-            }
-        } catch(e) {
-            list.innerHTML = '<div style="color:#888;font-size:12px">Could not load comments.</div>';
+
+            const sentEmoji = { positive: '😊', neutral: '😐', negative: '😠' };
+            list.innerHTML = comments.map(function(c) {
+                const sent = c.sentiment || 'neutral';
+                let toxHtml = '';
+                if (c.toxicity !== undefined && c.toxicity !== null) {
+                    if (c.toxicity >= 0.7)      toxHtml = '<span class="tox-badge tox-flagged">🚨 Flagged</span>';
+                    else if (c.toxicity >= 0.4) toxHtml = '<span class="tox-badge tox-toxic">⚠️ Toxic</span>';
+                    else                        toxHtml = '<span class="tox-badge tox-safe">😊 Safe</span>';
+                }
+                return '<div class="comment-item">' +
+                    '<div class="comment-user">' + esc(c.username) +
+                    ' <span class="sentiment-badge ' + sent + '">' + (sentEmoji[sent] || '') + ' ' + sent + '</span>' +
+                    toxHtml + '</div>' +
+                    '<div style="font-size:13px;color:#444;margin-top:3px">' + esc(c.content) + '</div>' +
+                    '</div>';
+            }).join('');
+
+        } catch (e) {
+            list.innerHTML = '<div class="comment-error">⚠️ Could not load comments. Please try again.</div>';
         }
     }
+
     async function postComment(itemId) {
-        const parts = itemId.split('-');
-        const type = parts[0];
-        const id   = parts.slice(1).join('-');
+        const dash = itemId.indexOf('-');
+        const type = itemId.slice(0, dash);
+        const id   = itemId.slice(dash + 1);
+
         const usernameEl = document.getElementById('cu-' + itemId);
         const contentEl  = document.getElementById('ct-' + itemId);
         const btn        = document.getElementById('cb-' + itemId);
+
         if (!usernameEl || !contentEl) return;
+
         const username = usernameEl.value.trim();
         const content  = contentEl.value.trim();
-        if (!username || !content) { alert('Please fill in both fields.'); return; }
+
+        if (!username) { showToast('⚠️ Please enter your name.'); usernameEl.focus(); return; }
+        if (!content)  { showToast('⚠️ Please write a comment.');  contentEl.focus();  return; }
+
         if (btn) { btn.disabled = true; btn.textContent = 'Posting…'; }
+
         try {
             const res = await fetch(BASE + '/comments', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: username, content: content, item_type: type, item_id: Number(id) })
+                body: JSON.stringify({
+                    username: username,
+                    content:  content,
+                    item_type: type,
+                    item_id:  parseInt(id, 10)
+                })
             });
-            if (!res.ok) throw new Error('Post failed');
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'Server error ' + res.status);
+            }
+
             contentEl.value = '';
+            showToast('✅ Comment posted!');
             await loadComments(itemId);
-        } catch(e) {
-            alert('Failed to post comment. Please try again.');
+
+        } catch (e) {
+            showToast('❌ Failed to post: ' + e.message);
         } finally {
             if (btn) { btn.disabled = false; btn.textContent = 'Post'; }
         }
     }
+
+    // Build the comment section HTML for a card
     function commentSection(type, id, likes) {
-        const key = type + '-' + id;
+        const key   = type + '-' + id;
         const liked = likedItems[key];
-        return '<button class="like-btn ' + (liked ? 'liked' : '') + '" id="like-' + key + '" onclick="toggleLike(\'' + type + '\',' + id + ',this)">❤️ ' + (likes || 0) + '</button>' +
-            '<button class="comments-toggle" onclick="toggleComments(\'' + key + '\')">💬 Comments</button>' +
+        // NOTE: onclick uses a named function with event passed — no inline toggle that conflicts
+        return '<div style="margin-top:10px">' +
+            '<button class="like-btn' + (liked ? ' liked' : '') + '" id="like-' + key + '" ' +
+                'onclick="toggleLike(\'' + type + '\',' + id + ',this)">' +
+                '❤️ ' + (likes || 0) +
+            '</button>' +
+            ' <button class="comments-toggle" ' +
+                'onclick="toggleComments(\'' + key + '\',event)">💬 Comments</button>' +
             '<div class="comments-section" id="comments-' + key + '">' +
-            '<div id="comment-list-' + key + '"></div>' +
-            '<div class="comment-form" onclick="event.stopPropagation()">' +
-            '<input id="cu-' + key + '" placeholder="Your name" autocomplete="off">' +
-            '<input id="ct-' + key + '" placeholder="Write a comment…" autocomplete="off">' +
-            '<button id="cb-' + key + '" onclick="event.stopPropagation();postComment(\'' + key + '\')">Post</button>' +
-            '</div></div>';
+                '<div id="comment-list-' + key + '"></div>' +
+                '<div class="comment-form" onclick="event.stopPropagation()">' +
+                    '<div class="comment-form-row">' +
+                        '<input id="cu-' + key + '" placeholder="Your name" autocomplete="off" ' +
+                            'onfocus="openSections.add(\'' + key + '\')" ' +
+                            'onclick="event.stopPropagation()">' +
+                    '</div>' +
+                    '<input id="ct-' + key + '" placeholder="Write a comment…" autocomplete="off" ' +
+                        'onfocus="openSections.add(\'' + key + '\')" ' +
+                        'onclick="event.stopPropagation()" ' +
+                        'onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();postComment(\'' + key + '\')}">' +
+                    '<button id="cb-' + key + '" class="comment-post-btn" ' +
+                        'onclick="event.stopPropagation();postComment(\'' + key + '\')">Post</button>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
     }
-    function esc(s) { return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-    // ── LOAD QUOTES ──
+    // ═══════════════════════════════════════════════
+    // IMAGE ERROR HELPER — suppress 404 noise silently
+    // ═══════════════════════════════════════════════
+    function safeImg(url, alt, cssClass) {
+        if (!url) return '';
+        // Use onerror to hide broken images without console spam
+        return '<img src="' + esc(url) + '" alt="' + esc(alt || '') + '"' +
+            (cssClass ? ' class="' + cssClass + '"' : '') +
+            ' loading="lazy" onerror="this.style.display=\'none\'">';
+    }
+
+    // ═══════════════════════════════════════════════
+    // LOAD QUOTES
+    // ═══════════════════════════════════════════════
     async function loadQuotes() {
+        const grid = document.getElementById('quoteGrid');
         try {
-            const res = await fetch(`${BASE}/quotes`, { cache: "no-store" });
-            if (!res.ok) throw new Error("Failed to fetch quotes");
+            const res = await fetch(BASE + '/quotes', { cache: 'no-store' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
             const quotes = await res.json();
-            const grid = document.getElementById('quoteGrid');
-            grid.innerHTML = '';
-            if (!quotes.length) { grid.innerHTML = '<p style="color:#888">✨ No quotes yet. Be the first to add inspiration!</p>'; return; }
-            quotes.forEach(q => {
-                const card = document.createElement('div');
-                card.className = 'quote-card';
-                card.innerHTML = (q.image_url ? `<img src="${esc(q.image_url)}" alt="Quote image" loading="lazy">` : '') +
-                    `<p>${esc(q.text)}</p>` +
-                    (q.author ? `<small style="color:#888">— ${esc(q.author)}</small>` : '') +
-                    commentSection('quote', q.id, q.likes);
-                grid.appendChild(card);
+            if (!Array.isArray(quotes) || !quotes.length) {
+                grid.innerHTML = '<p style="color:#888">✨ No quotes yet. Be the first to add inspiration!</p>';
+                return;
+            }
+            const html = quotes.map(function(q) {
+                return '<div class="quote-card">' +
+                    safeImg(q.image_url, 'Quote image') +
+                    '<p>' + esc(q.text) + '</p>' +
+                    (q.author ? '<small style="color:#888">— ' + esc(q.author) + '</small>' : '') +
+                    commentSection('quote', q.id, q.likes) +
+                    '</div>';
+            }).join('');
+            grid.innerHTML = html;
+            // Restore any open comment sections after re-render
+            openSections.forEach(function(key) {
+                const sec = document.getElementById('comments-' + key);
+                if (sec) sec.classList.add('open');
             });
-        } catch(e) { console.error('Failed to load quotes', e); }
+        } catch (e) {
+            if (grid.innerHTML === '') grid.innerHTML = '<p style="color:#888">Could not load quotes right now.</p>';
+        }
     }
 
-    // ── LOAD STORIES ──
+    // ═══════════════════════════════════════════════
+    // LOAD STORIES
+    // ═══════════════════════════════════════════════
     async function loadStories() {
+        const grid = document.getElementById('storyGrid');
         try {
-            const stories = await fetch(`${BASE}/stories`, { cache: "no-store" }).then(r => r.json());
-            const grid = document.getElementById('storyGrid');
-            grid.innerHTML = '';
-            if (!stories.length) { grid.innerHTML = '<p style="color:#888">No stories yet.</p>'; return; }
-            stories.slice(0, 6).forEach(s => {
-                const card = document.createElement('div');
-                card.className = 'story-card';
-                card.innerHTML = (s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.title)}" loading="lazy" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:10px">` : '') +
-                    `<h3>${esc(s.title)}</h3><p style="color:#555;font-size:14px;line-height:1.6">${esc(s.content.substring(0, 150))}…</p>` +
-                    `<a href="/story/${s.id}" class="btn" style="display:inline-block;margin-top:10px;padding:8px 18px;font-size:13px">📖 Read More</a>` +
-                    commentSection('story', s.id, s.likes);
-                grid.appendChild(card);
+            const res = await fetch(BASE + '/stories', { cache: 'no-store' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const stories = await res.json();
+            if (!Array.isArray(stories) || !stories.length) {
+                grid.innerHTML = '<p style="color:#888">No stories yet.</p>';
+                return;
+            }
+            const html = stories.slice(0, 6).map(function(s) {
+                return '<div class="story-card">' +
+                    safeImg(s.image_url, s.title, '') +
+                    '<h3>' + esc(s.title) + '</h3>' +
+                    '<p style="color:#555;font-size:14px;line-height:1.6">' +
+                        esc((s.content || '').substring(0, 150)) + '…</p>' +
+                    '<a href="/story/' + s.id + '" class="read-more-btn">📖 Read More</a>' +
+                    commentSection('story', s.id, s.likes) +
+                    '</div>';
+            }).join('');
+            grid.innerHTML = html;
+            openSections.forEach(function(key) {
+                const sec = document.getElementById('comments-' + key);
+                if (sec) sec.classList.add('open');
             });
-        } catch(e) { console.error('Failed to load stories', e); }
+        } catch (e) {
+            if (grid.innerHTML === '') grid.innerHTML = '<p style="color:#888">Could not load stories right now.</p>';
+        }
     }
 
-    // ── LOAD BLOGS ──
+    // ═══════════════════════════════════════════════
+    // LOAD BLOGS
+    // ═══════════════════════════════════════════════
     async function loadBlogs() {
+        const grid = document.getElementById('blogGrid');
         try {
-            const blogs = await fetch(`${BASE}/blogs`, { cache: "no-store" }).then(r => r.json());
-            const grid = document.getElementById('blogGrid');
-            grid.innerHTML = '';
-            if (!blogs.length) { grid.innerHTML = '<p style="color:#888">No blogs yet.</p>'; return; }
-            blogs.slice(0, 6).forEach(b => {
-                const card = document.createElement('div');
-                card.className = 'blog-card';
-                card.innerHTML = `<h3>${esc(b.title)}</h3><p>${esc(b.content.substring(0, 120))}…</p>` +
-                    commentSection('blog', b.id, b.likes);
-                grid.appendChild(card);
+            const res = await fetch(BASE + '/blogs', { cache: 'no-store' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const blogs = await res.json();
+            if (!Array.isArray(blogs) || !blogs.length) {
+                grid.innerHTML = '<p style="color:#888">No blogs yet.</p>';
+                return;
+            }
+            const html = blogs.slice(0, 6).map(function(b) {
+                return '<div class="blog-card">' +
+                    safeImg(b.image_url, b.title, '') +
+                    '<h3>' + esc(b.title) + '</h3>' +
+                    '<p style="color:#555;font-size:14px">' +
+                        esc((b.content || '').substring(0, 120)) + '…</p>' +
+                    commentSection('blog', b.id, b.likes) +
+                    '</div>';
+            }).join('');
+            grid.innerHTML = html;
+            openSections.forEach(function(key) {
+                const sec = document.getElementById('comments-' + key);
+                if (sec) sec.classList.add('open');
             });
-        } catch(e) { console.error('Failed to load blogs', e); }
+        } catch (e) {
+            if (grid.innerHTML === '') grid.innerHTML = '<p style="color:#888">Could not load blogs right now.</p>';
+        }
     }
 
+    // ═══════════════════════════════════════════════
+    // SETTINGS  — suppress console.log, handle missing data safely
+    // ═══════════════════════════════════════════════
     async function loadSettings() {
-    try {
-        const res = await fetch(`${BASE}/settings`);
-        const settings = await res.json();
+        try {
+            const res = await fetch(BASE + '/settings', { cache: 'no-store' });
+            if (!res.ok) return; // silent fail — settings are optional
+            const s = await res.json();
+            if (!s || typeof s !== 'object') return;
 
-        console.log("SETTINGS:", settings); // debug
-
-        // SITE TITLE → navbar
-        if (settings.site_title) {
-            document.querySelector('.logo-text').innerText = settings.site_title;
+            if (s.site_title) {
+                const el = document.querySelector('.logo-text');
+                if (el) el.innerText = s.site_title;
+            }
+            if (s.site_logo) {
+                const el = document.querySelector('.nav-logo');
+                if (el) el.src = s.site_logo;
+            }
+            if (s.profile_picture) {
+                const el = document.querySelector('.hero-logo');
+                if (el) el.src = s.profile_picture;
+            }
+            if (s.dark_mode && !document.body.classList.contains('dark')) {
+                document.body.classList.add('dark');
+            }
+        } catch (e) {
+            // Settings are non-critical; swallow errors silently
         }
-
-        // LOGO → navbar image
-        if (settings.site_logo) {
-            document.querySelector('.nav-logo').src = settings.site_logo;
-        }
-
-        // HERO IMAGE
-        if (settings.profile_picture) {
-            document.querySelector('.hero-logo').src = settings.profile_picture;
-        }
-
-        // DARK MODE
-        if (settings.dark_mode) {
-            document.body.classList.add('dark');
-        }
-
-    } catch (err) {
-        console.error("Failed to load settings", err);
     }
-}
 
-    // ── FORUM ──
+    // ═══════════════════════════════════════════════
+    // FORUM
+    // ═══════════════════════════════════════════════
     async function loadPosts() {
-        const res = await fetch(`${BASE}/forum/posts`, { cache: "no-store" });
-        const posts = await res.json();
-        const forumPosts = document.getElementById('forumPosts');
-        forumPosts.innerHTML = '';
-        posts.forEach(p => {
-            const post = document.createElement('div');
-            post.className = 'forum-post';
-            const strong = document.createElement('strong');
-            strong.textContent = p.name + ': ';
-            post.appendChild(strong);
-            post.appendChild(document.createTextNode(p.message));
-            forumPosts.appendChild(post);
-        });
+        const container = document.getElementById('forumPosts');
+        try {
+            const res = await fetch(BASE + '/forum/posts', { cache: 'no-store' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const posts = await res.json();
+            container.innerHTML = '';
+            if (!Array.isArray(posts) || !posts.length) {
+                container.innerHTML = '<p style="color:#aaa;font-size:14px">No forum posts yet. Start the conversation!</p>';
+                return;
+            }
+            posts.forEach(function(p) {
+                const div = document.createElement('div');
+                div.className = 'forum-post';
+                const strong = document.createElement('strong');
+                strong.textContent = (p.name || 'Anonymous') + ': ';
+                div.appendChild(strong);
+                div.appendChild(document.createTextNode(p.message || ''));
+                container.appendChild(div);
+            });
+        } catch (e) {
+            // Keep existing content if any; silent fail
+        }
     }
-    document.getElementById('forumForm').addEventListener('submit', async (e) => {
+
+    document.getElementById('forumForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const name = document.getElementById('userName').value;
-        const message = document.getElementById('userMessage').value;
-        await fetch(`${BASE}/forum/post`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name, message}) });
-        document.getElementById('forumForm').reset();
-        loadPosts();
+        const name    = document.getElementById('userName').value.trim();
+        const message = document.getElementById('userMessage').value.trim();
+        if (!name || !message) return;
+        try {
+            const res = await fetch(BASE + '/forum/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, message: message })
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            document.getElementById('forumForm').reset();
+            showToast('✅ Message posted!');
+            loadPosts();
+        } catch (e) {
+            showToast('❌ Could not post message. Try again.');
+        }
     });
 
-    // ── CONTACT ──
-    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+    // ═══════════════════════════════════════════════
+    // CONTACT
+    // ═══════════════════════════════════════════════
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        await fetch(`${BASE}/contact/send`, {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({
-                name: document.getElementById('contactName').value,
-                email: document.getElementById('contactEmail').value,
-                message: document.getElementById('contactMessage').value,
-            })
-        });
-        document.getElementById('contactForm').reset();
-        alert('Message sent successfully!');
+        const btn = e.target.querySelector('button[type="submit"]');
+        if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+        try {
+            const res = await fetch(BASE + '/contact/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name:    document.getElementById('contactName').value,
+                    email:   document.getElementById('contactEmail').value,
+                    message: document.getElementById('contactMessage').value
+                })
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            document.getElementById('contactForm').reset();
+            showToast('✅ Message sent! We will get back to you soon.');
+        } catch (e) {
+            showToast('❌ Could not send message. Please try again.');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Send Message'; }
+        }
     });
 
-    // ── CHATBOT ──
+    // ═══════════════════════════════════════════════
+    // CHATBOT
+    // ═══════════════════════════════════════════════
     let chatOpen = false;
     function toggleChat() {
         chatOpen = !chatOpen;
         const box = document.getElementById('chatBox');
-        if (chatOpen) box.classList.add('open'); else box.classList.remove('open');
+        if (chatOpen) box.classList.add('open');
+        else box.classList.remove('open');
     }
     async function sendChat() {
         const input = document.getElementById('chatInput');
@@ -443,54 +618,62 @@
         appendChatBubble(msg, 'user');
         input.value = '';
         try {
-            const res = await fetch(`${BASE}/chatbot`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({message: msg}) });
+            const res = await fetch(BASE + '/chatbot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            });
             const data = await res.json();
-            appendChatBubble(data.reply || 'Sorry, I didn\'t catch that!', 'bot');
-        } catch {
-            appendChatBubble('Hmm, I\'m having trouble connecting right now. Please try again!', 'bot');
+            appendChatBubble(data.reply || "Sorry, I didn't catch that!", 'bot');
+        } catch (e) {
+            appendChatBubble("Hmm, I'm having trouble connecting. Please try again!", 'bot');
         }
     }
     function appendChatBubble(text, who) {
         const msgs = document.getElementById('chatMessages');
-        const div = document.createElement('div');
-        div.className = `chat-bubble ${who}`;
+        const div  = document.createElement('div');
+        div.className = 'chat-bubble ' + who;
         div.textContent = text;
         msgs.appendChild(div);
         msgs.scrollTop = msgs.scrollHeight;
     }
 
     // ── BACK TO TOP ──
-    const backToTop = document.getElementById('backToTop');
-    window.onscroll = () => { backToTop.style.display = (document.documentElement.scrollTop > 200) ? 'block' : 'none'; };
-    function scrollToTop() { window.scrollTo({top: 0, behavior: 'smooth'}); }
+    const backToTopBtn = document.getElementById('backToTop');
+    window.addEventListener('scroll', function() {
+        backToTopBtn.style.display = window.scrollY > 200 ? 'block' : 'none';
+    });
+    function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
     // ── SMOOTH NAV ──
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', e => {
+    document.querySelectorAll('a[href^="#"]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
             e.preventDefault();
             const target = document.querySelector(link.getAttribute('href'));
             if (target) target.scrollIntoView({ behavior: 'smooth' });
         });
     });
 
-    
-// 🚀 INITIAL LOAD (VERY IMPORTANT)
-loadQuotes();
-loadSettings();
-loadStories();
-loadBlogs();
-loadPosts();
-
-
-    setInterval(() => {
+    // ═══════════════════════════════════════════════
+    // INIT — load once, then poll every 30s
+    // (5s was hammering the server and causing visual flicker
+    //  that made comments auto-close)
+    // ═══════════════════════════════════════════════
+    loadSettings();
     loadQuotes();
-    loadSettings();   // 🔥 ADD THIS
     loadStories();
     loadBlogs();
     loadPosts();
-}, 5000); // every 5s
 
-   
+    // Refresh content every 30 seconds without disturbing open comment sections
+    setInterval(function() {
+        loadQuotes();
+        loadStories();
+        loadBlogs();
+        loadPosts();
+        // Settings polled less often to reduce noise
+    }, 30000);
+
     </script>
 </body>
 </html>
