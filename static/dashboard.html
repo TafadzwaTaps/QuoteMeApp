@@ -659,21 +659,7 @@ label.required::after{content:' *';color:var(--danger);font-weight:700}
 
 <script>
 function checkSession() {
-  const token = getToken();
-
-  fetch("/admin/stats", {
-    headers: authHeaders()
-  })
-  .then(res => {
-    if (res.status === 401) {
-      localStorage.removeItem("adminToken");
-      window.location.href = "/admin";
-      return;
-    }
-    return res.json();
-  })
-  .then(data => console.log(data))
-  .catch(err => console.error(err));
+  // Session is validated during DOMContentLoaded — this is a no-op kept for compatibility
 }
 
 // ╔══════════════════════════════════════════════════════════╗
@@ -682,19 +668,19 @@ function checkSession() {
 // ╚══════════════════════════════════════════════════════════╝
 
 // ================== CONFIG ==================
-const BASE = 'https://quotemeapp.onrender.com';
+const BASE = window.location.origin;
 const API = {
-  quotes:     `${BASE}/quotes`,
-  stories:    `${BASE}/stories`,
-  blogs:      `${BASE}/blogs`,
-  upload:     `${BASE}/upload-image`,
-  settings:   `${BASE}/admin/settings`,
-  changePwd:  `${BASE}/admin/change-password`,
-  changeUser: `${BASE}/admin/change-username`,
-  comments:   `${BASE}/comments`,
-  forum:      `${BASE}/forum/posts`,
-  like:       `${BASE}/like`,
-  stats:      `${BASE}/admin/stats`,
+  quotes:     BASE + '/quotes',
+  stories:    BASE + '/stories',
+  blogs:      BASE + '/blogs',
+  upload:     BASE + '/upload-image',
+  settings:   BASE + '/admin/settings',
+  changePwd:  BASE + '/admin/change-password',
+  changeUser: BASE + '/admin/change-username',
+  comments:   BASE + '/comments',
+  forum:      BASE + '/forum/posts',
+  like:       BASE + '/like',
+  stats:      BASE + '/admin/stats',
 };
 
 // ================== STATE ==================
@@ -734,7 +720,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const token = getToken();
   if (!token) {
     showToast('Session expired. Redirecting…', 'warn');
-    setTimeout(() => window.location.href = '/admin.html', 900);
+    setTimeout(() => window.location.href = '/admin', 900);
     return;
   }
   const payload = decodeJwt(token);
@@ -764,6 +750,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Start on overview
   switchTab('overview');
+
+  // Start background auto-refresh
+  startAutoRefresh();
 });
 
 function setGreeting() {
@@ -780,13 +769,13 @@ function wireEventListeners() {
 
   safeOn('logoutBtn', 'click', () => {
     localStorage.removeItem('adminToken');
-    window.location.href = '/admin.html';
+    window.location.href = '/admin';
   });
 
   safeOn('refreshBtn', 'click', () => {
-    if (['quotes','stories','blogs'].includes(state.tab)) loadList(true);
-    else loadCurrentTab();
-    showToast('Refreshed', 'info');
+    loadCurrentTab();
+    loadStats();
+    showToast('🔄 Refreshed', 'info');
   });
 
   safeOn('addBtn', 'click', () => openModalForAdd());
@@ -1138,7 +1127,7 @@ async function loadActivityFeed() {
 async function fetchItemsFromApi() {
   try {
     const res = await fetch(API[state.tab] + '?limit=200', { headers: authHeaders() });
-    if (res.status === 401) { window.location.href = '/admin.html'; return []; }
+    if (res.status === 401) { window.location.href = '/admin'; return []; }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const items = await res.json();
     return Array.isArray(items) ? items : [];
@@ -1151,10 +1140,16 @@ async function fetchItemsFromApi() {
 
 async function loadList(forceReload = false) {
   const container = document.getElementById('listContainer');
-  if (container) container.innerHTML = renderSkeletons(6);
-  state.items = await fetchItemsFromApi();
-  state.selected.clear();
-  updateBulkBar();
+  // Only show skeleton on hard reloads (tab switch, explicit refresh)
+  // Soft reloads (auto-refresh) preserve current content while fetching
+  if (forceReload && container) container.innerHTML = renderSkeletons(6);
+  const fresh = await fetchItemsFromApi();
+  if (!fresh.length && !forceReload) return; // don't clear on background fail
+  state.items = fresh;
+  if (forceReload) {
+    state.selected.clear();
+    updateBulkBar();
+  }
   renderList();
 }
 
@@ -1697,8 +1692,8 @@ function viewComments(itemId, itemType) {
       </div>
     </div>`;
   overlay.style.display = 'flex';
-  // Only close if user clicks the dark backdrop AND no input is currently focused
-  overlay.addEventListener('click', e => {
+  // Only close overlay if clicking the dark backdrop AND no input is focused
+  overlay.addEventListener('click', function(e) {
     if (e.target === overlay) {
       const focused = overlay.querySelector(':focus');
       if (!focused) closeCommentsView();
@@ -1771,15 +1766,15 @@ async function submitInlineComment(itemId, itemType) {
 async function deleteCommentFromView(commentId, itemId, itemType) {
   if (!confirm('Delete this comment? This cannot be undone.')) return;
   try {
-    const res = await fetch(`${BASE}/comments/${commentId}`, { method: 'DELETE', headers: authHeaders() });
+    const res = await fetch(BASE + '/comments/' + commentId, { method: 'DELETE', headers: authHeaders() });
     if (res.ok) {
       showToast('🗑️ Comment deleted', 'success');
-      viewComments(itemId, itemType);
+      viewComments(itemId, itemType); // reload comments panel
     } else {
       const d = await res.json().catch(() => ({}));
       showToast(d.detail || 'Failed to delete comment', 'error');
     }
-  } catch { showToast('Network error', 'error'); }
+  } catch (e) { showToast('Network error', 'error'); }
 }
 
 // ================== ALL COMMENTS TAB ==================
@@ -1837,18 +1832,19 @@ async function loadAllComments() {
 async function deleteComment(id) {
   if (!confirm('Delete this comment? This cannot be undone.')) return;
   try {
-    const res = await fetch(`${BASE}/comments/${id}`, { method: 'DELETE', headers: authHeaders() });
+    const res = await fetch(BASE + '/comments/' + id, { method: 'DELETE', headers: authHeaders() });
     if (res.ok) {
       showToast('🗑️ Comment deleted', 'success');
-      // Remove element from DOM immediately for snappy UX
-      const btn = document.querySelector(`[onclick="deleteComment(${id})"]`);
+      // Optimistic: remove card from DOM immediately
+      const btn = document.querySelector('[onclick="deleteComment(' + id + ')"]');
       if (btn) btn.closest('.comment-item').remove();
+      // Then reload to sync
       loadAllComments();
     } else {
       const d = await res.json().catch(() => ({}));
       showToast(d.detail || 'Failed to delete comment', 'error');
     }
-  } catch { showToast('Network error', 'error'); }
+  } catch (e) { showToast('Network error', 'error'); }
 }
 
 // ================== FORUM ==================
@@ -1955,6 +1951,33 @@ async function changeUsername() {
     }
   } catch { showToast('Network error', 'error'); }
 }
+
+// ================== AUTO-REFRESH ==================
+// Refresh stats and active tab content every 60 seconds so admins
+// see changes made by other sessions without manual reload
+let _refreshTimer = null;
+function startAutoRefresh() {
+  stopAutoRefresh();
+  _refreshTimer = setInterval(function() {
+    loadStats();
+    // Only reload list if we're on a content tab — avoid disrupting settings/comments
+    if (['quotes','stories','blogs'].includes(state.tab)) {
+      loadList(false); // false = soft reload, no skeleton flash
+    } else if (state.tab === 'comments') {
+      loadAllComments();
+    } else if (state.tab === 'forum') {
+      loadForum();
+    }
+  }, 60000); // every 60 seconds
+}
+function stopAutoRefresh() {
+  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+}
+// Pause refresh when tab is hidden (saves requests)
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) stopAutoRefresh();
+  else startAutoRefresh();
+});
 
 // ================== TOAST ==================
 function showToast(msg, type = 'info') {
