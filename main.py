@@ -75,6 +75,10 @@ def admin_page():
 def dashboard_page():
     return FileResponse("static/dashboard.html")
 
+@app.get("/story/{story_id}")
+def story_page(story_id: int):
+    return FileResponse("static/story.html")
+
 # =========================
 # AUTH HELPERS
 # =========================
@@ -292,6 +296,14 @@ def get_stories():
     return supabase.table("stories").select("*").execute().data
 
 
+@app.get("/stories/{story_id}")
+def get_story(story_id: int):
+    res = supabase.table("stories").select("*").eq("id", story_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Story not found")
+    return res.data[0]
+
+
 @app.post("/stories")
 def create_story(data: dict, username: str = Depends(require_admin)):
     return supabase.table("stories").insert(data).execute().data
@@ -344,17 +356,37 @@ def get_comments(item_type: str, item_id: int):
 
 @app.post("/comments")
 def add_comment(data: dict):
-    content = data.get("content", "")
-    sentiment = "neutral"
+    text = data.get("content", "")
+    sent = "neutral"
 
-    if any(w in content.lower() for w in ["good", "great", "love", "amazing"]):
-        sentiment = "positive"
-    if any(w in content.lower() for w in ["bad", "hate", "worst"]):
-        sentiment = "negative"
+    if any(w in text.lower() for w in ["good", "great", "love", "amazing", "wonderful", "inspiring", "beautiful", "thank", "best"]):
+        sent = "positive"
+    if any(w in text.lower() for w in ["bad", "hate", "worst", "horrible", "terrible", "awful", "disgusting"]):
+        sent = "negative"
 
-    data["sentiment"] = sentiment
+    data["sentiment"] = sent
+
+    # Basic toxicity scoring based on word list
+    toxic_words = ["hate", "kill", "stupid", "idiot", "ugly", "horrible", "disgusting", "awful", "terrible", "worst"]
+    flagged_words = ["die", "murder", "attack", "abuse"]
+    text_lower = text.lower()
+    flag_count = sum(1 for w in flagged_words if w in text_lower)
+    toxic_count = sum(1 for w in toxic_words if w in text_lower)
+
+    if flag_count > 0:
+        data["toxicity"] = min(0.7 + flag_count * 0.1, 1.0)
+    elif toxic_count > 0:
+        data["toxicity"] = min(0.3 + toxic_count * 0.1, 0.69)
+    else:
+        data["toxicity"] = 0.0
 
     return supabase.table("comments").insert(data).execute().data
+
+
+@app.delete("/comments/{comment_id}")
+def delete_comment(comment_id: int, username: str = Depends(require_admin)):
+    res = supabase.table("comments").delete().eq("id", comment_id).execute()
+    return {"message": "Comment deleted", "id": comment_id}
 
 
 # =========================

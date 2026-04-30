@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Story – QuoteMe ZW</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── PAGE LAYOUT ── */
+.story-page { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
+
+/* ── BACK LINK ── */
+.back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #d63384; text-decoration: none; font-weight: 600;
+    font-size: 14px; margin-bottom: 24px; transition: opacity .2s;
+}
+.back-link:hover { opacity: .75; }
+
+/* ── STORY CARD ── */
+.story-full { background: #fff; border-radius: 20px; padding: 36px 40px; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+body.dark .story-full { background: #2c2c2c; }
+
+.story-full .story-hero {
+    width: 100%; max-height: 360px; object-fit: cover;
+    border-radius: 14px; margin-bottom: 28px;
+}
+.story-full h1 { font-size: 26px; color: #d63384; margin-bottom: 8px; line-height: 1.3; }
+body.dark .story-full h1 { color: #ffb3d9; }
+.story-meta { font-size: 13px; color: #999; margin-bottom: 24px; }
+.story-body { font-size: 15px; line-height: 1.85; color: #333; white-space: pre-line; }
+body.dark .story-body { color: #ddd; }
+
+/* ── LIKES ── */
+.like-row { display: flex; align-items: center; gap: 12px; margin-top: 28px; }
+.like-btn {
+    background: transparent; border: 1.5px solid #d63384; color: #d63384;
+    padding: 7px 18px; border-radius: 20px; cursor: pointer;
+    font-size: 14px; font-weight: 600; transition: all .2s;
+}
+.like-btn:hover, .like-btn.liked { background: #d63384; color: #fff; }
+
+/* ── COMMENTS SECTION ── */
+.comments-area { margin-top: 44px; }
+.comments-area h2 { font-size: 20px; color: #d63384; margin-bottom: 20px; }
+body.dark .comments-area h2 { color: #ffb3d9; }
+
+.comment-card {
+    background: #fff5f9; border-radius: 14px; padding: 14px 18px;
+    margin-bottom: 12px; border-left: 4px solid #d63384;
+}
+body.dark .comment-card { background: #383838; border-color: #ff69b4; }
+
+.comment-card-user {
+    font-weight: 700; font-size: 13px; color: #d63384; margin-bottom: 5px;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+}
+body.dark .comment-card-user { color: #ffb3d9; }
+.comment-card-text { font-size: 14px; color: #444; line-height: 1.6; }
+body.dark .comment-card-text { color: #ccc; }
+.comment-card-date { font-size: 11px; color: #bbb; margin-top: 5px; }
+
+/* ── SENTIMENT BADGES ── */
+.sentiment-badge {
+    display: inline-block; font-size: 10px; padding: 2px 8px;
+    border-radius: 10px; font-weight: 700;
+}
+.sentiment-badge.positive { background: #e8f5e9; color: #2e7d32; }
+.sentiment-badge.neutral  { background: #e3f2fd; color: #1565c0; }
+.sentiment-badge.negative { background: #ffebee; color: #c62828; }
+
+/* ── TOXICITY BADGES ── */
+.tox-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+.tox-safe    { background: #e8f5e9; color: #2e7d32; }
+.tox-toxic   { background: #fff3e0; color: #e65100; }
+.tox-flagged { background: #ffebee; color: #c62828; }
+
+/* ── COMMENT FORM ── */
+.comment-form-area {
+    background: #fff; border-radius: 16px; padding: 24px 28px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.07); margin-top: 24px;
+}
+body.dark .comment-form-area { background: #2c2c2c; }
+.comment-form-area h3 { font-size: 16px; color: #d63384; margin-bottom: 16px; }
+body.dark .comment-form-area h3 { color: #ffb3d9; }
+.cf-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.cf-row input { flex: 1; min-width: 160px; }
+.comment-form-area input,
+.comment-form-area textarea {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid #f0c0d8; font-family: 'Poppins', sans-serif;
+    font-size: 13px; outline: none; transition: border .2s;
+    background: #fdfafa;
+}
+body.dark .comment-form-area input,
+body.dark .comment-form-area textarea { background: #3a3a3a; border-color: #555; color: #f0f0f0; }
+.comment-form-area input:focus,
+.comment-form-area textarea:focus { border-color: #d63384; }
+.comment-form-area textarea { resize: vertical; min-height: 90px; margin-bottom: 10px; }
+.post-btn {
+    background: linear-gradient(135deg, #d63384, #9c27b0);
+    color: #fff; border: none; padding: 10px 28px;
+    border-radius: 20px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity .2s;
+}
+.post-btn:hover { opacity: .85; }
+.post-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── EMPTY / LOADING STATES ── */
+.state-msg { text-align: center; color: #bbb; padding: 24px; font-size: 14px; }
+
+/* ── TOAST ── */
+#storyToast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: #333; color: #fff; padding: 10px 22px; border-radius: 20px;
+    font-size: 14px; z-index: 999; opacity: 0; transition: opacity .3s;
+    pointer-events: none;
+}
+#storyToast.show { opacity: 1; }
+
+/* ── NAVBAR ── */
+.nav-brand { display: flex; align-items: center; gap: 10px; }
+.nav-logo { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+.logo-text { font-size: 18px; font-weight: 700; color: #d63384; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+    .story-full { padding: 22px 18px; }
+    .story-full h1 { font-size: 21px; }
+    .comment-form-area { padding: 18px 16px; }
+    .cf-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+    <div class="nav-brand">
+        <img src="/static/QuoteMe Logo.jpg" alt="QuoteMe Logo" class="nav-logo">
+        <span class="logo-text">QuoteMe ZW</span>
+    </div>
+    <nav>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#stories">Stories</a></li>
+            <li><a href="/#blog">Blog</a></li>
+        </ul>
+    </nav>
+    <button class="dark-toggle" onclick="document.body.classList.toggle('dark')">🌙</button>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="story-page">
+    <a href="/#stories" class="back-link">← Back to Stories</a>
+
+    <div id="storyContent">
+        <div class="state-msg">⏳ Loading story…</div>
+    </div>
+
+    <div class="comments-area" id="commentsArea" style="display:none">
+        <h2>💬 Comments</h2>
+        <div id="commentsList">
+            <div class="state-msg">⏳ Loading comments…</div>
+        </div>
+
+        <div class="comment-form-area">
+            <h3>✍️ Leave a Comment</h3>
+            <div class="cf-row">
+                <input type="text" id="commentUsername" placeholder="Your name" autocomplete="off" maxlength="80">
+            </div>
+            <textarea id="commentText" placeholder="Write your comment here…" maxlength="1000"></textarea>
+            <button class="post-btn" id="submitCommentBtn" onclick="submitComment()">Post Comment</button>
+        </div>
+    </div>
+</main>
+
+<div id="storyToast"></div>
+
+<script>
+const BASE = window.location.origin;
+let storyId = null;
+
+// ── TOAST ──
+function toast(msg, duration) {
+    const el = document.getElementById('storyToast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), duration || 2800);
+}
+
+// ── ESCAPE HTML ──
+function esc(s) {
+    return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ── BADGES ──
+const sentEmoji = { positive:'😊', neutral:'😐', negative:'😠' };
+function sentBadge(s) {
+    const t = s || 'neutral';
+    return `<span class="sentiment-badge ${t}">${sentEmoji[t]||''} ${t}</span>`;
+}
+function toxBadge(score) {
+    if (score === undefined || score === null) return '';
+    if (score >= 0.7) return '<span class="tox-badge tox-flagged">🚨 Flagged</span>';
+    if (score >= 0.4) return '<span class="tox-badge tox-toxic">⚠️ Toxic</span>';
+    return '<span class="tox-badge tox-safe">😊 Safe</span>';
+}
+
+// ── LOAD STORY ──
+async function loadStory(id) {
+    const container = document.getElementById('storyContent');
+    try {
+        const res = await fetch(`${BASE}/stories/${id}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const s = await res.json();
+
+        const likedKey = `story-${id}`;
+        const liked = JSON.parse(localStorage.getItem('likedItems') || '{}')[likedKey];
+
+        container.innerHTML = `
+            <div class="story-full">
+                ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.title)}" class="story-hero">` : ''}
+                <h1>${esc(s.title)}</h1>
+                ${s.author ? `<div class="story-meta">By ${esc(s.author)}</div>` : ''}
+                ${s.created_at ? `<div class="story-meta">Published ${new Date(s.created_at).toLocaleDateString('en-GB', {year:'numeric',month:'long',day:'numeric'})}</div>` : ''}
+                <div class="story-body">${esc(s.content)}</div>
+                <div class="like-row">
+                    <button class="like-btn ${liked?'liked':''}" id="storyLikeBtn" onclick="likeStory(${id})">
+                        ❤️ <span id="likeCount">${s.likes||0}</span>
+                    </button>
+                    <span style="font-size:13px;color:#aaa">${s.likes||0} like${(s.likes||0)!==1?'s':''}</span>
+                </div>
+            </div>`;
+
+        document.title = `${s.title} – QuoteMe ZW`;
+        document.getElementById('commentsArea').style.display = 'block';
+        loadComments(id);
+    } catch(e) {
+        container.innerHTML = `<div class="state-msg">😕 Could not load this story. <a href="/">Return home</a></div>`;
+    }
+}
+
+// ── LIKE STORY ──
+async function likeStory(id) {
+    const btn = document.getElementById('storyLikeBtn');
+    const countEl = document.getElementById('likeCount');
+    const likedKey = `story-${id}`;
+    const likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
+    if (likedItems[likedKey]) { toast('You already liked this! 💖'); return; }
+    try {
+        const res = await fetch(`${BASE}/like/story/${id}`, { method: 'POST' });
+        const data = await res.json();
+        likedItems[likedKey] = true;
+        localStorage.setItem('likedItems', JSON.stringify(likedItems));
+        btn.classList.add('liked');
+        countEl.textContent = data.likes;
+        toast('❤️ Thanks for the like!');
+    } catch(e) { toast('Could not like right now.'); }
+}
+
+// ── LOAD COMMENTS ──
+async function loadComments(id) {
+    const list = document.getElementById('commentsList');
+    list.innerHTML = '<div class="state-msg">⏳ Loading comments…</div>';
+    try {
+        const comments = await fetch(`${BASE}/comments/story/${id}`).then(r => r.json());
+        if (!comments.length) {
+            list.innerHTML = '<div class="state-msg">💬 No comments yet. Be the first to share your thoughts!</div>';
+            return;
+        }
+        list.innerHTML = comments.map(c => `
+            <div class="comment-card">
+                <div class="comment-card-user">
+                    ${esc(c.username)}
+                    ${sentBadge(c.sentiment)}
+                    ${toxBadge(c.toxicity)}
+                </div>
+                <div class="comment-card-text">${esc(c.content)}</div>
+                ${c.created_at ? `<div class="comment-card-date">${new Date(c.created_at).toLocaleString()}</div>` : ''}
+            </div>`).join('');
+    } catch(e) {
+        list.innerHTML = '<div class="state-msg">⚠️ Could not load comments.</div>';
+    }
+}
+
+// ── SUBMIT COMMENT ──
+async function submitComment() {
+    const username = document.getElementById('commentUsername').value.trim();
+    const content  = document.getElementById('commentText').value.trim();
+    const btn      = document.getElementById('submitCommentBtn');
+    if (!username) { toast('⚠️ Please enter your name.'); return; }
+    if (!content)  { toast('⚠️ Please write a comment.'); return; }
+    btn.disabled = true;
+    btn.textContent = 'Posting…';
+    try {
+        const res = await fetch(`${BASE}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, content, item_type: 'story', item_id: storyId })
+        });
+        if (!res.ok) throw new Error('Post failed');
+        document.getElementById('commentText').value = '';
+        toast('✅ Comment posted!');
+        await loadComments(storyId);
+    } catch(e) {
+        toast('❌ Failed to post comment. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Post Comment';
+    }
+}
+
+// ── INIT: extract story ID from URL /story/123 ──
+(function init() {
+    const match = window.location.pathname.match(/\/story\/(\d+)/);
+    if (!match) {
+        document.getElementById('storyContent').innerHTML =
+            '<div class="state-msg">❌ Story not found. <a href="/">Return home</a></div>';
+        return;
+    }
+    storyId = parseInt(match[1], 10);
+    loadStory(storyId);
+})();
+</script>
+</body>
+</html>

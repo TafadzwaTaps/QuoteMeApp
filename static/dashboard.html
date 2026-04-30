@@ -1697,7 +1697,13 @@ function viewComments(itemId, itemType) {
       </div>
     </div>`;
   overlay.style.display = 'flex';
-  overlay.addEventListener('click', e => { if (e.target === overlay) closeCommentsView(); }, { once: true });
+  // Only close if user clicks the dark backdrop AND no input is currently focused
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) {
+      const focused = overlay.querySelector(':focus');
+      if (!focused) closeCommentsView();
+    }
+  });
 
   fetch(`${API.comments}/${itemType}/${itemId}`)
     .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
@@ -1752,7 +1758,7 @@ async function submitInlineComment(itemId, itemType) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, username, item_type: itemType, item_id: itemId })
     });
-    if (res.ok) { showToast('✅ Comment posted!', 'success'); viewComments(itemId, itemType); }
+    if (res.ok) { showToast('✅ Comment posted!', 'success'); textEl.value = ''; viewComments(itemId, itemType); }
     else {
       const data = await res.json().catch(() => ({}));
       showToast(data.detail || 'Failed to post comment', 'error');
@@ -1763,9 +1769,17 @@ async function submitInlineComment(itemId, itemType) {
 }
 
 async function deleteCommentFromView(commentId, itemId, itemType) {
-  const res = await fetch(`${BASE}/comments/${commentId}`, { method: 'DELETE', headers: authHeaders() });
-  if (res.ok) { showToast('Comment deleted', 'success'); viewComments(itemId, itemType); }
-  else showToast('Failed to delete comment', 'error');
+  if (!confirm('Delete this comment? This cannot be undone.')) return;
+  try {
+    const res = await fetch(`${BASE}/comments/${commentId}`, { method: 'DELETE', headers: authHeaders() });
+    if (res.ok) {
+      showToast('🗑️ Comment deleted', 'success');
+      viewComments(itemId, itemType);
+    } else {
+      const d = await res.json().catch(() => ({}));
+      showToast(d.detail || 'Failed to delete comment', 'error');
+    }
+  } catch { showToast('Network error', 'error'); }
 }
 
 // ================== ALL COMMENTS TAB ==================
@@ -1821,10 +1835,19 @@ async function loadAllComments() {
 }
 
 async function deleteComment(id) {
+  if (!confirm('Delete this comment? This cannot be undone.')) return;
   try {
     const res = await fetch(`${BASE}/comments/${id}`, { method: 'DELETE', headers: authHeaders() });
-    if (res.ok) { showToast('Comment deleted', 'success'); loadAllComments(); }
-    else showToast('Failed to delete comment', 'error');
+    if (res.ok) {
+      showToast('🗑️ Comment deleted', 'success');
+      // Remove element from DOM immediately for snappy UX
+      const btn = document.querySelector(`[onclick="deleteComment(${id})"]`);
+      if (btn) btn.closest('.comment-item').remove();
+      loadAllComments();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      showToast(d.detail || 'Failed to delete comment', 'error');
+    }
   } catch { showToast('Network error', 'error'); }
 }
 
