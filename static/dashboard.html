@@ -363,6 +363,73 @@ label.required::after{content:' *';color:var(--danger);font-weight:700}
   .bulk-bar{flex-wrap:wrap}
 }
 
+
+/* ═══════════════════════════════════════
+   SIDEBAR DONATION WIDGET
+═══════════════════════════════════════ */
+.sidebar-donate {
+    margin: 8px 4px 4px;
+    background: linear-gradient(135deg, var(--accent-light), rgba(156,39,176,0.08));
+    border: 1px solid rgba(214,51,132,0.18);
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.sidebar-donate::before {
+    content: '';
+    position: absolute;
+    top: -18px; right: -18px;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: rgba(214,51,132,0.08);
+    pointer-events: none;
+}
+.sidebar-donate-heart {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 4px;
+    animation: heartbeat 2.2s ease-in-out infinite;
+}
+@keyframes heartbeat {
+    0%,100%{transform:scale(1)} 14%{transform:scale(1.18)} 28%{transform:scale(1)} 42%{transform:scale(1.1)}
+}
+.sidebar-donate h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+    font-family: 'DM Serif Display', serif;
+}
+.sidebar-donate p {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+.sidebar-donate-btn {
+    display: inline-block;
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    letter-spacing: 0.2px;
+}
+.sidebar-donate-btn:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(214,51,132,0.35);
+}
+
 </style>
 </head>
 <body>
@@ -399,6 +466,15 @@ label.required::after{content:' *';color:var(--danger);font-weight:700}
     <div style="flex:1"></div>
     <div style="padding:12px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:auto">
       Logged in as <strong id="sidebarUser">—</strong>
+    </div>
+    <!-- ── SIDEBAR DONATION WIDGET ── -->
+    <div class="sidebar-donate">
+        <span class="sidebar-donate-heart">💖</span>
+        <h4>Support QuoteMe</h4>
+        <p>Help us keep the inspiration flowing for everyone.</p>
+        <a href="/#donate" class="sidebar-donate-btn" target="_blank">
+            💖 Make a Donation
+        </a>
     </div>
     <a href="/" class="btn">← Back to Home</a>
   </aside>
@@ -659,7 +735,21 @@ label.required::after{content:' *';color:var(--danger);font-weight:700}
 
 <script>
 function checkSession() {
-  // Session is validated during DOMContentLoaded — this is a no-op kept for compatibility
+  const token = getToken();
+
+  fetch("/admin/stats", {
+    headers: authHeaders()
+  })
+  .then(res => {
+    if (res.status === 401) {
+      localStorage.removeItem("adminToken");
+      window.location.href = "/admin";
+      return;
+    }
+    return res.json();
+  })
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
 }
 
 // ╔══════════════════════════════════════════════════════════╗
@@ -668,19 +758,19 @@ function checkSession() {
 // ╚══════════════════════════════════════════════════════════╝
 
 // ================== CONFIG ==================
-const BASE = window.location.origin;
+const BASE = 'https://quotemeapp.onrender.com';
 const API = {
-  quotes:     BASE + '/quotes',
-  stories:    BASE + '/stories',
-  blogs:      BASE + '/blogs',
-  upload:     BASE + '/upload-image',
-  settings:   BASE + '/admin/settings',
-  changePwd:  BASE + '/admin/change-password',
-  changeUser: BASE + '/admin/change-username',
-  comments:   BASE + '/comments',
-  forum:      BASE + '/forum/posts',
-  like:       BASE + '/like',
-  stats:      BASE + '/admin/stats',
+  quotes:     `${BASE}/quotes`,
+  stories:    `${BASE}/stories`,
+  blogs:      `${BASE}/blogs`,
+  upload:     `${BASE}/upload-image`,
+  settings:   `${BASE}/admin/settings`,
+  changePwd:  `${BASE}/admin/change-password`,
+  changeUser: `${BASE}/admin/change-username`,
+  comments:   `${BASE}/comments`,
+  forum:      `${BASE}/forum/posts`,
+  like:       `${BASE}/like`,
+  stats:      `${BASE}/admin/stats`,
 };
 
 // ================== STATE ==================
@@ -720,7 +810,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const token = getToken();
   if (!token) {
     showToast('Session expired. Redirecting…', 'warn');
-    setTimeout(() => window.location.href = '/admin', 900);
+    setTimeout(() => window.location.href = '/admin.html', 900);
     return;
   }
   const payload = decodeJwt(token);
@@ -750,9 +840,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Start on overview
   switchTab('overview');
-
-  // Start background auto-refresh
-  startAutoRefresh();
 });
 
 function setGreeting() {
@@ -769,13 +856,13 @@ function wireEventListeners() {
 
   safeOn('logoutBtn', 'click', () => {
     localStorage.removeItem('adminToken');
-    window.location.href = '/admin';
+    window.location.href = '/admin.html';
   });
 
   safeOn('refreshBtn', 'click', () => {
-    loadCurrentTab();
-    loadStats();
-    showToast('🔄 Refreshed', 'info');
+    if (['quotes','stories','blogs'].includes(state.tab)) loadList(true);
+    else loadCurrentTab();
+    showToast('Refreshed', 'info');
   });
 
   safeOn('addBtn', 'click', () => openModalForAdd());
@@ -1127,7 +1214,7 @@ async function loadActivityFeed() {
 async function fetchItemsFromApi() {
   try {
     const res = await fetch(API[state.tab] + '?limit=200', { headers: authHeaders() });
-    if (res.status === 401) { window.location.href = '/admin'; return []; }
+    if (res.status === 401) { window.location.href = '/admin.html'; return []; }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const items = await res.json();
     return Array.isArray(items) ? items : [];
@@ -1140,16 +1227,10 @@ async function fetchItemsFromApi() {
 
 async function loadList(forceReload = false) {
   const container = document.getElementById('listContainer');
-  // Only show skeleton on hard reloads (tab switch, explicit refresh)
-  // Soft reloads (auto-refresh) preserve current content while fetching
-  if (forceReload && container) container.innerHTML = renderSkeletons(6);
-  const fresh = await fetchItemsFromApi();
-  if (!fresh.length && !forceReload) return; // don't clear on background fail
-  state.items = fresh;
-  if (forceReload) {
-    state.selected.clear();
-    updateBulkBar();
-  }
+  if (container) container.innerHTML = renderSkeletons(6);
+  state.items = await fetchItemsFromApi();
+  state.selected.clear();
+  updateBulkBar();
   renderList();
 }
 
@@ -1692,13 +1773,7 @@ function viewComments(itemId, itemType) {
       </div>
     </div>`;
   overlay.style.display = 'flex';
-  // Only close overlay if clicking the dark backdrop AND no input is focused
-  overlay.addEventListener('click', function(e) {
-    if (e.target === overlay) {
-      const focused = overlay.querySelector(':focus');
-      if (!focused) closeCommentsView();
-    }
-  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeCommentsView(); }, { once: true });
 
   fetch(`${API.comments}/${itemType}/${itemId}`)
     .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
@@ -1753,7 +1828,7 @@ async function submitInlineComment(itemId, itemType) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, username, item_type: itemType, item_id: itemId })
     });
-    if (res.ok) { showToast('✅ Comment posted!', 'success'); textEl.value = ''; viewComments(itemId, itemType); }
+    if (res.ok) { showToast('✅ Comment posted!', 'success'); viewComments(itemId, itemType); }
     else {
       const data = await res.json().catch(() => ({}));
       showToast(data.detail || 'Failed to post comment', 'error');
@@ -1764,17 +1839,9 @@ async function submitInlineComment(itemId, itemType) {
 }
 
 async function deleteCommentFromView(commentId, itemId, itemType) {
-  if (!confirm('Delete this comment? This cannot be undone.')) return;
-  try {
-    const res = await fetch(BASE + '/comments/' + commentId, { method: 'DELETE', headers: authHeaders() });
-    if (res.ok) {
-      showToast('🗑️ Comment deleted', 'success');
-      viewComments(itemId, itemType); // reload comments panel
-    } else {
-      const d = await res.json().catch(() => ({}));
-      showToast(d.detail || 'Failed to delete comment', 'error');
-    }
-  } catch (e) { showToast('Network error', 'error'); }
+  const res = await fetch(`${BASE}/comments/${commentId}`, { method: 'DELETE', headers: authHeaders() });
+  if (res.ok) { showToast('Comment deleted', 'success'); viewComments(itemId, itemType); }
+  else showToast('Failed to delete comment', 'error');
 }
 
 // ================== ALL COMMENTS TAB ==================
@@ -1830,21 +1897,11 @@ async function loadAllComments() {
 }
 
 async function deleteComment(id) {
-  if (!confirm('Delete this comment? This cannot be undone.')) return;
   try {
-    const res = await fetch(BASE + '/comments/' + id, { method: 'DELETE', headers: authHeaders() });
-    if (res.ok) {
-      showToast('🗑️ Comment deleted', 'success');
-      // Optimistic: remove card from DOM immediately
-      const btn = document.querySelector('[onclick="deleteComment(' + id + ')"]');
-      if (btn) btn.closest('.comment-item').remove();
-      // Then reload to sync
-      loadAllComments();
-    } else {
-      const d = await res.json().catch(() => ({}));
-      showToast(d.detail || 'Failed to delete comment', 'error');
-    }
-  } catch (e) { showToast('Network error', 'error'); }
+    const res = await fetch(`${BASE}/comments/${id}`, { method: 'DELETE', headers: authHeaders() });
+    if (res.ok) { showToast('Comment deleted', 'success'); loadAllComments(); }
+    else showToast('Failed to delete comment', 'error');
+  } catch { showToast('Network error', 'error'); }
 }
 
 // ================== FORUM ==================
@@ -1951,33 +2008,6 @@ async function changeUsername() {
     }
   } catch { showToast('Network error', 'error'); }
 }
-
-// ================== AUTO-REFRESH ==================
-// Refresh stats and active tab content every 60 seconds so admins
-// see changes made by other sessions without manual reload
-let _refreshTimer = null;
-function startAutoRefresh() {
-  stopAutoRefresh();
-  _refreshTimer = setInterval(function() {
-    loadStats();
-    // Only reload list if we're on a content tab — avoid disrupting settings/comments
-    if (['quotes','stories','blogs'].includes(state.tab)) {
-      loadList(false); // false = soft reload, no skeleton flash
-    } else if (state.tab === 'comments') {
-      loadAllComments();
-    } else if (state.tab === 'forum') {
-      loadForum();
-    }
-  }, 60000); // every 60 seconds
-}
-function stopAutoRefresh() {
-  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
-}
-// Pause refresh when tab is hidden (saves requests)
-document.addEventListener('visibilitychange', function() {
-  if (document.hidden) stopAutoRefresh();
-  else startAutoRefresh();
-});
 
 // ================== TOAST ==================
 function showToast(msg, type = 'info') {
