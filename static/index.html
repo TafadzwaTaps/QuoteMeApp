@@ -229,9 +229,13 @@
             showToast('You already liked this! 💖');
             return;
         }
+        btn.disabled = true;
         try {
             const res = await fetch(BASE + '/like/' + type + '/' + id, { method: 'POST' });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'HTTP ' + res.status);
+            }
             const data = await res.json();
             likedItems[key] = true;
             localStorage.setItem('likedItems', JSON.stringify(likedItems));
@@ -239,7 +243,9 @@
             btn.classList.add('liked');
             showToast('❤️ Liked!');
         } catch (e) {
-            showToast('Could not update like. Try again.');
+            showToast('❌ Could not like: ' + e.message);
+        } finally {
+            btn.disabled = false;
         }
     }
 

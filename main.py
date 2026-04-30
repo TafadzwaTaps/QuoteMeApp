@@ -2,6 +2,9 @@ from datetime import datetime, timedelta
 import os
 import uuid
 import shutil
+import mimetypes
+import mimetypes
+import logging
 
 from fastapi import FastAPI, HTTPException, Depends, Header, File, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,7 +32,13 @@ SECRET_KEY = os.getenv("SECRET_KEY", "!QuoteMe_ZW@2026")
 ALGORITHM = "HS256"
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
+# Supabase Storage bucket — create in Dashboard: Storage → New bucket → "images" → Public ON
+SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "images")
+
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -216,46 +225,54 @@ def stats(username: str = Depends(require_admin)):
 # UPLOAD IMAGE
 # =========================
 @app.post("/upload-image")
-def upload(
+async def upload(
     file: UploadFile = File(...),
     username: str = Depends(require_admin)
 ):
-    # =========================
-    # VALIDATE FILE NAME
-    # =========================
+    """
+    Upload image to Supabase Storage (survives Render redeploys).
+    Falls back to local disk if Storage bucket not yet configured.
+
+    One-time Supabase setup:
+      Dashboard → Storage → New bucket → Name: "images" → Public: ON
+    """
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
     ext = os.path.splitext(file.filename)[1].lower()
-
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
-    # =========================
-    # SAFE FILE NAME GENERATION
-    # =========================
-    filename = f"{uuid.uuid4().hex}{ext}"
-    path = os.path.join(UPLOAD_DIR, filename)
+    filename     = f"{uuid.uuid4().hex}{ext}"
+    file_bytes   = await file.read()
+    content_type = mimetypes.guess_type(filename)[0] or "image/jpeg"
 
-    # =========================
-    # SAVE FILE SAFELY
-    # =========================
+    # ── Primary: Supabase Storage (persistent) ──
     try:
-        with open(path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        supabase.storage.from_(SUPABASE_BUCKET).upload(
+            path=filename,
+            file=file_bytes,
+            file_options={"content-type": content_type, "upsert": "true"}
+        )
+        public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(filename)
+        logger.info(f"Supabase Storage upload OK: {filename}")
+        return {"success": True, "url": public_url}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        logger.warning(f"Supabase Storage upload failed ({e}) — falling back to local disk")
 
-    # =========================
-    # RETURN PUBLIC URL
-    # =========================
-    return {
-        "success": True,
-        "url": f"/uploads/{filename}"
-    }
+    # ── Fallback: local disk (lost on redeploy, but better than nothing) ──
+    path = os.path.join(UPLOAD_DIR, filename)
+    try:
+        with open(path, "wb") as buf:
+            buf.write(file_bytes)
+        logger.info(f"Local disk upload (fallback): {filename}")
+        return {"success": True, "url": f"/uploads/{filename}"}
+    except Exception as e:
+        logger.error(f"Both upload paths failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {e}")
 
 
 # =========================
@@ -293,15 +310,25 @@ def delete_quote(quote_id: int, username: str = Depends(require_admin)):
 # =========================
 @app.get("/stories")
 def get_stories():
-    return supabase.table("stories").select("*").execute().data
+    try:
+        return supabase.table("stories").select("*").execute().data
+    except Exception as e:
+        logger.error(f"get_stories: {e}")
+        raise HTTPException(500, str(e))
 
 
 @app.get("/stories/{story_id}")
 def get_story(story_id: int):
-    res = supabase.table("stories").select("*").eq("id", story_id).execute()
-    if not res.data:
-        raise HTTPException(status_code=404, detail="Story not found")
-    return res.data[0]
+    try:
+        res = supabase.table("stories").select("*").eq("id", story_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Story not found")
+        return res.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"get_story {story_id}: {e}")
+        raise HTTPException(500, str(e))
 
 
 @app.post("/stories")
@@ -325,21 +352,32 @@ def create_blog(data: dict, username: str = Depends(require_admin)):
 # =========================
 # LIKES
 # =========================
+# Maps singular item_type → correct Supabase table name
+_TYPE_TO_TABLE = {
+    "quote":  "quotes",
+    "story":  "stories",   # NOT "storys"
+    "blog":   "blogs",
+}
+
 @app.post("/like/{item_type}/{item_id}")
 def like(item_type: str, item_id: int):
-    table = item_type + "s"  # quotes, stories, blogs
-
-    item = supabase.table(table).select("*").eq("id", item_id).execute().data
-    if not item:
-        raise HTTPException(status_code=404, detail="Not found")
-
-    current = item[0].get("likes", 0)
-
-    supabase.table(table).update({
-        "likes": current + 1
-    }).eq("id", item_id).execute()
-
-    return {"likes": current + 1}
+    table = _TYPE_TO_TABLE.get(item_type)
+    if not table:
+        raise HTTPException(status_code=400, detail=f"Invalid item_type '{item_type}'. Must be quote, story, or blog.")
+    try:
+        rows = supabase.table(table).select("id, likes").eq("id", item_id).execute().data
+        if not rows:
+            raise HTTPException(status_code=404, detail=f"{item_type.capitalize()} #{item_id} not found")
+        current = rows[0].get("likes") or 0
+        new_val = current + 1
+        supabase.table(table).update({"likes": new_val}).eq("id", item_id).execute()
+        logger.info(f"Like: {table} id={item_id} → {new_val}")
+        return {"likes": new_val}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"like {item_type}/{item_id}: {e}")
+        raise HTTPException(status_code=500, detail="Could not update likes")
 
 
 # =========================
@@ -354,39 +392,97 @@ def get_comments(item_type: str, item_id: int):
         .execute().data
 
 
+# ── SENTIMENT & TOXICITY HELPERS ──
+_POS = {"love","great","amazing","wonderful","inspiring","beautiful","excellent",
+        "fantastic","awesome","good","brilliant","perfect","happy","joy","thank","best"}
+_NEG = {"hate","terrible","awful","bad","horrible","worst","ugly","boring",
+        "disappointing","sad","angry","useless","poor","disgusting","failed","wrong"}
+_FLAGGED = {"murder","kill","attack","abuse","rape","bomb","terrorist"}
+_TOXIC   = {"hate","stupid","idiot","ugly","horrible","disgusting","awful",
+            "terrible","worst","dumb","moron","loser","trash"}
+
+def _sentiment(text: str) -> str:
+    words = set(text.lower().split())
+    pos, neg = len(words & _POS), len(words & _NEG)
+    if pos > neg: return "positive"
+    if neg > pos: return "negative"
+    return "neutral"
+
+def _toxicity(text: str) -> float:
+    words = set(text.lower().split())
+    f = len(words & _FLAGGED)
+    t = len(words & _TOXIC)
+    if f > 0: return min(0.70 + f * 0.10, 1.0)
+    if t > 0: return min(0.30 + t * 0.10, 0.69)
+    return 0.0
+
+
 @app.post("/comments")
 def add_comment(data: dict):
-    text = data.get("content", "")
-    sent = "neutral"
+    """
+    Safe comment insert.
+    Tries to save with `toxicity` first.
+    If the column does not exist in Supabase it retries without it.
+    Add the column with:  ALTER TABLE comments ADD COLUMN IF NOT EXISTS toxicity float4 DEFAULT 0;
+    """
+    text      = (data.get("content")   or "").strip()
+    username  = (data.get("username")  or "").strip()
+    item_type = (data.get("item_type") or "").strip()
+    item_id   = data.get("item_id")
 
-    if any(w in text.lower() for w in ["good", "great", "love", "amazing", "wonderful", "inspiring", "beautiful", "thank", "best"]):
-        sent = "positive"
-    if any(w in text.lower() for w in ["bad", "hate", "worst", "horrible", "terrible", "awful", "disgusting"]):
-        sent = "negative"
+    if not text:
+        raise HTTPException(status_code=400, detail="Comment content is required")
+    if not username:
+        raise HTTPException(status_code=400, detail="Username is required")
+    if not item_type or item_id is None:
+        raise HTTPException(status_code=400, detail="item_type and item_id are required")
 
-    data["sentiment"] = sent
+    payload = {
+        "username":  username,
+        "content":   text,
+        "item_type": item_type,
+        "item_id":   int(item_id),
+        "sentiment": _sentiment(text),
+    }
 
-    # Basic toxicity scoring based on word list
-    toxic_words = ["hate", "kill", "stupid", "idiot", "ugly", "horrible", "disgusting", "awful", "terrible", "worst"]
-    flagged_words = ["die", "murder", "attack", "abuse"]
-    text_lower = text.lower()
-    flag_count = sum(1 for w in flagged_words if w in text_lower)
-    toxic_count = sum(1 for w in toxic_words if w in text_lower)
+    # Attempt 1: include toxicity score
+    try:
+        res = supabase.table("comments").insert({**payload, "toxicity": _toxicity(text)}).execute()
+        if res.data:
+            logger.info(f"Comment saved (with toxicity) id={res.data[0].get('id')}")
+            return res.data
+    except Exception as e:
+        err = str(e).lower()
+        if any(kw in err for kw in ["toxicity", "column", "schema", "undefined", "does not exist", "not found"]):
+            logger.warning(f"toxicity column missing, retrying without it ({e})")
+        else:
+            logger.error(f"add_comment error: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to save comment: {e}")
 
-    if flag_count > 0:
-        data["toxicity"] = min(0.7 + flag_count * 0.1, 1.0)
-    elif toxic_count > 0:
-        data["toxicity"] = min(0.3 + toxic_count * 0.1, 0.69)
-    else:
-        data["toxicity"] = 0.0
-
-    return supabase.table("comments").insert(data).execute().data
+    # Attempt 2: without toxicity
+    try:
+        res = supabase.table("comments").insert(payload).execute()
+        if res.data:
+            logger.info(f"Comment saved (no toxicity) id={res.data[0].get('id')}")
+            return res.data
+        raise ValueError("Supabase returned empty data")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"add_comment retry error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save comment: {e}")
 
 
 @app.delete("/comments/{comment_id}")
 def delete_comment(comment_id: int, username: str = Depends(require_admin)):
-    res = supabase.table("comments").delete().eq("id", comment_id).execute()
-    return {"message": "Comment deleted", "id": comment_id}
+    """Delete a comment by ID. Requires admin Authorization header."""
+    try:
+        supabase.table("comments").delete().eq("id", comment_id).execute()
+        logger.info(f"Admin '{username}' deleted comment {comment_id}")
+        return {"message": "Comment deleted", "id": comment_id}
+    except Exception as e:
+        logger.error(f"delete_comment {comment_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete comment: {e}")
 
 
 # =========================
@@ -406,8 +502,13 @@ def create_post(data: dict):
 # CONTACT
 # =========================
 @app.post("/contact/send")
-def contact(data: dict, username: str = Depends(require_admin)):
-    return supabase.table("contactmessage").insert(data).execute().data
+def contact(data: dict):
+    """Public contact form — no auth required."""
+    try:
+        return supabase.table("contactmessage").insert(data).execute().data
+    except Exception as e:
+        logger.error(f"contact/send: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # =========================
