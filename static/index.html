@@ -71,6 +71,252 @@
     color: #d63384;
     letter-spacing: 0.5px;
 }
+
+    /* ═══════════════════════════
+       ABOUT US SECTION
+    ═══════════════════════════ */
+    .about-section {
+        padding: 70px 20px;
+        background: linear-gradient(135deg, #fff0f7 0%, #f3e5f5 100%);
+        position: relative; overflow: hidden;
+    }
+    body.dark .about-section { background: linear-gradient(135deg,#1a0a14 0%,#130a1e 100%); }
+    .about-section::before {
+        content:''; position:absolute; top:-80px; right:-80px;
+        width:260px; height:260px; border-radius:50%;
+        background:rgba(214,51,132,.06); pointer-events:none;
+    }
+    .about-inner {
+        max-width:1000px; margin:0 auto;
+        display:flex; align-items:center; gap:50px; flex-wrap:wrap;
+    }
+    .about-image-col { flex:0 0 260px; }
+    .about-founder-img {
+        width:260px; height:260px; border-radius:50%; object-fit:cover;
+        border:5px solid #d63384;
+        box-shadow:0 16px 48px rgba(214,51,132,.25);
+        transition:transform .35s ease, box-shadow .35s ease;
+        display:block; margin:0 auto;
+    }
+    .about-founder-img:hover {
+        transform:scale(1.04) rotate(2deg);
+        box-shadow:0 24px 60px rgba(214,51,132,.35);
+    }
+    .about-founder-badge {
+        text-align:center; margin-top:14px;
+        font-size:13px; font-weight:700; color:#d63384; letter-spacing:.5px;
+    }
+    body.dark .about-founder-badge { color:#f472b6; }
+    .about-content-col { flex:1; min-width:280px; }
+    .about-content-col .section-tag {
+        display:inline-block; background:rgba(214,51,132,.12); color:#d63384;
+        font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+        padding:4px 12px; border-radius:20px; margin-bottom:12px;
+    }
+    body.dark .about-content-col .section-tag { background:rgba(244,114,182,.15); color:#f472b6; }
+    .about-content-col h2 {
+        font-size:30px; font-weight:700; color:#d63384; margin-bottom:14px; line-height:1.25;
+    }
+    body.dark .about-content-col h2 { color:#f472b6; }
+    .about-content-col p {
+        font-size:14px; color:#555; line-height:1.85; margin-bottom:12px;
+    }
+    body.dark .about-content-col p { color:#b8a8c8; }
+    .about-values {
+        display:flex; flex-wrap:wrap; gap:10px; margin:18px 0;
+    }
+    .about-value-chip {
+        background:#fff; border:1.5px solid #f0c0d8; color:#d63384;
+        padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700;
+        transition:all .2s;
+    }
+    .about-value-chip:hover { background:#d63384; color:#fff; border-color:#d63384; }
+    body.dark .about-value-chip {
+        background:#2a1838; border-color:#5a2050; color:#f472b6;
+    }
+    body.dark .about-value-chip:hover { background:#f472b6; color:#1a0a14; }
+    .about-stats {
+        display:flex; gap:24px; flex-wrap:wrap; margin-top:22px;
+        padding-top:22px; border-top:1px solid #f0c8dc;
+    }
+    body.dark .about-stats { border-color:#3a2040; }
+    .about-stat { text-align:center; }
+    .about-stat-number { font-size:26px; font-weight:700; color:#d63384; display:block; }
+    body.dark .about-stat-number { color:#f472b6; }
+    .about-stat-label { font-size:11px; color:#999; text-transform:uppercase; letter-spacing:.8px; }
+
+    /* ═══════════════════════════
+       ENHANCED FORUM
+    ═══════════════════════════ */
+    .forum-section { padding:60px 20px; background:#fff9fb; }
+    body.dark .forum-section { background:#120810; }
+    .forum-section > h2 { text-align:center; }
+    .forum-section > p  { text-align:center; color:#888; margin-bottom:28px; }
+    body.dark .forum-section > p { color:#8a7a9a; }
+    .forum-inner { max-width:720px; margin:0 auto; }
+    /* tabs */
+    .forum-tabs {
+        display:flex; gap:0; margin-bottom:20px;
+        border-bottom:2px solid #f0e0ea; position:relative;
+    }
+    body.dark .forum-tabs { border-color:#3a2040; }
+    .forum-tab-btn {
+        padding:10px 20px; border:0; background:transparent;
+        font-family:'Poppins',sans-serif; font-size:13px; font-weight:600;
+        color:#aaa; cursor:pointer; transition:color .2s; position:relative;
+    }
+    .forum-tab-btn::after {
+        content:''; position:absolute; bottom:-2px; left:0; right:0;
+        height:2px; background:#d63384; transform:scaleX(0); transition:transform .2s;
+    }
+    .forum-tab-btn.active { color:#d63384; }
+    .forum-tab-btn.active::after { transform:scaleX(1); }
+    body.dark .forum-tab-btn.active { color:#f472b6; }
+    body.dark .forum-tab-btn.active::after { background:#f472b6; }
+    /* post cards */
+    .forum-post {
+        background:#fff; border-radius:16px; padding:16px 18px;
+        margin-bottom:12px; box-shadow:0 2px 12px rgba(214,51,132,.07);
+        border-left:4px solid #d63384; transition:box-shadow .2s;
+        animation:forumIn .25s ease;
+    }
+    @keyframes forumIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .forum-post:hover { box-shadow:0 6px 20px rgba(214,51,132,.14); }
+    body.dark .forum-post { background:#1e1428; border-color:#f472b6; }
+    .forum-post-header {
+        display:flex; align-items:center; gap:10px; margin-bottom:8px;
+    }
+    .forum-avatar {
+        width:36px; height:36px; border-radius:50%;
+        background:linear-gradient(135deg,#d63384,#9c27b0);
+        color:#fff; font-size:15px; font-weight:700;
+        display:flex; align-items:center; justify-content:center;
+        flex-shrink:0;
+    }
+    .forum-post-meta { flex:1; }
+    .forum-post-name { font-weight:700; font-size:13px; color:#d63384; }
+    body.dark .forum-post-name { color:#f472b6; }
+    .forum-post-time { font-size:11px; color:#bbb; }
+    body.dark .forum-post-time { color:#7a6a8a; }
+    .forum-post-body { font-size:14px; color:#444; line-height:1.65; }
+    body.dark .forum-post-body { color:#ccc; }
+    .forum-post-actions {
+        margin-top:10px; display:flex; gap:8px; align-items:center;
+    }
+    .forum-like-btn {
+        background:transparent; border:1.5px solid #f0c0d8; color:#d63384;
+        padding:4px 12px; border-radius:16px; font-size:12px; font-weight:600;
+        cursor:pointer; font-family:'Poppins',sans-serif; transition:all .2s;
+    }
+    .forum-like-btn:hover,.forum-like-btn.liked { background:#d63384; color:#fff; border-color:#d63384; }
+    body.dark .forum-like-btn { border-color:#5a2050; color:#f472b6; }
+    body.dark .forum-like-btn:hover { background:#f472b6; color:#1a0a14; border-color:#f472b6; }
+    .forum-reply-btn {
+        background:transparent; border:0; color:#aaa; font-size:12px;
+        cursor:pointer; font-family:'Poppins',sans-serif; transition:color .2s;
+    }
+    .forum-reply-btn:hover { color:#d63384; }
+    /* category badge */
+    .forum-category {
+        display:inline-block; font-size:10px; font-weight:700;
+        padding:2px 8px; border-radius:10px; margin-left:auto;
+    }
+    .forum-cat-general  { background:#fce7ef; color:#c2185b; }
+    .forum-cat-story    { background:#e8f5e9; color:#2e7d32; }
+    .forum-cat-question { background:#e3f2fd; color:#1565c0; }
+    .forum-cat-feedback { background:#fff3e0; color:#e65100; }
+    body.dark .forum-cat-general  { background:#3a0a20; color:#f48fb1; }
+    body.dark .forum-cat-story    { background:#0a2010; color:#81c784; }
+    body.dark .forum-cat-question { background:#0a1020; color:#64b5f6; }
+    body.dark .forum-cat-feedback { background:#201000; color:#ffb74d; }
+    /* compose box */
+    .forum-compose {
+        background:#fff; border-radius:18px; padding:24px;
+        box-shadow:0 4px 20px rgba(214,51,132,.09); margin-bottom:24px;
+    }
+    body.dark .forum-compose { background:#1e1428; }
+    .forum-compose h3 { font-size:16px; color:#d63384; margin-bottom:16px; }
+    body.dark .forum-compose h3 { color:#f472b6; }
+    .forum-compose-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+    .forum-compose-row input, .forum-compose select {
+        flex:1; min-width:140px; padding:10px 14px;
+        border-radius:10px; border:1.5px solid #f0c0d8;
+        font-family:'Poppins',sans-serif; font-size:13px; outline:none;
+        background:#fff; color:#333; transition:border .2s;
+    }
+    body.dark .forum-compose-row input,
+    body.dark .forum-compose select {
+        background:#2a1838; border-color:#5a2050; color:#f0e8f5;
+    }
+    .forum-compose-row input:focus,
+    .forum-compose select:focus { border-color:#d63384; }
+    .forum-compose textarea {
+        width:100%; padding:10px 14px; border-radius:10px;
+        border:1.5px solid #f0c0d8; font-family:'Poppins',sans-serif;
+        font-size:13px; outline:none; resize:vertical; min-height:80px;
+        box-sizing:border-box; background:#fff; color:#333;
+        transition:border .2s; margin-bottom:10px;
+    }
+    body.dark .forum-compose textarea {
+        background:#2a1838; border-color:#5a2050; color:#f0e8f5;
+    }
+    .forum-compose textarea:focus { border-color:#d63384; }
+    .forum-compose-footer {
+        display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    }
+    .forum-char-count { font-size:11px; color:#bbb; }
+    body.dark .forum-char-count { color:#7a6a8a; }
+    .forum-submit-btn {
+        background:linear-gradient(135deg,#d63384,#9c27b0);
+        color:#fff; border:0; padding:10px 24px; border-radius:20px;
+        font-size:13px; font-weight:700; font-family:'Poppins',sans-serif;
+        cursor:pointer; transition:all .2s;
+    }
+    .forum-submit-btn:hover { opacity:.88; transform:translateY(-1px); box-shadow:0 6px 18px rgba(214,51,132,.3); }
+    .forum-submit-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    /* search */
+    .forum-search-row {
+        display:flex; gap:8px; margin-bottom:16px;
+    }
+    .forum-search-input {
+        flex:1; padding:9px 14px; border-radius:20px;
+        border:1.5px solid #f0c0d8; font-family:'Poppins',sans-serif;
+        font-size:13px; outline:none; background:#fff; color:#333;
+    }
+    body.dark .forum-search-input { background:#2a1838; border-color:#5a2050; color:#f0e8f5; }
+    .forum-search-input:focus { border-color:#d63384; }
+    /* sort */
+    .forum-sort-select {
+        padding:9px 12px; border-radius:20px; border:1.5px solid #f0c0d8;
+        font-family:'Poppins',sans-serif; font-size:12px; background:#fff;
+        color:#d63384; cursor:pointer; outline:none;
+    }
+    body.dark .forum-sort-select { background:#2a1838; border-color:#5a2050; color:#f472b6; }
+    /* empty / loading */
+    .forum-empty { text-align:center; color:#bbb; padding:32px; font-size:14px; }
+    body.dark .forum-empty { color:#7a6a8a; }
+    .forum-loading { text-align:center; color:#d63384; padding:20px; font-size:13px; }
+
+    /* chatbot quick replies */
+    .chat-quick-replies {
+        display:flex; flex-wrap:wrap; gap:5px; padding:6px 12px 0;
+    }
+    .chat-quick-btn {
+        background:#fff0f7; border:1.5px solid #f0c0d8; color:#d63384;
+        padding:4px 10px; border-radius:12px; font-size:11px; font-weight:600;
+        cursor:pointer; font-family:'Poppins',sans-serif; transition:all .2s;
+        white-space:nowrap;
+    }
+    .chat-quick-btn:hover { background:#d63384; color:#fff; border-color:#d63384; }
+
+    @media(max-width:700px){
+        .about-inner { flex-direction:column; gap:28px; }
+        .about-image-col { flex:none; }
+        .about-founder-img { width:200px; height:200px; }
+        .about-content-col h2 { font-size:24px; }
+        .about-stats { gap:16px; }
+        .forum-compose-row { flex-direction:column; }
+    }
    </style>
 </head>
 <body>
@@ -83,6 +329,7 @@
         </div>
         <nav class="nav" id="navMenu">
             <ul class="nav-links">
+                <li><a href="#about">About</a></li>
                 <li><a href="#explore">Quotes</a></li>
                 <li><a href="#stories">Stories</a></li>
                 <li><a href="#blog">Blog</a></li>
@@ -101,6 +348,72 @@
         </div>
        <img src="/static/Founder.png" alt="QuoteMe Herself" class="hero-logo">
     </section>
+
+    <!-- ══════════════════════════════════════════
+         ABOUT US SECTION
+    ══════════════════════════════════════════ -->
+    <section id="about" class="about-section fade-in">
+        <div class="about-inner">
+            <!-- Founder photo -->
+            <div class="about-image-col">
+                <img
+                    src="/static/Founder.png"
+                    alt="QuoteMe ZW Founder"
+                    class="about-founder-img"
+                    onerror="this.src='/static/QuoteMe Logo.jpg'"
+                >
+                <p class="about-founder-badge">✨ Founder &amp; Visionary</p>
+            </div>
+
+            <!-- Content -->
+            <div class="about-content-col">
+                <span class="section-tag">Our Story</span>
+                <h2>About QuoteMe ZW</h2>
+                <p>
+                    QuoteMe ZW was born from a simple but powerful belief — that every woman
+                    and young person in Zimbabwe deserves access to daily inspiration,
+                    empowering stories, and a community that lifts them up.
+                </p>
+                <p>
+                    Founded with a passion for women's empowerment and youth development,
+                    we curate quotes, share real-life success stories, and create a safe
+                    space where voices are heard and celebrated. Every piece of content on
+                    this platform is chosen with love and purpose.
+                </p>
+
+                <!-- Values chips -->
+                <div class="about-values">
+                    <span class="about-value-chip">💖 Empowerment</span>
+                    <span class="about-value-chip">🌟 Inspiration</span>
+                    <span class="about-value-chip">🤝 Community</span>
+                    <span class="about-value-chip">🌸 Growth</span>
+                    <span class="about-value-chip">🦁 Courage</span>
+                    <span class="about-value-chip">🇿🇼 Zimbabwe</span>
+                </div>
+
+                <!-- Stats -->
+                <div class="about-stats">
+                    <div class="about-stat">
+                        <span class="about-stat-number" id="statQuotes">—</span>
+                        <span class="about-stat-label">Quotes</span>
+                    </div>
+                    <div class="about-stat">
+                        <span class="about-stat-number" id="statStories">—</span>
+                        <span class="about-stat-label">Stories</span>
+                    </div>
+                    <div class="about-stat">
+                        <span class="about-stat-number" id="statBlogs">—</span>
+                        <span class="about-stat-label">Blogs</span>
+                    </div>
+                    <div class="about-stat">
+                        <span class="about-stat-number" id="statPosts">—</span>
+                        <span class="about-stat-label">Forum Posts</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
 
     <section id="explore" class="quotes-section fade-in">
         <h2>Featured Quotes</h2>
@@ -130,13 +443,65 @@
 
     <section id="forum" class="forum-section fade-in">
         <h2>Community Forum</h2>
-        <p>Share your thoughts and interact with our community!</p>
-        <div class="forum-container">
-            <div class="forum-posts" id="forumPosts"></div>
-            <form id="forumForm" class="forum-form">
-                <input type="text" id="userName" placeholder="Your Name" required>
-                <textarea id="userMessage" placeholder="Your Message" required></textarea>
-                <button type="submit" class="btn">Post Message</button>
+        <p>Share your thoughts, ask questions, and connect with our community!</p>
+        <div class="forum-inner">
+
+            <!-- Compose box -->
+            <div class="forum-compose">
+                <h3>✍️ Start a Conversation</h3>
+                <div class="forum-compose-row">
+                    <input type="text" id="userName" placeholder="Your Name" maxlength="60" autocomplete="off">
+                    <select id="forumCategory">
+                        <option value="general">💬 General</option>
+                        <option value="story">📖 Story</option>
+                        <option value="question">❓ Question</option>
+                        <option value="feedback">💡 Feedback</option>
+                    </select>
+                </div>
+                <textarea
+                    id="userMessage"
+                    placeholder="What's on your mind? Share a thought, ask a question, or tell us your story…"
+                    maxlength="500"
+                    oninput="updateForumCharCount(this)"
+                ></textarea>
+                <div class="forum-compose-footer">
+                    <span class="forum-char-count" id="forumCharCount">0 / 500</span>
+                    <button class="forum-submit-btn" id="forumSubmitBtn" onclick="submitForumPost()">Post Message</button>
+                </div>
+            </div>
+
+            <!-- Search + sort bar -->
+            <div class="forum-search-row">
+                <input
+                    class="forum-search-input"
+                    id="forumSearch"
+                    placeholder="🔍 Search posts…"
+                    oninput="filterForumPosts()"
+                >
+                <select class="forum-sort-select" id="forumSort" onchange="renderForumPosts()">
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                </select>
+            </div>
+
+            <!-- Tab filters -->
+            <div class="forum-tabs">
+                <button class="forum-tab-btn active" onclick="setForumTab('all',this)">All</button>
+                <button class="forum-tab-btn" onclick="setForumTab('general',this)">💬 General</button>
+                <button class="forum-tab-btn" onclick="setForumTab('story',this)">📖 Story</button>
+                <button class="forum-tab-btn" onclick="setForumTab('question',this)">❓ Question</button>
+                <button class="forum-tab-btn" onclick="setForumTab('feedback',this)">💡 Feedback</button>
+            </div>
+
+            <!-- Posts list -->
+            <div id="forumPosts">
+                <div class="forum-loading">⏳ Loading posts…</div>
+            </div>
+
+            <!-- Hidden legacy form kept for backward compat -->
+            <form id="forumForm" style="display:none">
+                <input type="text" id="userNameHidden">
+                <textarea id="userMessageHidden"></textarea>
             </form>
         </div>
     </section>
@@ -163,6 +528,15 @@
             <div class="chat-messages" id="chatMessages">
                 <div class="chat-bubble bot">Hi! 👋 I'm your QuoteMe assistant. Ask me about quotes, stories, blogs, or how to contact us!</div>
             </div>
+            <!-- Quick reply chips -->
+            <div class="chat-quick-replies" id="chatQuickReplies">
+                <button class="chat-quick-btn" onclick="quickChat('quotes')">✨ Quotes</button>
+                <button class="chat-quick-btn" onclick="quickChat('stories')">📖 Stories</button>
+                <button class="chat-quick-btn" onclick="quickChat('about us')">ℹ️ About</button>
+                <button class="chat-quick-btn" onclick="quickChat('donate')">💖 Donate</button>
+                <button class="chat-quick-btn" onclick="quickChat('forum')">🗣️ Forum</button>
+                <button class="chat-quick-btn" onclick="quickChat('help')">🆘 Help</button>
+            </div>
             <div class="chat-input-row">
                 <input class="chat-input" id="chatInput" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendChat()">
                 <button class="chat-send" onclick="sendChat()">Send</button>
@@ -172,13 +546,17 @@
     </div>
 
     <script>
-    const BASE = 'https://quotemeapp.onrender.com';
+    const BASE = window.location.origin;
 
     // MOBILE MENU
     function toggleMenu() { document.getElementById('navMenu').classList.toggle('show'); }
 
     // DARK MODE
-    function toggleDark() { document.body.classList.toggle('dark'); }
+    function toggleDark() {
+        document.body.classList.toggle('dark');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark') ? '1' : '0');
+    }
+    if (localStorage.getItem('darkMode') === '1') document.body.classList.add('dark');
 
     // QUOTE OF THE DAY
     const heroQuotes = [
@@ -268,6 +646,8 @@
             const grid = document.getElementById('quoteGrid');
             grid.innerHTML = '';
             if (!quotes.length) { grid.innerHTML = '<p style="color:#888">✨ No quotes yet. Be the first to add inspiration!</p>'; return; }
+            const statQ = document.getElementById('statQuotes');
+            if (statQ) statQ.textContent = quotes.length;
             quotes.forEach(q => {
                 const card = document.createElement('div');
                 card.className = 'quote-card';
@@ -286,7 +666,14 @@
             const stories = await fetch(`${BASE}/stories`, { cache: "no-store" }).then(r => r.json());
             const grid = document.getElementById('storyGrid');
             grid.innerHTML = '';
-            if (!stories.length) { grid.innerHTML = '<p style="color:#888">No stories yet.</p>'; return; }
+            if (!Array.isArray(stories) || !stories.length) {
+                grid.innerHTML = '<p style="color:#888">No stories yet.</p>';
+                return;
+            }
+            // Update about section stat
+            const statEl = document.getElementById('statStories');
+            if (statEl) statEl.textContent = stories.length;
+
             stories.slice(0, 6).forEach(s => {
                 const card = document.createElement('div');
                 card.className = 'story-card';
@@ -296,7 +683,7 @@
                 card.innerHTML = imgHtml +
                     `<h3>${esc(s.title)}</h3>` +
                     `<p style="color:#555;font-size:14px;line-height:1.6">${esc(s.content.substring(0, 150))}…</p>` +
-                    `<a href="/story/${s.id}" style="display:inline-block;margin-top:10px;margin-bottom:6px;padding:7px 18px;background:#d63384;color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;transition:opacity .2s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">📖 Read More</a>` +
+                    `<a href="/story/${s.id}" style="display:inline-block;margin:8px 0 6px;padding:7px 18px;background:#d63384;color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;transition:opacity .2s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">📖 Read More</a>` +
                     commentSection('story', s.id, s.likes);
                 grid.appendChild(card);
             });
@@ -310,6 +697,8 @@
             const grid = document.getElementById('blogGrid');
             grid.innerHTML = '';
             if (!blogs.length) { grid.innerHTML = '<p style="color:#888">No blogs yet.</p>'; return; }
+            const statB = document.getElementById('statBlogs');
+            if (statB) statB.textContent = blogs.length;
             blogs.slice(0, 6).forEach(b => {
                 const card = document.createElement('div');
                 card.className = 'blog-card';
@@ -324,8 +713,6 @@
     try {
         const res = await fetch(`${BASE}/settings`);
         const settings = await res.json();
-
-        console.log("SETTINGS:", settings); // debug
 
         // SITE TITLE → navbar
         if (settings.site_title) {
@@ -352,30 +739,145 @@
     }
 }
 
-    // ── FORUM ──
+    // ═══════════════════════════════════════
+    // ENHANCED FORUM
+    // ═══════════════════════════════════════
+    let _allForumPosts = [];
+    let _forumTab      = 'all';
+
     async function loadPosts() {
-        const res = await fetch(`${BASE}/forum/posts`, { cache: "no-store" });
-        const posts = await res.json();
-        const forumPosts = document.getElementById('forumPosts');
-        forumPosts.innerHTML = '';
-        posts.forEach(p => {
-            const post = document.createElement('div');
-            post.className = 'forum-post';
-            const strong = document.createElement('strong');
-            strong.textContent = p.name + ': ';
-            post.appendChild(strong);
-            post.appendChild(document.createTextNode(p.message));
-            forumPosts.appendChild(post);
-        });
+        try {
+            const res = await fetch(`${BASE}/forum/posts`, { cache: 'no-store' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            _allForumPosts = await res.json();
+            if (!Array.isArray(_allForumPosts)) _allForumPosts = [];
+            // Update about stat
+            const statP = document.getElementById('statPosts');
+            if (statP) statP.textContent = _allForumPosts.length;
+            renderForumPosts();
+        } catch(e) {
+            document.getElementById('forumPosts').innerHTML =
+                '<div class="forum-empty">⚠️ Could not load posts. Please try again.</div>';
+        }
     }
-    document.getElementById('forumForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('userName').value;
-        const message = document.getElementById('userMessage').value;
-        await fetch(`${BASE}/forum/post`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name, message}) });
-        document.getElementById('forumForm').reset();
-        loadPosts();
-    });
+
+    function setForumTab(tab, btn) {
+        _forumTab = tab;
+        document.querySelectorAll('.forum-tab-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        renderForumPosts();
+    }
+
+    function filterForumPosts() { renderForumPosts(); }
+
+    function renderForumPosts() {
+        const container = document.getElementById('forumPosts');
+        const query     = (document.getElementById('forumSearch')  || {}).value || '';
+        const sort      = (document.getElementById('forumSort')     || {}).value || 'newest';
+        const search    = query.toLowerCase().trim();
+
+        let posts = _allForumPosts.filter(p => {
+            const matchTab = _forumTab === 'all' || (p.category || 'general') === _forumTab;
+            const matchSearch = !search ||
+                (p.name    || '').toLowerCase().includes(search) ||
+                (p.message || '').toLowerCase().includes(search);
+            return matchTab && matchSearch;
+        });
+
+        if (sort === 'oldest') posts = posts.slice().reverse();
+
+        if (!posts.length) {
+            container.innerHTML = '<div class="forum-empty">💬 No posts yet in this category. Be the first!</div>';
+            return;
+        }
+
+        const catLabel = { general:'💬 General', story:'📖 Story', question:'❓ Question', feedback:'💡 Feedback' };
+        const catClass = { general:'forum-cat-general', story:'forum-cat-story', question:'forum-cat-question', feedback:'forum-cat-feedback' };
+
+        container.innerHTML = posts.map(function(p) {
+            const name    = esc(p.name || 'Anonymous');
+            const letter  = (p.name || 'A')[0].toUpperCase();
+            const msg     = esc(p.message || '');
+            const cat     = p.category || 'general';
+            const label   = catLabel[cat]  || '💬 General';
+            const cls     = catClass[cat]  || 'forum-cat-general';
+            const ts      = p.created_at ? timeAgo(new Date(p.created_at)) : '';
+            const liked   = JSON.parse(localStorage.getItem('forumLikes') || '{}')[p.id];
+            return `<div class="forum-post" id="fpost-\${p.id}">
+                <div class="forum-post-header">
+                    <div class="forum-avatar">\${letter}</div>
+                    <div class="forum-post-meta">
+                        <div class="forum-post-name">\${name}</div>
+                        \${ts ? '<div class="forum-post-time">' + ts + '</div>' : ''}
+                    </div>
+                    <span class="forum-category \${cls}">\${label}</span>
+                </div>
+                <div class="forum-post-body">\${msg}</div>
+                <div class="forum-post-actions">
+                    <button class="forum-like-btn \${liked ? 'liked' : ''}" onclick="likeForumPost(\${p.id}, this)">
+                        ❤️ \${p.likes || 0}
+                    </button>
+                    <button class="forum-reply-btn" onclick="replyToPost(\${p.id}, '\${name}')">↩ Reply</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function likeForumPost(id, btn) {
+        const likes = JSON.parse(localStorage.getItem('forumLikes') || '{}');
+        if (likes[id]) { showToast('You already liked this post! 💖'); return; }
+        likes[id] = true;
+        localStorage.setItem('forumLikes', JSON.stringify(likes));
+        btn.classList.add('liked');
+        const post = _allForumPosts.find(p => p.id === id);
+        if (post) { post.likes = (post.likes || 0) + 1; btn.innerHTML = '❤️ ' + post.likes; }
+        showToast('❤️ Liked!');
+    }
+
+    function replyToPost(id, name) {
+        const ta = document.getElementById('userMessage');
+        const na = document.getElementById('userName');
+        if (ta) { ta.value = '@' + name + ' '; ta.focus(); }
+        document.getElementById('forum').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updateForumCharCount(ta) {
+        const el = document.getElementById('forumCharCount');
+        if (el) el.textContent = ta.value.length + ' / 500';
+    }
+
+    async function submitForumPost() {
+        const name    = (document.getElementById('userName')      || {}).value?.trim();
+        const message = (document.getElementById('userMessage')   || {}).value?.trim();
+        const cat     = (document.getElementById('forumCategory') || {}).value || 'general';
+        const btn     = document.getElementById('forumSubmitBtn');
+        if (!name)    { showToast('⚠️ Please enter your name.'); return; }
+        if (!message) { showToast('⚠️ Please write a message.'); return; }
+        if (btn) { btn.disabled = true; btn.textContent = 'Posting…'; }
+        try {
+            const res = await fetch(`${BASE}/forum/post`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, message, category: cat })
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            document.getElementById('userMessage').value = '';
+            document.getElementById('forumCharCount').textContent = '0 / 500';
+            showToast('✅ Post published!');
+            await loadPosts();
+        } catch(e) {
+            showToast('❌ Could not post. Please try again.');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Post Message'; }
+        }
+    }
+
+    function timeAgo(date) {
+        const diff = Math.floor((Date.now() - date) / 1000);
+        if (diff < 60)   return 'just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        return Math.floor(diff / 86400) + 'd ago';
+    }
 
     // ── CONTACT ──
     document.getElementById('contactForm').addEventListener('submit', async (e) => {
@@ -389,7 +891,7 @@
             })
         });
         document.getElementById('contactForm').reset();
-        alert('Message sent successfully!');
+        showToast('✅ Message sent! We will get back to you soon.');
     });
 
     // ── CHATBOT ──
@@ -422,6 +924,34 @@
         msgs.scrollTop = msgs.scrollHeight;
     }
 
+    // ── QUICK CHAT ──
+    function quickChat(msg) {
+        const inp = document.getElementById('chatInput');
+        if (inp) { inp.value = msg; }
+        // open the bot if closed
+        const box = document.getElementById('chatBox');
+        if (box && !box.classList.contains('open')) {
+            chatOpen = true;
+            box.classList.add('open');
+        }
+        sendChat();
+    }
+
+    // ── TOAST ──
+    function showToast(msg, duration) {
+        let toast = document.getElementById('_globalToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = '_globalToast';
+            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;font-family:Poppins,sans-serif';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        clearTimeout(toast._tid);
+        toast._tid = setTimeout(() => { toast.style.opacity = '0'; }, duration || 2800);
+    }
+
     // ── BACK TO TOP ──
     const backToTop = document.getElementById('backToTop');
     window.onscroll = () => { backToTop.style.display = (document.documentElement.scrollTop > 200) ? 'block' : 'none'; };
@@ -437,21 +967,20 @@
     });
 
     
-// 🚀 INITIAL LOAD (VERY IMPORTANT)
-loadQuotes();
+// 🚀 INITIAL LOAD
 loadSettings();
+loadQuotes();
 loadStories();
 loadBlogs();
 loadPosts();
 
-
-    setInterval(() => {
+// Auto-refresh every 30s (not 5s — avoids closing open comments)
+setInterval(function() {
     loadQuotes();
-    loadSettings();   // 🔥 ADD THIS
     loadStories();
     loadBlogs();
     loadPosts();
-}, 5000); // every 5s
+}, 30000);
 
    
     </script>

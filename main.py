@@ -516,120 +516,289 @@ def contact(data: dict):
 # =========================
 @app.post("/chatbot")
 def chatbot(data: dict):
-    msg = (data.get("message") or "").lower().strip()
+    """
+    Enhanced chatbot with 20+ command categories.
+    All keyword matching is case-insensitive.
+    """
+    raw = (data.get("message") or "").strip()
+    msg = raw.lower()
 
     if not msg:
-        return {"reply": "Please type a message 😊"}
+        return {"reply": "Please type a message 😊 Try saying 'help' to see what I can do!"}
+
+    # ── helpers ──
+    def _quotes(limit=3):
+        try:
+            return supabase.table("quotes").select("*").limit(limit).execute().data or []
+        except Exception:
+            return []
+
+    def _stories(limit=2):
+        try:
+            return supabase.table("stories").select("*").limit(limit).execute().data or []
+        except Exception:
+            return []
+
+    def _blogs(limit=2):
+        try:
+            return supabase.table("blogs").select("*").limit(limit).execute().data or []
+        except Exception:
+            return []
 
     # =========================
     # GREETINGS
     # =========================
-    if any(w in msg for w in ["hi", "hello", "hey", "good morning", "good evening"]):
-        return {
-            "reply": "Hey there 👋 Welcome to QuoteMe ZW 💖 I can help you find quotes, stories, blogs, or anything on the platform!"
-        }
+    if any(w in msg for w in ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "howdy", "greetings", "sup", "hola"]):
+        import random
+        greets = [
+            "Hey there 👋 Welcome to QuoteMe ZW 💖 I'm here to inspire you! Ask me about quotes, stories, blogs, or anything else.",
+            "Hello beautiful soul! 🌸 How can I inspire you today?",
+            "Hey hey! 💖 Welcome to QuoteMe ZW — Zimbabwe's home of daily inspiration. What can I help you with?",
+            "Hi there! 👋 Ready to get inspired? Ask me about quotes, stories, or our community forum!",
+        ]
+        return {"reply": random.choice(greets)}
+
+    # =========================
+    # GOODBYE
+    # =========================
+    if any(w in msg for w in ["bye", "goodbye", "see you", "later", "ciao", "take care"]):
+        return {"reply": "Goodbye! 👋 Stay inspired and keep shining! 💖 Come back anytime — QuoteMe ZW is always here for you. ✨"}
+
+    # =========================
+    # THANK YOU
+    # =========================
+    if any(w in msg for w in ["thank", "thanks", "thank you", "cheers", "appreciate"]):
+        return {"reply": "You're so welcome! 🌸 That's what we're here for. Keep spreading that positive energy! 💖"}
+
+    # =========================
+    # HOW ARE YOU
+    # =========================
+    if any(w in msg for w in ["how are you", "how r u", "how are u", "you okay", "you good"]):
+        return {"reply": "I'm doing amazing, thank you for asking! 💖 I'm always energised when helping people find inspiration. How are YOU doing today? 😊"}
 
     # =========================
     # QUOTES
     # =========================
-    if "quote" in msg:
-        quotes = supabase.table("quotes").select("*").limit(3).execute().data
+    if any(w in msg for w in ["quote", "quotes", "inspire me", "motivation", "motivate", "inspire", "uplift"]):
+        rows = _quotes(3)
+        if rows:
+            sample = "\n\n".join([f"💬 \"{q['text']}\"\'\n   — {q.get('author','Unknown')}" for q in rows])
+            return {"reply": f"Here are some inspiring quotes just for you ✨\n\n{sample}\n\nVisit our Quotes section for more! 💖"}
+        return {"reply": "We post daily inspirational quotes! ✨ Check out our Quotes section on the homepage."}
 
-        if quotes:
-            sample = "\n\n".join([f"💬 {q['text']} — {q.get('author','Unknown')}" for q in quotes])
-            return {
-                "reply": f"Here are some inspiring quotes for you ✨\n\n{sample}"
-            }
-
-        return {"reply": "We post daily inspirational quotes ✨"}
+    # =========================
+    # RANDOM QUOTE
+    # =========================
+    if any(w in msg for w in ["random quote", "surprise me", "give me a quote", "quote of the day", "qotd"]):
+        import random
+        rows = _quotes(10)
+        if rows:
+            q = random.choice(rows)
+            return {"reply": f"Here's one for you today ✨\n\n💬 \"{q['text']}\"\'\n— {q.get('author','QuoteMe ZW')}"}
+        local = [
+            "She believed she could, so she did. 🌸",
+            "Your potential is endless. Keep going! 💪",
+            "Queens don't compete — they collaborate. 👑",
+            "The most powerful thing you can do is believe in yourself. ✨",
+        ]
+        import random
+        return {"reply": "💬 " + random.choice(local)}
 
     # =========================
     # STORIES
     # =========================
-    if "story" in msg:
-        stories = supabase.table("stories").select("*").limit(2).execute().data
-
-        if stories:
-            sample = "\n\n".join([f"📖 {s['title']}\n{s['content'][:120]}..." for s in stories])
-            return {
-                "reply": f"Here are some empowerment stories 💖\n\n{sample}"
-            }
-
-        return {"reply": "We share powerful women empowerment stories 💖"}
+    if any(w in msg for w in ["story", "stories", "empowerment", "women", "real stories", "success story"]):
+        rows = _stories(2)
+        if rows:
+            sample = "\n\n".join([f"📖 *{s['title']}*\n{s['content'][:100]}..." for s in rows])
+            return {"reply": f"Here are some powerful empowerment stories 💖\n\n{sample}\n\nClick \'Read More\' on any story for the full version!"}
+        return {"reply": "We share real women empowerment stories! 💖 Check the Stories section on our homepage."}
 
     # =========================
     # BLOGS
     # =========================
-    if "blog" in msg:
-        blogs = supabase.table("blogs").select("*").limit(2).execute().data
-
-        if blogs:
-            sample = "\n\n".join([f"📰 {b['title']}\n{b['content'][:120]}..." for b in blogs])
-            return {
-                "reply": f"Here are some motivational blogs 🚀\n\n{sample}"
-            }
-
-        return {"reply": "Check our blog section for motivation 🚀"}
+    if any(w in msg for w in ["blog", "blogs", "article", "read", "post", "posts"]):
+        rows = _blogs(2)
+        if rows:
+            sample = "\n\n".join([f"📰 *{b['title']}*\n{b['content'][:100]}..." for b in rows])
+            return {"reply": f"Here are some of our latest blogs 🚀\n\n{sample}\n\nHead to our Blog section for more!"}
+        return {"reply": "Check our Blog section for motivational articles and tips! 🚀"}
 
     # =========================
-    # CONTACT / SUPPORT
+    # FORUM
     # =========================
-    if any(w in msg for w in ["contact", "email", "reach", "support"]):
+    if any(w in msg for w in ["forum", "community", "discussion", "chat", "talk", "ask", "question", "connect"]):
         return {
-            "reply": "You can reach us via the Contact form on the homepage 📩 or email us at support@quotemezw.com"
+            "reply": (
+                "Our Community Forum is the best place to connect! 🗣️\n\n"
+                "You can:\n"
+                "💬 Share general thoughts\n"
+                "📖 Discuss stories\n"
+                "❓ Ask questions\n"
+                "💡 Leave feedback\n\n"
+                "Scroll down to the Forum section to join the conversation!"
+            )
         }
 
     # =========================
-    # INSTAGRAM
+    # DONATE / SUPPORT US
     # =========================
-    if "instagram" in msg or "social" in msg:
+    if any(w in msg for w in ["donate", "donation", "support", "contribute", "fund", "help us", "paypal"]):
         return {
-            "reply": "Follow us on Instagram @quoteme_zw 📸 for daily inspiration and updates!"
-        }
-
-    # =========================
-    # ADMIN HELP
-    # =========================
-    if "admin" in msg:
-        return {
-            "reply": "Admin panel is available at /admin.html 🔐 Only authorized users can log in."
+            "reply": (
+                "Thank you so much for wanting to support us! 💖\n\n"
+                "Every donation helps us:\n"
+                "💬 Create more inspiring quotes\n"
+                "📖 Share more empowerment stories\n"
+                "🚀 Grow our community\n\n"
+                "Visit our Donate section on the homepage to contribute. Even $1 makes a difference! 🌸"
+            )
         }
 
     # =========================
     # ABOUT
     # =========================
-    if any(w in msg for w in ["what is this", "about", "who are you"]):
-        return {
-            "reply": "QuoteMe ZW is a motivational platform sharing quotes, stories, and blogs to inspire women and youth across Zimbabwe 💖"
-        }
-
-    # =========================
-    # HELP
-    # =========================
-    if any(w in msg for w in ["help", "what can you do"]):
+    if any(w in msg for w in ["about", "what is this", "who are you", "what is quoteme", "tell me about", "quoteme zw", "mission", "vision"]):
         return {
             "reply": (
-                "I can help you with:\n"
-                "✨ Quotes\n"
-                "📖 Stories\n"
-                "📰 Blogs\n"
-                "📩 Contact info\n"
-                "📸 Instagram\n\n"
-                "Just ask me anything!"
+                "QuoteMe ZW is Zimbabwe's home of daily inspiration! 🇿🇼💖\n\n"
+                "We are a platform dedicated to:\n"
+                "🌟 Empowering women and youth\n"
+                "💬 Sharing daily inspirational quotes\n"
+                "📖 Celebrating real success stories\n"
+                "📰 Publishing motivational blogs\n"
+                "🤝 Building a supportive community\n\n"
+                "Founded with love and a mission to make inspiration accessible to everyone in Zimbabwe and beyond. ✨"
             )
         }
 
     # =========================
-    # FALLBACK SMART RESPONSE
+    # FOUNDER / TEAM
     # =========================
-    return {
-        "reply": (
-            "I'm not fully sure what you're asking yet 🤔\n\n"
-            "Try asking about:\n"
-            "- quotes\n"
-            "- stories\n"
-            "- blogs\n"
-            "- contact info\n\n"
-            "Or just say 'help' 😊"
-        )
-    }
+    if any(w in msg for w in ["founder", "team", "who made", "who created", "creator", "owner"]):
+        return {
+            "reply": (
+                "QuoteMe ZW was founded by a passionate visionary who believes every woman and young person "
+                "deserves access to daily inspiration and a community that lifts them up. 💖\n\n"
+                "Our small but dedicated team curates every quote, story, and blog with love and purpose. 🌸\n\n"
+                "Want to know more? Visit our About section or reach out via our Contact form!"
+            )
+        }
+
+    # =========================
+    # CONTACT / SUPPORT
+    # =========================
+    if any(w in msg for w in ["contact", "email", "reach", "reach out", "message us", "get in touch", "collaborate"]):
+        return {
+            "reply": (
+                "We'd love to hear from you! 📩\n\n"
+                "You can reach us via:\n"
+                "📝 The Contact form on the homepage\n"
+                "📧 Email: support@quotemezw.com\n"
+                "📸 Instagram: @quoteme_zw\n\n"
+                "Whether it's a collaboration, feedback, or just to say hi — we're always happy to connect! 💖"
+            )
+        }
+
+    # =========================
+    # INSTAGRAM / SOCIAL MEDIA
+    # =========================
+    if any(w in msg for w in ["instagram", "social", "social media", "follow", "ig", "insta"]):
+        return {
+            "reply": (
+                "Follow us on Instagram for daily inspiration! 📸\n\n"
+                "👉 @quoteme_zw\n\n"
+                "We post:\n"
+                "✨ Daily motivational quotes\n"
+                "💖 Empowerment content\n"
+                "🌸 Behind-the-scenes updates\n\n"
+                "See you there! 💕"
+            )
+        }
+
+    # =========================
+    # DARK MODE
+    # =========================
+    if any(w in msg for w in ["dark mode", "dark theme", "night mode", "light mode"]):
+        return {"reply": "You can toggle between dark and light mode using the 🌙 button in the top navigation bar! Your preference is saved automatically. 🌙✨"}
+
+    # =========================
+    # LIKES / COMMENTS
+    # =========================
+    if any(w in msg for w in ["like", "comment", "react", "interaction"]):
+        return {
+            "reply": (
+                "Great question! 💖\n\n"
+                "On every quote, story, and blog you can:\n"
+                "❤️ Like it to show your love\n"
+                "💬 Leave a comment\n"
+                "😊 Comments even show a positivity score!\n\n"
+                "Try it on your favourite quote now! ✨"
+            )
+        }
+
+    # =========================
+    # ZIMBABWE
+    # =========================
+    if any(w in msg for w in ["zimbabwe", "zim", "harare", "bulawayo", "african", "africa"]):
+        return {
+            "reply": (
+                "QuoteMe ZW is proudly Zimbabwean! 🇿🇼✨\n\n"
+                "We celebrate the strength, resilience, and beauty of Zimbabwean women and youth. "
+                "Our content is curated with our community in mind — relatable, empowering, and real. 💖\n\n"
+                "Zimbabwe rises through its people! 🌟"
+            )
+        }
+
+    # =========================
+    # AFFIRMATION / POSITIVITY
+    # =========================
+    if any(w in msg for w in ["affirmation", "positive", "positivity", "feel good", "cheer up", "sad", "down", "depressed", "struggling"]):
+        import random
+        affirmations = [
+            "You are stronger than you think, braver than you feel, and more loved than you know. 💖",
+            "Every day is a new beginning. Take a deep breath and start again. 🌸",
+            "You are enough. You have always been enough. ✨",
+            "Your story isn't over yet — the best chapters are still ahead! 📖",
+            "Difficult roads often lead to beautiful destinations. Keep going! 🌟",
+        ]
+        return {"reply": "Here's a little love from QuoteMe ZW 💖\n\n🌸 " + random.choice(affirmations) + "\n\nYou've got this! 💪"}
+
+    # =========================
+    # ADMIN HELP
+    # =========================
+    if "admin" in msg:
+        return {"reply": "The admin panel is available at /admin 🔐 Only authorised team members can log in. If you need access, please contact us via the Contact form."}
+
+    # =========================
+    # HELP / COMMANDS
+    # =========================
+    if any(w in msg for w in ["help", "what can you do", "commands", "menu", "options", "what do you do"]):
+        return {
+            "reply": (
+                "Here's everything I can help you with! 💖\n\n"
+                "✨ *Quotes* — Get inspiring quotes\n"
+                "🎲 *Random quote* — Surprise quote just for you\n"
+                "📖 *Stories* — Women empowerment stories\n"
+                "📰 *Blogs* — Motivational articles\n"
+                "🗣️ *Forum* — Join the community discussion\n"
+                "💖 *Donate* — Support our mission\n"
+                "ℹ️ *About* — Learn about QuoteMe ZW\n"
+                "🌸 *Affirmation* — Need a pick-me-up?\n"
+                "📩 *Contact* — Get in touch with us\n"
+                "📸 *Instagram* — Find us on social media\n"
+                "🇿🇼 *Zimbabwe* — Our Zimbabwean pride!\n\n"
+                "Just type any of the above or ask me anything! 😊"
+            )
+        }
+
+    # =========================
+    # FALLBACK
+    # =========================
+    import random
+    fallbacks = [
+        f"Hmm, I'm not sure about \"{raw}\" yet 🤔\n\nTry asking about quotes, stories, blogs, our forum, or say \'help\' to see all my commands! 😊",
+        f"I didn't quite catch that! 🤔 Try saying \'help\' to see everything I can do. Or ask me for a \'random quote\'! ✨",
+        "I'm still learning! 🌱 Try asking about quotes, stories, or say \'help\' for a full list of things I can help you with! 💖",
+    ]
+    return {"reply": random.choice(fallbacks)}
