@@ -687,6 +687,9 @@
     <section id="blog" class="blog-section fade-in">
         <h2>Motivational Blog</h2>
         <div id="blogGrid" class="blog-grid"></div>
+        <div id="blogLoader" style="display:none;text-align:center;padding:20px;color:#d63384;font-size:14px;">
+            ✨ Loading more blogs…
+        </div>
     </section>
 
     <section id="contact" class="contact-section fade-in">
@@ -1161,22 +1164,60 @@
 }
 
     // ── LOAD BLOGS ──
+    // ── BLOG INFINITE SCROLL STATE ──
+    let blogOffset = 0;
+    const BLOG_LIMIT = 6;
+    let loadingBlogs = false;
+    let allBlogsLoaded = false;
+
     async function loadBlogs() {
+        if (loadingBlogs || allBlogsLoaded) return;
+        loadingBlogs = true;
+
+        // Show loading indicator
+        const loaderEl = document.getElementById('blogLoader');
+        if (loaderEl) loaderEl.style.display = 'block';
+
         try {
-            const blogs = await fetch(`${BASE}/blogs`, { cache: "no-store" }).then(r => r.json());
+            const blogs = await fetch(
+                `${BASE}/blogs?limit=${BLOG_LIMIT}&offset=${blogOffset}`,
+                { cache: 'no-store' }
+            ).then(r => r.json());
+
             const grid = document.getElementById('blogGrid');
-            grid.innerHTML = '';
-            if (!blogs.length) { grid.innerHTML = '<p style="color:#888">No blogs yet.</p>'; return; }
+
+            if (blogOffset === 0 && (!blogs || !blogs.length)) {
+                grid.innerHTML = '<p style="color:#888">No blogs yet.</p>';
+                allBlogsLoaded = true;
+                return;
+            }
+
+            if (!blogs.length) {
+                allBlogsLoaded = true;
+                return;
+            }
+
             const statB = document.getElementById('statBlogs');
-            if (statB) statB.textContent = blogs.length;
-            blogs.slice(0, 6).forEach(b => {
+            blogs.forEach(b => {
                 const card = document.createElement('div');
                 card.className = 'blog-card';
-                card.innerHTML = `<h3>${esc(b.title)}</h3><p>${esc(b.content.substring(0, 120))}…</p>` +
+                card.innerHTML = `<h3>${esc(b.title)}</h3><p>${esc((b.content || '').substring(0, 120))}…</p>` +
                     commentSection('blog', b.id, b.likes);
                 grid.appendChild(card);
             });
-        } catch(e) { console.error('Failed to load blogs', e); }
+
+            blogOffset += BLOG_LIMIT;
+            if (statB) statB.textContent = blogOffset;
+
+            if (blogs.length < BLOG_LIMIT) allBlogsLoaded = true;
+
+        } catch(e) {
+            console.error('Failed to load blogs', e);
+        } finally {
+            loadingBlogs = false;
+            const loaderEl = document.getElementById('blogLoader');
+            if (loaderEl) loaderEl.style.display = 'none';
+        }
     }
 
     async function loadSettings() {
@@ -1265,31 +1306,32 @@
         const catClass = { general:'forum-cat-general', story:'forum-cat-story', question:'forum-cat-question', feedback:'forum-cat-feedback' };
 
         container.innerHTML = posts.map(function(p) {
-            const name    = esc(p.name || 'Anonymous');
-            const letter  = (p.name || 'A')[0].toUpperCase();
-            const msg     = esc(p.message || '');
-            const cat     = p.category || 'general';
-            const label   = catLabel[cat]  || '💬 General';
-            const cls     = catClass[cat]  || 'forum-cat-general';
-            const ts      = p.created_at ? timeAgo(new Date(p.created_at)) : '';
-            const liked   = JSON.parse(localStorage.getItem('forumLikes') || '{}')[p.id];
-            return `<div class="forum-post" id="fpost-\${p.id}">
-                <div class="forum-post-header">
-                    <div class="forum-avatar">\${letter}</div>
-                    <div class="forum-post-meta">
-                        <div class="forum-post-name">\${name}</div>
-                        \${ts ? '<div class="forum-post-time">' + ts + '</div>' : ''}
-                    </div>
-                    <span class="forum-category \${cls}">\${label}</span>
-                </div>
-                <div class="forum-post-body">\${msg}</div>
-                <div class="forum-post-actions">
-                    <button class="forum-like-btn \${liked ? 'liked' : ''}" onclick="likeForumPost(\${p.id}, this)">
-                        ❤️ \${p.likes || 0}
-                    </button>
-                    <button class="forum-reply-btn" onclick="replyToPost(\${p.id}, '\${name}')">↩ Reply</button>
-                </div>
-            </div>`;
+            // Use only fields that exist in the forumpost schema: id, name, message
+            const name   = esc(p.name    || 'Anonymous');
+            const msg    = esc(p.message || '');
+            const letter = (p.name || 'A')[0].toUpperCase();
+            // created_at is optional — gracefully omitted if missing
+            const ts     = p.created_at ? timeAgo(new Date(p.created_at)) : '';
+            const liked  = JSON.parse(localStorage.getItem('forumLikes') || '{}')[p.id];
+
+            return (
+                '<div class="forum-post" id="fpost-' + p.id + '">' +
+                    '<div class="forum-post-header">' +
+                        '<div class="forum-avatar">' + letter + '</div>' +
+                        '<div class="forum-post-meta">' +
+                            '<div class="forum-post-name">' + name + '</div>' +
+                            (ts ? '<div class="forum-post-time">' + ts + '</div>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="forum-post-body">' + msg + '</div>' +
+                    '<div class="forum-post-actions">' +
+                        '<button class="forum-like-btn ' + (liked ? 'liked' : '') + '" onclick="likeForumPost(' + p.id + ', this)">' +
+                            '❤️ ' + (p.likes || 0) +
+                        '</button>' +
+                        '<button class="forum-reply-btn" onclick="replyToPost(' + p.id + ', \'' + name + '\')">↩ Reply</button>' +
+                    '</div>' +
+                '</div>'
+            );
         }).join('');
     }
 
@@ -1423,8 +1465,7 @@
     }
 
     // ── BACK TO TOP ──
-    const backToTop = document.getElementById('backToTop');
-    window.onscroll = () => { backToTop.style.display = (document.documentElement.scrollTop > 200) ? 'block' : 'none'; };
+    // Back-to-top scroll visibility is handled in the scroll listener above
     function scrollToTop() { window.scrollTo({top: 0, behavior: 'smooth'}); }
 
     // ── SMOOTH NAV ──
@@ -1436,18 +1477,20 @@
         });
     });
 
+    const backToTop = document.getElementById('backToTop');
     window.addEventListener('scroll', () => {
-    const scrollside =
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
+        // Trigger infinite scroll when within 300px of bottom
+        const nearBottom =
+            window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
 
-    if (scrollside) {
-        loadStories();
-    }
-});
+        if (nearBottom) {
+            loadStories();
+            loadBlogs();
+        }
 
-document.getElementById('storyLoader').style.display =
-    loadingStories ? 'block' : 'none';
-    
+        // Back-to-top visibility
+        backToTop.style.display = (document.documentElement.scrollTop > 200) ? 'block' : 'none';
+    });
 // 🚀 INITIAL LOAD
 loadSettings();
 loadQuotes();
@@ -1457,10 +1500,16 @@ document.addEventListener('DOMContentLoaded', () => {
 loadBlogs();
 loadPosts();
 
-// Auto-refresh every 3000s (not 5s — avoids closing open comments)
+// Auto-refresh every 3000s — reset pagination state before reloading
 setInterval(function() {
     loadQuotes();
+    // Reset story infinite scroll state
+    storyOffset = 0; loadingStories = false; allStoriesLoaded = false;
+    document.getElementById('storyGrid').innerHTML = '';
     loadStories();
+    // Reset blog infinite scroll state
+    blogOffset = 0; loadingBlogs = false; allBlogsLoaded = false;
+    document.getElementById('blogGrid').innerHTML = '';
     loadBlogs();
     loadPosts();
 }, 3000000);
