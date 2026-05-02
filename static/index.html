@@ -970,7 +970,7 @@
     <script>
     const BASE = window.location.origin;
     let storyOffset = 0;
-    const STORY_LIMIT = 10;
+    const STORY_LIMIT = 25;
     let loadingStories = false;
     let allStoriesLoaded = false;
 
@@ -1437,10 +1437,10 @@
     });
 
     window.addEventListener('scroll', () => {
-    const scrollBottom =
+    const scrollside =
         window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
 
-    if (scrollBottom) {
+    if (scrollside) {
         loadStories();
     }
 });

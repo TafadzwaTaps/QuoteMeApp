@@ -309,7 +309,7 @@ def delete_quote(quote_id: int, username: str = Depends(require_admin)):
 # STORIES
 # =========================
 @app.get("/stories")
-def get_stories(limit: int = 10, offset: int = 0):
+def get_stories(limit: int = 15, offset: int = 0):
     try:
         res = (
             supabase.table("stories")
