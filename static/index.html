@@ -317,6 +317,326 @@
         .about-stats { gap:16px; }
         .forum-compose-row { flex-direction:column; }
     }
+
+       /* ═══════════════════════════════════════
+       DONATION SECTION
+    ═══════════════════════════════════════ */
+    .donate-section {
+        padding: 60px 20px;
+        text-align: center;
+        background: linear-gradient(135deg, #fff0f7 0%, #fce7ef 50%, #f3e5f5 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    body.dark .donate-section {
+        background: linear-gradient(135deg, #1a0a14 0%, #200d1a 50%, #130a1e 100%);
+    }
+    .donate-section::before {
+        content: '';
+        position: absolute;
+        top: -60px; right: -60px;
+        width: 220px; height: 220px;
+        border-radius: 50%;
+        background: rgba(214,51,132,0.07);
+        pointer-events: none;
+    }
+    .donate-section::after {
+        content: '';
+        position: absolute;
+        bottom: -40px; left: -40px;
+        width: 160px; height: 160px;
+        border-radius: 50%;
+        background: rgba(214,51,132,0.05);
+        pointer-events: none;
+    }
+
+    /* Card */
+    .donate-card {
+        background: #fff;
+        border-radius: 24px;
+        padding: 40px 36px;
+        max-width: 540px;
+        margin: 0 auto;
+        box-shadow: 0 12px 48px rgba(214,51,132,0.13);
+        position: relative;
+        z-index: 1;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .donate-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 60px rgba(214,51,132,0.18);
+    }
+    body.dark .donate-card {
+        background: #1e1428;
+        box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+    }
+
+    .donate-heart {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 10px;
+        animation: heartbeat 2.2s ease-in-out infinite;
+    }
+    @keyframes heartbeat {
+        0%,100% { transform: scale(1); }
+        14%      { transform: scale(1.18); }
+        28%      { transform: scale(1); }
+        42%      { transform: scale(1.1); }
+    }
+
+    .donate-card h2 {
+        font-size: 26px;
+        color: #d63384;
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+    body.dark .donate-card h2 { color: #f472b6; }
+
+    .donate-card p {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.65;
+        margin-bottom: 28px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    body.dark .donate-card p { color: #b8a8c8; }
+
+    /* Amount grid */
+    .donate-amounts {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .donate-amt-btn {
+        padding: 12px 8px;
+        border-radius: 14px;
+        border: 2px solid #f0c0d8;
+        background: #fff8fc;
+        color: #d63384;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: 'Poppins', sans-serif;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    body.dark .donate-amt-btn {
+        background: #2a1838;
+        border-color: #5a2050;
+        color: #f472b6;
+    }
+    .donate-amt-btn::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(214,51,132,0);
+        transition: background 0.2s;
+    }
+    .donate-amt-btn:hover {
+        border-color: #d63384;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(214,51,132,0.22);
+    }
+    .donate-amt-btn:hover::after { background: rgba(214,51,132,0.04); }
+    .donate-amt-btn.selected {
+        background: linear-gradient(135deg, #d63384, #9c27b0);
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 6px 20px rgba(214,51,132,0.38);
+        transform: translateY(-2px);
+    }
+    body.dark .donate-amt-btn.selected {
+        background: linear-gradient(135deg, #e91e8c, #7b1fa2);
+    }
+
+    /* Custom amount input */
+    .donate-custom-row {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        border: 2px solid #f0c0d8;
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        background: #fff8fc;
+        transition: border-color 0.2s;
+    }
+    .donate-custom-row:focus-within {
+        border-color: #d63384;
+        box-shadow: 0 0 0 3px rgba(214,51,132,0.12);
+    }
+    body.dark .donate-custom-row {
+        background: #2a1838;
+        border-color: #5a2050;
+    }
+    .donate-currency {
+        padding: 0 14px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #d63384;
+        border-right: 2px solid #f0c0d8;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        background: #fff0f7;
+        user-select: none;
+    }
+    body.dark .donate-currency {
+        background: #3a1e40;
+        border-color: #5a2050;
+        color: #f472b6;
+    }
+    .donate-custom-input {
+        flex: 1;
+        border: 0;
+        outline: none;
+        padding: 12px 14px;
+        font-size: 15px;
+        font-family: 'Poppins', sans-serif;
+        background: transparent;
+        color: #333;
+        min-width: 0;
+    }
+    body.dark .donate-custom-input { color: #f0e8f5; }
+    .donate-custom-input::placeholder { color: #cba8c0; }
+
+    /* Validation message */
+    .donate-validation {
+        font-size: 12px;
+        color: #e53935;
+        min-height: 18px;
+        margin-top: -14px;
+        margin-bottom: 14px;
+        display: none;
+        text-align: left;
+        padding-left: 4px;
+    }
+    .donate-validation.show { display: block; }
+
+    /* PayPal button */
+    .donate-paypal-btn {
+        width: 100%;
+        padding: 15px 24px;
+        background: #003087;
+        color: #fff;
+        border: 0;
+        border-radius: 14px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: 'Poppins', sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.25s ease;
+        position: relative;
+        overflow: hidden;
+        letter-spacing: 0.3px;
+    }
+    .donate-paypal-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+        transform: translateX(-100%);
+        transition: transform 0.5s ease;
+    }
+    .donate-paypal-btn:hover::before { transform: translateX(100%); }
+    .donate-paypal-btn:hover {
+        background: #002070;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0,48,135,0.35);
+    }
+    .donate-paypal-btn:active { transform: translateY(0); }
+    .paypal-logo {
+        height: 20px;
+        vertical-align: middle;
+        filter: brightness(0) invert(1);
+    }
+    .paypal-text-pay { color: #009cde; }
+    .paypal-text-pal { color: #012169; }
+
+    /* Secure note */
+    .donate-secure {
+        margin-top: 14px;
+        font-size: 11px;
+        color: #aaa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+    body.dark .donate-secure { color: #7a6a8a; }
+
+    /* Impact strip */
+    .donate-impact {
+        display: flex;
+        justify-content: center;
+        gap: 0;
+        margin-top: 28px;
+        border-top: 1px solid #f0e0ea;
+        padding-top: 22px;
+        flex-wrap: wrap;
+    }
+    body.dark .donate-impact { border-color: #3a2040; }
+    .donate-impact-item {
+        flex: 1;
+        min-width: 100px;
+        padding: 8px 12px;
+        text-align: center;
+    }
+    .donate-impact-item .di-emoji { font-size: 22px; display: block; margin-bottom: 4px; }
+    .donate-impact-item .di-label { font-size: 11px; color: #999; line-height: 1.4; }
+    body.dark .donate-impact-item .di-label { color: #8a7a9a; }
+
+    /* ── FLOATING DONATE BUTTON ── */
+    /* Sits above backToTop (z-index: 100) and to the left of chatWidget (right: 24px) */
+    #donateFab {
+        position: fixed;
+        bottom: 96px;        /* above backToTop button */
+        right: 24px;
+        z-index: 999;        /* below chatWidget (1000) */
+        background: linear-gradient(135deg, #d63384, #9c27b0);
+        color: #fff;
+        border: 0;
+        border-radius: 28px;
+        padding: 11px 18px;
+        font-size: 14px;
+        font-weight: 700;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(214,51,132,0.42);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.25s ease;
+        white-space: nowrap;
+        animation: fabIn 0.5s 1.5s ease both;
+    }
+    @keyframes fabIn {
+        from { opacity:0; transform: translateY(20px) scale(0.85); }
+        to   { opacity:1; transform: translateY(0)    scale(1); }
+    }
+    #donateFab:hover {
+        transform: translateY(-3px) scale(1.04);
+        box-shadow: 0 10px 28px rgba(214,51,132,0.5);
+    }
+    #donateFab.hidden { opacity:0; pointer-events:none; transform:translateY(20px); }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+        .donate-card { padding: 28px 18px; }
+        .donate-amounts { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .donate-amt-btn { padding: 10px 4px; font-size: 14px; }
+        .donate-card h2 { font-size: 22px; }
+        #donateFab { padding: 10px 14px; font-size: 13px; bottom: 88px; right: 16px; }
+        .donate-impact-item { min-width: 80px; }
+    }
    </style>
 </head>
 <body>
@@ -329,12 +649,13 @@
         </div>
         <nav class="nav" id="navMenu">
             <ul class="nav-links">
-                <li><a href="#about">About</a></li>
                 <li><a href="#explore">Quotes</a></li>
                 <li><a href="#stories">Stories</a></li>
                 <li><a href="#blog">Blog</a></li>
                 <li><a href="#contact">Contact</a></li>
+                <li><a href="#about">About</a></li>
                 <li><a href="#forum">Forum</a></li>
+                <li><a href="#donate">💖 Donate</a></li>
             </ul>
         </nav>
         <button class="dark-toggle" onclick="toggleDark()">🌙</button>
@@ -347,6 +668,33 @@
             <a href="#explore" class="btn">Explore Quotes</a>
         </div>
        <img src="/static/Founder.png" alt="QuoteMe Herself" class="hero-logo">
+    </section>
+
+
+    <section id="explore" class="quotes-section fade-in">
+        <h2>Featured Quotes</h2>
+        <div id="quoteGrid" class="quote-grid"></div>
+    </section>
+
+    <section id="stories" class="stories-section fade-in">
+        <h2>Women Empowerment Stories</h2>
+        <div id="storyGrid" class="story-grid"></div>
+    </section>
+
+    <section id="blog" class="blog-section fade-in">
+        <h2>Motivational Blog</h2>
+        <div id="blogGrid" class="blog-grid"></div>
+    </section>
+
+    <section id="contact" class="contact-section fade-in">
+        <h2>Contact Us</h2>
+        <p>Have a suggestion or want to collaborate? Reach out!</p>
+        <form id="contactForm" class="contact-form">
+            <input type="text" id="contactName" placeholder="Your Name" required>
+            <input type="email" id="contactEmail" placeholder="Your Email" required>
+            <textarea id="contactMessage" placeholder="Your Message" required></textarea>
+            <button type="submit" class="btn">Send Message</button>
+        </form>
     </section>
 
     <!-- ══════════════════════════════════════════
@@ -414,32 +762,9 @@
         </div>
     </section>
 
-
-    <section id="explore" class="quotes-section fade-in">
-        <h2>Featured Quotes</h2>
-        <div id="quoteGrid" class="quote-grid"></div>
-    </section>
-
-    <section id="stories" class="stories-section fade-in">
-        <h2>Women Empowerment Stories</h2>
-        <div id="storyGrid" class="story-grid"></div>
-    </section>
-
-    <section id="blog" class="blog-section fade-in">
-        <h2>Motivational Blog</h2>
-        <div id="blogGrid" class="blog-grid"></div>
-    </section>
-
-    <section id="contact" class="contact-section fade-in">
-        <h2>Contact Us</h2>
-        <p>Have a suggestion or want to collaborate? Reach out!</p>
-        <form id="contactForm" class="contact-form">
-            <input type="text" id="contactName" placeholder="Your Name" required>
-            <input type="email" id="contactEmail" placeholder="Your Email" required>
-            <textarea id="contactMessage" placeholder="Your Message" required></textarea>
-            <button type="submit" class="btn">Send Message</button>
-        </form>
-    </section>
+     <!-- ══════════════════════════════════════════
+          COMMUNITY FORUM SECTION
+     ══════════════════════════════════════════ -->
 
     <section id="forum" class="forum-section fade-in">
         <h2>Community Forum</h2>
@@ -760,7 +1085,7 @@
             const statEl = document.getElementById('statStories');
             if (statEl) statEl.textContent = stories.length;
 
-            stories.slice(0, 6).forEach(s => {
+            stories.slice(0, 10).forEach(s => {
                 const card = document.createElement('div');
                 card.className = 'story-card';
                 const imgHtml = s.image_url
