@@ -309,9 +309,16 @@ def delete_quote(quote_id: int, username: str = Depends(require_admin)):
 # STORIES
 # =========================
 @app.get("/stories")
-def get_stories():
+def get_stories(limit: int = 10, offset: int = 0):
     try:
-        return supabase.table("stories").select("*").execute().data
+        res = (
+            supabase.table("stories")
+            .select("*")
+            .order("id", desc=True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+        return res.data
     except Exception as e:
         logger.error(f"get_stories: {e}")
         raise HTTPException(500, str(e))
@@ -348,13 +355,25 @@ def delete_story(story_id: int, username: str = Depends(require_admin)):
     logger.info(f"Story {story_id} deleted by admin")
     return {"message": "Story deleted", "id": story_id}
 
+@app.get("/stories/count")
+def stories_count():
+    res = supabase.table("stories").select("id", count="exact").execute()
+    return {"count": res.count}
+
 
 # =========================
 # BLOGS
 # =========================
 @app.get("/blogs")
-def get_blogs():
-    return supabase.table("blogs").select("*").execute().data
+def get_blogs(limit: int = 6, offset: int = 0):
+    return (
+        supabase.table("blogs")
+        .select("*")
+        .order("id", desc=True)
+        .range(offset, offset + limit - 1)
+        .execute()
+        .data
+    )
 
 
 @app.post("/blogs")

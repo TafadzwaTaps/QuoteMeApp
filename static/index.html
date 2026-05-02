@@ -680,6 +680,9 @@
         <h2>Women Empowerment Stories</h2>
         <div id="storyGrid" class="story-grid"></div>
     </section>
+    <div id="storyLoader" style="text-align:center;padding:20px;color:#888;">
+         Loading more stories...
+        </div>
 
     <section id="blog" class="blog-section fade-in">
         <h2>Motivational Blog</h2>
@@ -831,6 +834,11 @@
         </div>
     </section>
 
+    <section id="instagram" class="instagram-section fade-in">
+        <h2>Follow Us on Instagram</h2>
+        <iframe src="https://www.instagram.com/quoteme_zw/embed" width="400" height="480" frameborder="0" scrolling="no" allowtransparency="true"></iframe>
+    </section>
+
     <section id="donate" class="donate-section fade-in">
         <div class="donate-card">
             <span class="donate-heart">💖</span>
@@ -917,15 +925,17 @@
         </div>
     </section>
 
-    <section id="instagram" class="instagram-section fade-in">
-        <h2>Follow Us on Instagram</h2>
-        <iframe src="https://www.instagram.com/quoteme_zw/embed" width="400" height="480" frameborder="0" scrolling="no" allowtransparency="true"></iframe>
-    </section>
-
     <footer class="footer">
         <p>© 2026 QuoteMe ZW • Inspiration Everyday</p>
         <p>Follow us on Instagram @quoteme_zw</p>
     </footer>
+
+    
+    <!-- ── FLOATING DONATE BUTTON ── -->
+    <!-- Sits at z-index:999, bottom:96px — above backToTop, left of chatWidget -->
+    <button id="donateFab" onclick="scrollToDonate()" title="Support QuoteMe ZW">
+        💖 Donate
+    </button>
 
     <button id="backToTop" onclick="scrollToTop()">↑</button>
 
@@ -958,6 +968,10 @@
 
     <script>
     const BASE = window.location.origin;
+    let storyOffset = 0;
+    const STORY_LIMIT = 10;
+    let loadingStories = false;
+    let allStoriesLoaded = false;
 
     // MOBILE MENU
     function toggleMenu() { document.getElementById('navMenu').classList.toggle('show'); }
@@ -1073,33 +1087,77 @@
 
     // ── LOAD STORIES ──
     async function loadStories() {
-        try {
-            const stories = await fetch(`${BASE}/stories`, { cache: "no-store" }).then(r => r.json());
-            const grid = document.getElementById('storyGrid');
-            grid.innerHTML = '';
-            if (!Array.isArray(stories) || !stories.length) {
-                grid.innerHTML = '<p style="color:#888">No stories yet.</p>';
-                return;
-            }
-            // Update about section stat
-            const statEl = document.getElementById('statStories');
-            if (statEl) statEl.textContent = stories.length;
+    if (loadingStories || allStoriesLoaded) return;
+    loadingStories = true;
 
-            stories.slice(0, 10).forEach(s => {
-                const card = document.createElement('div');
-                card.className = 'story-card';
-                const imgHtml = s.image_url
-                    ? `<img src="${esc(s.image_url)}" alt="${esc(s.title)}" loading="lazy" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:10px" onerror="this.style.display='none'">`
-                    : '';
-                card.innerHTML = imgHtml +
-                    `<h3>${esc(s.title)}</h3>` +
-                    `<p style="color:#555;font-size:14px;line-height:1.6">${esc(s.content.substring(0, 150))}…</p>` +
-                    `<a href="/story/${s.id}" style="display:inline-block;margin:8px 0 6px;padding:7px 18px;background:#d63384;color:#fff;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;transition:opacity .2s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">📖 Read More</a>` +
-                    commentSection('story', s.id, s.likes);
-                grid.appendChild(card);
-            });
-        } catch(e) { console.error('Failed to load stories', e); }
+    try {
+        const stories = await fetch(
+            `${BASE}/stories?limit=${STORY_LIMIT}&offset=${storyOffset}`,
+            { cache: "no-store" }
+        ).then(r => r.json());
+
+        const list = Array.isArray(stories) ? stories : stories.stories;
+
+        const grid = document.getElementById('storyGrid');
+
+        if (storyOffset === 0 && (!list || !list.length)) {
+            grid.innerHTML = '<p style="color:#888">No stories yet.</p>';
+            allStoriesLoaded = true;
+            return;
+        }
+
+        const statEl = document.getElementById('statStories');
+        if (statEl && storyOffset === 0) statEl.textContent = "Loading...";
+
+        if (!list.length) {
+            allStoriesLoaded = true;
+            return;
+        }
+
+        list.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'story-card';
+
+            const imgHtml = s.image_url
+                ? `<img src="${esc(s.image_url)}" alt="${esc(s.title)}"
+                     loading="lazy"
+                     style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:10px"
+                     onerror="this.style.display='none'">`
+                : '';
+
+            card.innerHTML =
+                imgHtml +
+                `<h3>${esc(s.title)}</h3>` +
+                `<p style="color:#555;font-size:14px;line-height:1.6">
+                    ${esc((s.content || '').substring(0, 150))}…
+                 </p>` +
+                `<a href="/story/${s.id}"
+                    style="display:inline-block;margin:8px 0 6px;padding:7px 18px;
+                    background:#d63384;color:#fff;border-radius:20px;text-decoration:none;
+                    font-size:13px;font-weight:600">
+                    📖 Read More
+                 </a>` +
+                commentSection('story', s.id, s.likes);
+
+            grid.appendChild(card);
+        });
+
+        storyOffset += STORY_LIMIT;
+
+        if (list.length < STORY_LIMIT) {
+            allStoriesLoaded = true;
+        }
+
+        if (statEl && storyOffset > 0) {
+            statEl.textContent = storyOffset;
+        }
+
+    } catch (e) {
+        console.error('Failed to load stories', e);
+    } finally {
+        loadingStories = false;
     }
+}
 
     // ── LOAD BLOGS ──
     async function loadBlogs() {
@@ -1377,11 +1435,24 @@
         });
     });
 
+    window.addEventListener('scroll', () => {
+    const scrollBottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
+
+    if (scrollBottom) {
+        loadStories();
+    }
+});
+
+document.getElementById('storyLoader').style.display =
+    loadingStories ? 'block' : 'none';
     
 // 🚀 INITIAL LOAD
 loadSettings();
 loadQuotes();
-loadStories();
+document.addEventListener('DOMContentLoaded', () => {
+    loadStories();
+});
 loadBlogs();
 loadPosts();
 
