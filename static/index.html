@@ -641,24 +641,28 @@
 </head>
 <body>
 
-    <div class="mobile-menu-btn" onclick="toggleMenu()">☰</div>
     <header class="header">
         <div class="nav-brand">
             <img src="/static/QuoteMe Logo.jpg" alt="QuoteMe Logo" class="nav-logo">
-             <span class="logo-text">QuoteMe ZW</span>
+            <span class="logo-text">QuoteMe ZW</span>
         </div>
         <nav class="nav" id="navMenu">
-            <ul class="nav-links">
-                <li><a href="#explore">Quotes</a></li>
-                <li><a href="#stories">Stories</a></li>
-                <li><a href="#blog">Blog</a></li>
-                <li><a href="#contact">Contact</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#forum">Forum</a></li>
-                <li><a href="#donate">💖 Donate</a></li>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#explore" onclick="closeMenu()">Quotes</a></li>
+                <li><a href="#stories" onclick="closeMenu()">Stories</a></li>
+                <li><a href="#blog" onclick="closeMenu()">Blog</a></li>
+                <li><a href="#contact" onclick="closeMenu()">Contact</a></li>
+                <li><a href="#about" onclick="closeMenu()">About</a></li>
+                <li><a href="#forum" onclick="closeMenu()">Forum</a></li>
+                <li><a href="#donate" onclick="closeMenu()">💖 Donate</a></li>
             </ul>
         </nav>
-        <button class="dark-toggle" onclick="toggleDark()">🌙</button>
+        <div class="header-right">
+            <button class="dark-toggle" onclick="toggleDark()">🌙</button>
+            <button class="mobile-menu-btn" onclick="toggleMenu()" aria-label="Open menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
     </header>
 
     <section class="hero fade-in">
@@ -680,9 +684,9 @@
         <h2>Women Empowerment Stories</h2>
         <div id="storyGrid" class="story-grid"></div>
     </section>
-    <div id="storyLoader" style="text-align:center;padding:20px;color:#888;">
-         Loading more stories...
-        </div>
+    <div id="storyLoader" style="display:none;text-align:center;padding:20px;color:#d63384;font-size:14px;">
+        ✨ Loading more stories…
+    </div>
 
     <section id="blog" class="blog-section fade-in">
         <h2>Motivational Blog</h2>
@@ -717,7 +721,7 @@
                     onerror="this.src='/static/QuoteMe Logo.jpg'"
                 >
                 <p class="about-founder-badge">✨ Founder &amp; Visionary</p>
-                <p class="about-founder-badge">✨ Ruva</p>
+                <p class="about-founder-badge">✨ Ruvarashe Rukuni</p>
             </div>
 
             <!-- Content -->
@@ -726,7 +730,7 @@
                 <h2>About QuoteMe ZW</h2>
                 <p>
                     QuoteMe ZW was born from a simple but powerful belief — that every woman
-                    and young person in Zimbabwe deserves access to daily inspiration,
+                    and young person deserves access to daily inspiration,
                     empowering stories, and a community that lifts them up.
                 </p>
                 <p>
@@ -855,11 +859,11 @@
 
             <!-- Amount preset grid -->
             <div class="donate-amounts" id="donateAmounts">
-                <button class="donate-amt-btn" data-amount="0.99" onclick="selectAmount(this)">$0.99</button>
                 <button class="donate-amt-btn" data-amount="1"    onclick="selectAmount(this)">$1</button>
                 <button class="donate-amt-btn" data-amount="2"    onclick="selectAmount(this)">$2</button>
                 <button class="donate-amt-btn" data-amount="5"    onclick="selectAmount(this)">$5</button>
                 <button class="donate-amt-btn" data-amount="10"   onclick="selectAmount(this)">$10</button>
+                <button class="donate-amt-btn" data-amount="20" onclick="selectAmount(this)">$20</button>
                 <button class="donate-amt-btn" data-amount="custom" onclick="selectAmount(this)">Custom</button>
             </div>
 
@@ -973,12 +977,28 @@
     <script>
     const BASE = window.location.origin;
     let storyOffset = 0;
-    const STORY_LIMIT = 15;
+    const STORY_LIMIT = 25;
     let loadingStories = false;
     let allStoriesLoaded = false;
 
     // MOBILE MENU
-    function toggleMenu() { document.getElementById('navMenu').classList.toggle('show'); }
+    function toggleMenu() {
+        const nav = document.getElementById('navMenu');
+        const btn = document.querySelector('.mobile-menu-btn');
+        nav.classList.toggle('nav-open');
+        btn.classList.toggle('open');
+    }
+    function closeMenu() {
+        const nav = document.getElementById('navMenu');
+        const btn = document.querySelector('.mobile-menu-btn');
+        if (nav) nav.classList.remove('nav-open');
+        if (btn) btn.classList.remove('open');
+    }
+    // Close menu when clicking outside the header
+    document.addEventListener('click', function(e) {
+        const header = document.querySelector('.header');
+        if (header && !header.contains(e.target)) closeMenu();
+    });
 
     // DARK MODE
     function toggleDark() {
@@ -1091,77 +1111,81 @@
 
     // ── LOAD STORIES ──
     async function loadStories() {
-    if (loadingStories || allStoriesLoaded) return;
-    loadingStories = true;
+        if (loadingStories || allStoriesLoaded) return;
+        loadingStories = true;
 
-    try {
-        const stories = await fetch(
-            `${BASE}/stories?limit=${STORY_LIMIT}&offset=${storyOffset}`,
-            { cache: "no-store" }
-        ).then(r => r.json());
+        // Show loader
+        const loaderEl = document.getElementById('storyLoader');
+        if (loaderEl) loaderEl.style.display = 'block';
 
-        const list = Array.isArray(stories) ? stories : stories.stories;
+        try {
+            const res = await fetch(
+                `${BASE}/stories?limit=${STORY_LIMIT}&offset=${storyOffset}`,
+                { cache: 'no-store' }
+            );
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const stories = await res.json();
+            const list = Array.isArray(stories) ? stories : (stories.stories || []);
 
-        const grid = document.getElementById('storyGrid');
+            const grid = document.getElementById('storyGrid');
 
-        if (storyOffset === 0 && (!list || !list.length)) {
-            grid.innerHTML = '<p style="color:#888">No stories yet.</p>';
-            allStoriesLoaded = true;
-            return;
+            // Empty state on first page
+            if (storyOffset === 0 && list.length === 0) {
+                grid.innerHTML = '<p style="color:#888">No stories yet.</p>';
+                allStoriesLoaded = true;
+                return; // finally will still run
+            }
+
+            // No more pages
+            if (list.length === 0) {
+                allStoriesLoaded = true;
+                return;
+            }
+
+            // Append cards
+            list.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'story-card';
+                const imgHtml = s.image_url
+                    ? `<img src="${esc(s.image_url)}" alt="${esc(s.title)}"
+                         loading="lazy"
+                         style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:10px"
+                         onerror="this.style.display='none'">`
+                    : '';
+                card.innerHTML =
+                    imgHtml +
+                    `<h3>${esc(s.title)}</h3>` +
+                    `<p style="color:#555;font-size:14px;line-height:1.6">
+                        ${esc((s.content || '').substring(0, 150))}…
+                     </p>` +
+                    `<a href="/story/${s.id}"
+                        style="display:inline-block;margin:8px 0 6px;padding:7px 18px;
+                        background:#d63384;color:#fff;border-radius:20px;text-decoration:none;
+                        font-size:13px;font-weight:600">
+                        📖 Read More
+                     </a>` +
+                    commentSection('story', s.id, s.likes);
+                grid.appendChild(card);
+            });
+
+            storyOffset += list.length;
+
+            // Update stat counter
+            const statEl = document.getElementById('statStories');
+            if (statEl) statEl.textContent = storyOffset;
+
+            // Mark done if last page
+            if (list.length < STORY_LIMIT) allStoriesLoaded = true;
+
+        } catch (e) {
+            console.error('Failed to load stories:', e);
+        } finally {
+            // Always runs — release lock and hide loader
+            loadingStories = false;
+            const loaderEl = document.getElementById('storyLoader');
+            if (loaderEl) loaderEl.style.display = 'none';
         }
-
-        const statEl = document.getElementById('statStories');
-        if (statEl && storyOffset === 0) statEl.textContent = "Loading...";
-
-        if (!list.length) {
-            allStoriesLoaded = true;
-            return;
-        }
-
-        list.forEach(s => {
-            const card = document.createElement('div');
-            card.className = 'story-card';
-
-            const imgHtml = s.image_url
-                ? `<img src="${esc(s.image_url)}" alt="${esc(s.title)}"
-                     loading="lazy"
-                     style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:10px"
-                     onerror="this.style.display='none'">`
-                : '';
-
-            card.innerHTML =
-                imgHtml +
-                `<h3>${esc(s.title)}</h3>` +
-                `<p style="color:#555;font-size:14px;line-height:1.6">
-                    ${esc((s.content || '').substring(0, 150))}…
-                 </p>` +
-                `<a href="/story/${s.id}"
-                    style="display:inline-block;margin:8px 0 6px;padding:7px 18px;
-                    background:#d63384;color:#fff;border-radius:20px;text-decoration:none;
-                    font-size:13px;font-weight:600">
-                    📖 Read More
-                 </a>` +
-                commentSection('story', s.id, s.likes);
-
-            grid.appendChild(card);
-        });
-
-        storyOffset += STORY_LIMIT;
-
-        if (list.length < STORY_LIMIT) {
-            allStoriesLoaded = true;
-        }
-
-        if (statEl && storyOffset > 0) {
-            statEl.textContent = storyOffset;
-        }
-
-    } catch (e) {
-        console.error('Failed to load stories', e);
-    } finally {
-        loadingStories = false;
     }
-}
 
     // ── LOAD BLOGS ──
     // ── BLOG INFINITE SCROLL STATE ──
@@ -1478,25 +1502,32 @@
     });
 
     const backToTop = document.getElementById('backToTop');
-    window.addEventListener('scroll', () => {
-        // Trigger infinite scroll when within 300px of bottom
-        const nearBottom =
-            window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
 
-        if (nearBottom) {
+    // Infinite scroll — fires when user is within 400px of the page bottom
+    window.addEventListener('scroll', function() {
+        const scrollTop    = window.pageYOffset || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight;
+        const docHeight    = Math.max(
+            document.body.scrollHeight,
+            document.documentElement.scrollHeight,
+            document.body.offsetHeight,
+            document.documentElement.offsetHeight
+        );
+
+        const distanceFromBottom = docHeight - (scrollTop + windowHeight);
+
+        if (distanceFromBottom < 400) {
             loadStories();
             loadBlogs();
         }
 
-        // Back-to-top visibility
-        backToTop.style.display = (document.documentElement.scrollTop > 200) ? 'block' : 'none';
-    });
-// 🚀 INITIAL LOAD
+        // Back-to-top button
+        backToTop.style.display = scrollTop > 200 ? 'block' : 'none';
+    }, { passive: true });
+// 🚀 INITIAL LOAD — page is already parsed when inline script runs
 loadSettings();
 loadQuotes();
-document.addEventListener('DOMContentLoaded', () => {
-    loadStories();
-});
+loadStories();
 loadBlogs();
 loadPosts();
 
