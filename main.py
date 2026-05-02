@@ -335,6 +335,19 @@ def get_story(story_id: int):
 def create_story(data: dict, username: str = Depends(require_admin)):
     return supabase.table("stories").insert(data).execute().data
 
+@app.put("/stories/{story_id}")
+def update_story(story_id: int, data: dict, username: str = Depends(require_admin)):
+    res = supabase.table("stories").update(data).eq("id", story_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Story not found")
+    return res.data
+
+@app.delete("/stories/{story_id}")
+def delete_story(story_id: int, username: str = Depends(require_admin)):
+    supabase.table("stories").delete().eq("id", story_id).execute()
+    logger.info(f"Story {story_id} deleted by admin")
+    return {"message": "Story deleted", "id": story_id}
+
 
 # =========================
 # BLOGS
@@ -347,6 +360,19 @@ def get_blogs():
 @app.post("/blogs")
 def create_blog(data: dict, username: str = Depends(require_admin)):
     return supabase.table("blogs").insert(data).execute().data
+
+@app.put("/blogs/{blog_id}")
+def update_blog(blog_id: int, data: dict, username: str = Depends(require_admin)):
+    res = supabase.table("blogs").update(data).eq("id", blog_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Blog not found")
+    return res.data
+
+@app.delete("/blogs/{blog_id}")
+def delete_blog(blog_id: int, username: str = Depends(require_admin)):
+    supabase.table("blogs").delete().eq("id", blog_id).execute()
+    logger.info(f"Blog {blog_id} deleted by admin")
+    return {"message": "Blog deleted", "id": blog_id}
 
 
 # =========================
@@ -495,7 +521,30 @@ def get_posts():
 
 @app.post("/forum/post")
 def create_post(data: dict):
-    return supabase.table("forumpost").insert(data).execute().data
+    """
+    Insert a forum post.
+    The forumpost table only has: id, name, message.
+    Strip any extra fields (e.g. category, created_at) before inserting
+    to avoid Supabase column-not-found errors.
+    """
+    name    = (data.get("name")    or "").strip()
+    message = (data.get("message") or "").strip()
+
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required")
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+
+    # Only send columns that actually exist in the table
+    payload = {"name": name, "message": message}
+
+    try:
+        res = supabase.table("forumpost").insert(payload).execute()
+        logger.info(f"Forum post created by '{name}'")
+        return res.data
+    except Exception as e:
+        logger.error(f"forum post insert error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save post: {e}")
 
 
 # =========================
