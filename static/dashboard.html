@@ -578,8 +578,63 @@ label.required::after{content:' *';color:var(--danger);font-weight:700}
     <!-- ===== FORUM TAB ===== -->
     <div id="tab-forum" style="display:none">
       <div class="panel">
-        <div class="panel-header"><h2>Forum Posts</h2></div>
+        <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <h2>🗣️ Forum Posts</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input id="forumSearchDash" class="form-control" placeholder="🔍 Search posts…"
+              style="width:200px;padding:7px 12px;font-size:13px"
+              oninput="renderForumDash()">
+            <button class="btn btn-primary" style="font-size:13px" onclick="openForumAddModal()">✏️ New Post</button>
+          </div>
+        </div>
         <div class="panel-body" id="forumList"></div>
+      </div>
+    </div>
+
+    <!-- FORUM EDIT/ADD MODAL -->
+    <div class="modal-backdrop" id="forumModalBackdrop">
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+          <h3 id="forumModalTitle">Edit Post</h3>
+          <button class="btn-icon" onclick="closeForumModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="required">Name</label>
+            <input id="forumModalName" class="form-control" placeholder="Poster name…" maxlength="100">
+          </div>
+          <div class="form-group">
+            <label class="required">Message</label>
+            <textarea id="forumModalMessage" class="form-control" placeholder="Post message…"
+              rows="4" maxlength="1000" style="resize:vertical"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeForumModal()">Cancel</button>
+          <button class="btn btn-primary" id="forumModalSaveBtn" onclick="saveForumPost()">💾 Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORUM REPLY MODAL -->
+    <div class="modal-backdrop" id="forumReplyBackdrop">
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+          <h3>↩ Reply to Post</h3>
+          <button class="btn-icon" onclick="closeForumReply()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="forumReplyOriginal" style="background:var(--input-bg);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--muted);border-left:3px solid var(--accent)"></div>
+          <div class="form-group">
+            <label class="required">Your Reply</label>
+            <textarea id="forumReplyMessage" class="form-control" placeholder="Write your reply…"
+              rows="4" maxlength="1000" style="resize:vertical"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeForumReply()">Cancel</button>
+          <button class="btn btn-primary" id="forumReplySaveBtn" onclick="submitForumReply()">↩ Send Reply</button>
+        </div>
       </div>
     </div>
 
@@ -769,6 +824,7 @@ const API = {
   changeUser: `${BASE}/admin/change-username`,
   comments:   `${BASE}/comments`,
   forum:      `${BASE}/forum/posts`,
+  forumPost:  `${BASE}/forum/post`,
   like:       `${BASE}/like`,
   stats:      `${BASE}/admin/stats`,
 };
@@ -892,6 +948,12 @@ function wireEventListeners() {
 
   // Confirm modal
   safeOn('confirmOkBtn', 'click', () => { if (pendingDeleteFn) pendingDeleteFn(); closeConfirm(); });
+
+  // Forum modals — close on backdrop click
+  const fmb = document.getElementById('forumModalBackdrop');
+  if (fmb) fmb.addEventListener('click', e => { if (e.target === fmb) closeForumModal(); });
+  const frb = document.getElementById('forumReplyBackdrop');
+  if (frb) frb.addEventListener('click', e => { if (e.target === frb) closeForumReply(); });
 
   // Dark mode toggles (topbar + settings page)
   safeOn('darkToggle', 'click', () => {
@@ -1905,25 +1967,196 @@ async function deleteComment(id) {
 }
 
 // ================== FORUM ==================
+// ================== FORUM CRUD ==================
+let _dashForumPosts = [];
+let _forumEditId    = null;  // null = add mode, number = edit mode
+let _forumReplyId   = null;
+
 async function loadForum() {
   const container = document.getElementById('forumList');
   if (!container) return;
   container.innerHTML = '<div style="padding:24px;color:var(--muted)">Loading…</div>';
   try {
-    const posts = await fetch(API.forum).then(r=>r.json()).catch(()=>[]);
-    if (!Array.isArray(posts) || !posts.length) {
-      container.innerHTML = '<div class="empty-state"><div class="emoji">🗣️</div><p>No forum posts yet.</p></div>';
-      return;
-    }
-    container.innerHTML = posts.map(p => `
-      <div class="comment-item" style="margin-bottom:10px">
-        <div class="comment-user">${esc(p.name)}</div>
-        <div class="comment-text">${esc(p.message)}</div>
-        ${p.created_at ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${new Date(p.created_at).toLocaleString()}</div>` : ''}
-      </div>`).join('');
+    const posts = await fetch(API.forum, { cache: 'no-store' }).then(r => r.json()).catch(() => []);
+    _dashForumPosts = Array.isArray(posts) ? posts : [];
+    renderForumDash();
   } catch (e) {
     console.error('[QuoteMe] loadForum:', e);
     container.innerHTML = '<div style="padding:24px;color:var(--muted)">Failed to load forum posts.</div>';
+  }
+}
+
+function renderForumDash() {
+  const container = document.getElementById('forumList');
+  if (!container) return;
+  const q = (document.getElementById('forumSearchDash')?.value || '').toLowerCase().trim();
+  const posts = _dashForumPosts.filter(p =>
+    !q ||
+    (p.name    || '').toLowerCase().includes(q) ||
+    (p.message || '').toLowerCase().includes(q)
+  );
+  if (!posts.length) {
+    container.innerHTML = '<div class="empty-state"><div class="emoji">🗣️</div><p>' +
+      (q ? 'No posts match your search.' : 'No forum posts yet.') + '</p></div>';
+    return;
+  }
+  container.innerHTML = posts.map(p => {
+    const name   = esc(p.name    || 'Anonymous');
+    const msg    = esc(p.message || '');
+    const letter = (p.name || 'A')[0].toUpperCase();
+    const ts     = p.created_at ? new Date(p.created_at).toLocaleString() : '';
+    const isReply = (p.message || '').startsWith('@');
+    return (
+      '<div class="comment-item" style="margin-bottom:12px;border-left:3px solid ' + (isReply ? '#9c27b0' : 'var(--accent)') + ';padding:12px 14px;position:relative">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+          '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,' + (isReply ? '#9c27b0,#d63384' : 'var(--accent),#9c27b0') + ');color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + letter + '</div>' +
+          '<div style="flex:1">' +
+            '<div class="comment-user" style="margin-bottom:1px">' + name + (isReply ? ' <span style="font-size:10px;background:#f3e5f5;color:#9c27b0;padding:1px 6px;border-radius:8px;font-weight:600">↩ REPLY</span>' : '') + '</div>' +
+            (ts ? '<div style="font-size:11px;color:var(--muted)">' + ts + '</div>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="comment-text" style="padding-left:40px;margin-bottom:10px">' + msg + '</div>' +
+        '<div style="display:flex;gap:6px;padding-left:40px;flex-wrap:wrap">' +
+          '<button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" onclick="openForumReply(' + p.id + ','' + name.replace(/'/g, "\'") + '','' + msg.replace(/'/g, "\'").substring(0, 80) + '')" title="Reply to this post">↩ Reply</button>' +
+          '<button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" onclick="openForumEditModal(' + p.id + ')" title="Edit post">✏️ Edit</button>' +
+          '<button class="btn btn-danger" style="font-size:12px;padding:5px 10px" onclick="confirmDeleteForumPost(' + p.id + ','' + name.replace(/'/g, "\'") + '')" title="Delete post">🗑️ Delete</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+// ── ADD / EDIT MODAL ──
+function openForumAddModal() {
+  _forumEditId = null;
+  document.getElementById('forumModalTitle').textContent   = '✏️ New Post';
+  document.getElementById('forumModalName').value          = '';
+  document.getElementById('forumModalMessage').value       = '';
+  document.getElementById('forumModalSaveBtn').textContent = '💾 Save';
+  document.getElementById('forumModalBackdrop').classList.add('show');
+}
+
+function openForumEditModal(id) {
+  const post = _dashForumPosts.find(p => p.id === id);
+  if (!post) return;
+  _forumEditId = id;
+  document.getElementById('forumModalTitle').textContent   = '✏️ Edit Post';
+  document.getElementById('forumModalName').value          = post.name    || '';
+  document.getElementById('forumModalMessage').value       = post.message || '';
+  document.getElementById('forumModalSaveBtn').textContent = '💾 Save Changes';
+  document.getElementById('forumModalBackdrop').classList.add('show');
+}
+
+function closeForumModal() {
+  document.getElementById('forumModalBackdrop').classList.remove('show');
+  _forumEditId = null;
+}
+
+async function saveForumPost() {
+  const name    = document.getElementById('forumModalName').value.trim();
+  const message = document.getElementById('forumModalMessage').value.trim();
+  if (!name)    { showToast('⚠️ Name is required', 'error'); return; }
+  if (!message) { showToast('⚠️ Message is required', 'error'); return; }
+  const btn = document.getElementById('forumModalSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    let res;
+    if (_forumEditId !== null) {
+      // EDIT
+      res = await fetch(`${BASE}/forum/posts/${_forumEditId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ name, message })
+      });
+    } else {
+      // ADD
+      res = await fetch(`${BASE}/forum/post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ name, message })
+      });
+    }
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || 'Save failed');
+    }
+    showToast(_forumEditId !== null ? '✅ Post updated!' : '✅ Post created!', 'success');
+    closeForumModal();
+    await loadForum();
+    loadStats();
+  } catch(e) {
+    showToast('❌ ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = _forumEditId !== null ? '💾 Save Changes' : '💾 Save';
+  }
+}
+
+// ── DELETE ──
+function confirmDeleteForumPost(id, name) {
+  document.getElementById('confirmTitle').textContent  = 'Delete Forum Post';
+  document.getElementById('confirmIcon').textContent   = '🗑️';
+  document.getElementById('confirmMsg').textContent    = `Delete post by "${name}"?`;
+  document.getElementById('confirmDetail').textContent = 'This action is permanent and cannot be undone.';
+  document.getElementById('confirmBackdrop').classList.add('show');
+  pendingDeleteFn = () => doDeleteForumPost(id);
+}
+
+async function doDeleteForumPost(id) {
+  try {
+    const res = await fetch(`${BASE}/forum/posts/${id}`, {
+      method: 'DELETE', headers: authHeaders()
+    });
+    if (res.ok) {
+      showToast('🗑️ Post deleted', 'success');
+      await loadForum();
+      loadStats();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      showToast(d.detail || 'Delete failed', 'error');
+    }
+  } catch(e) {
+    showToast('Network error', 'error');
+  }
+}
+
+// ── REPLY ──
+function openForumReply(id, name, previewMsg) {
+  _forumReplyId = id;
+  const origEl = document.getElementById('forumReplyOriginal');
+  origEl.innerHTML = '<strong>' + esc(name) + ':</strong> ' + esc(previewMsg) + (previewMsg.length >= 80 ? '…' : '');
+  document.getElementById('forumReplyMessage').value = '';
+  document.getElementById('forumReplyBackdrop').classList.add('show');
+}
+
+function closeForumReply() {
+  document.getElementById('forumReplyBackdrop').classList.remove('show');
+  _forumReplyId = null;
+}
+
+async function submitForumReply() {
+  if (_forumReplyId === null) return;
+  const message = document.getElementById('forumReplyMessage').value.trim();
+  if (!message) { showToast('⚠️ Please write a reply', 'error'); return; }
+  const btn = document.getElementById('forumReplySaveBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const res = await fetch(`${BASE}/forum/posts/${_forumReplyId}/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ message })
+    });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.detail || 'Reply failed');
+    }
+    showToast('✅ Reply posted!', 'success');
+    closeForumReply();
+    await loadForum();
+  } catch(e) {
+    showToast('❌ ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '↩ Send Reply';
   }
 }
 

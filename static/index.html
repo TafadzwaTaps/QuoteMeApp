@@ -637,7 +637,13 @@
         #donateFab { padding: 10px 14px; font-size: 13px; bottom: 88px; right: 16px; }
         .donate-impact-item { min-width: 80px; }
     }
-   </style>
+   
+    /* ── BLOG READ-MORE MODAL ── */
+    @keyframes blogModalIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+    body.dark #blogModalInner{background:#2c2c2c;color:#f0f0f0}
+    body.dark #blogModalTitle{color:#f472b6}
+    body.dark #blogModalBody{color:#ddd}
+</style>
 </head>
 <body>
 
@@ -696,6 +702,23 @@
         </div>
     </section>
 
+    <!-- ── BLOG READ-MORE MODAL ── -->
+    <div id="blogModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(10,5,15,.6);backdrop-filter:blur(6px);justify-content:center;align-items:flex-start;padding:30px 16px;overflow-y:auto;">
+        <div id="blogModalInner" style="background:#fff;border-radius:22px;width:100%;max-width:700px;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:blogModalIn .22s ease;position:relative;margin:auto;">
+            <button onclick="closeBlogModal()" aria-label="Close" style="position:absolute;top:16px;right:18px;background:rgba(214,51,132,.12);border:none;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer;color:#d63384;display:flex;align-items:center;justify-content:center;transition:background .2s;z-index:1">✕</button>
+            <div style="padding:28px 30px 24px">
+                <img id="blogModalImg" alt="" style="display:none;width:100%;max-height:320px;object-fit:cover;border-radius:14px;margin-bottom:18px">
+                <h2 id="blogModalTitle" style="color:#d63384;font-size:22px;line-height:1.3;margin-bottom:6px"></h2>
+                <div id="blogModalMeta" style="font-size:12px;color:#bbb;margin-bottom:4px"></div>
+                <hr style="border:none;border-top:1px solid rgba(214,51,132,.15);margin:12px 0">
+                <div id="blogModalBody" style="font-size:15px;line-height:1.85;color:#444;white-space:pre-line;margin-top:8px"></div>
+                <div style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(214,51,132,.12)">
+                    <div id="blogModalCommentSection"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <section id="contact" class="contact-section fade-in">
         <h2>Contact Us</h2>
         <p>Have a suggestion or want to collaborate? Reach out!</p>
@@ -730,7 +753,7 @@
                 <h2>About QuoteMe ZW</h2>
                 <p>
                     QuoteMe ZW was born from a simple but powerful belief — that every woman
-                    and young person deserves access to daily inspiration,
+                    and young person in world deserves access to daily inspiration,
                     empowering stories, and a community that lifts them up.
                 </p>
                 <p>
@@ -859,6 +882,7 @@
 
             <!-- Amount preset grid -->
             <div class="donate-amounts" id="donateAmounts">
+        
                 <button class="donate-amt-btn" data-amount="1"    onclick="selectAmount(this)">$1</button>
                 <button class="donate-amt-btn" data-amount="2"    onclick="selectAmount(this)">$2</button>
                 <button class="donate-amt-btn" data-amount="5"    onclick="selectAmount(this)">$5</button>
@@ -1225,7 +1249,22 @@
             blogs.forEach(b => {
                 const card = document.createElement('div');
                 card.className = 'blog-card';
-                card.innerHTML = `<h3>${esc(b.title)}</h3><p>${esc((b.content || '').substring(0, 120))}…</p>` +
+                const imgHtml = b.image_url
+                    ? `<img src="${esc(b.image_url)}" alt="${esc(b.title)}"
+                         loading="lazy"
+                         style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin-bottom:10px"
+                         onerror="this.style.display='none'">`
+                    : '';
+                card.innerHTML =
+                    imgHtml +
+                    `<h3 style="margin-bottom:8px">${esc(b.title)}</h3>` +
+                    `<p style="color:#666;font-size:13px;line-height:1.6;margin-bottom:10px">${esc((b.content || '').substring(0, 120))}…</p>` +
+                    `<button onclick="openBlogModal(${b.id})"
+                        style="display:inline-block;margin:4px 8px 6px 0;padding:7px 18px;
+                        background:#d63384;color:#fff;border-radius:20px;border:none;cursor:pointer;
+                        font-size:13px;font-weight:600;font-family:'Poppins',sans-serif">
+                        📖 Read More
+                     </button>` +
                     commentSection('blog', b.id, b.likes);
                 grid.appendChild(card);
             });
@@ -1524,6 +1563,118 @@
         // Back-to-top button
         backToTop.style.display = scrollTop > 200 ? 'block' : 'none';
     }, { passive: true });
+// ── BLOG READ-MORE MODAL ──
+async function openBlogModal(id) {
+    const modal = document.getElementById('blogModal');
+    const titleEl = document.getElementById('blogModalTitle');
+    const bodyEl  = document.getElementById('blogModalBody');
+    const imgEl   = document.getElementById('blogModalImg');
+    const metaEl  = document.getElementById('blogModalMeta');
+    const commEl  = document.getElementById('blogModalCommentSection');
+
+    // Reset & show modal
+    titleEl.textContent = '⏳ Loading…';
+    bodyEl.textContent  = '';
+    imgEl.style.display = 'none';
+    metaEl.textContent  = '';
+    commEl.innerHTML    = '';
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // prevent bg scroll
+
+    try {
+        const res = await fetch(`${BASE}/blogs/${id}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const b = await res.json();
+
+        titleEl.textContent = b.title || 'Untitled';
+        bodyEl.textContent  = b.content || '';
+
+        if (b.image_url) {
+            imgEl.src = b.image_url;
+            imgEl.style.display = 'block';
+        }
+        if (b.created_at) {
+            metaEl.textContent = new Date(b.created_at).toLocaleDateString('en-GB', {year:'numeric',month:'long',day:'numeric'});
+        }
+        if (b.likes != null) {
+            metaEl.textContent += (metaEl.textContent ? '  ·  ' : '') + '❤️ ' + b.likes + ' like' + (b.likes !== 1 ? 's' : '');
+        }
+
+        // Render inline comment widget
+        const key = 'blog-' + id;
+        const liked = (JSON.parse(localStorage.getItem('likedItems') || '{}'))[key];
+        commEl.innerHTML =
+            `<div style="margin-bottom:12px">` +
+            `<button class="like-btn ${liked ? 'liked' : ''}" id="blogModalLikeBtn"
+                onclick="toggleLike('blog',${id},this)" style="margin-bottom:10px">
+                ❤️ ${b.likes || 0}
+             </button></div>` +
+            `<h4 style="color:#d63384;font-size:15px;margin-bottom:12px">💬 Comments</h4>` +
+            `<div id="blogModalCommentList" style="margin-bottom:14px">
+                <div style="color:#bbb;font-size:13px">Loading comments…</div>
+             </div>` +
+            `<div class="comment-form">
+                <input id="blogModalCommentUser" placeholder="Your name" maxlength="80">
+                <input id="blogModalCommentText" placeholder="Write a comment…" maxlength="500">
+                <button onclick="postBlogModalComment(${id})">Post</button>
+             </div>`;
+
+        // Load comments
+        loadBlogModalComments(id);
+
+    } catch(e) {
+        titleEl.textContent = '😕 Could not load this blog post.';
+        console.error(e);
+    }
+}
+
+async function loadBlogModalComments(id) {
+    const list = document.getElementById('blogModalCommentList');
+    if (!list) return;
+    try {
+        const comments = await fetch(`${BASE}/comments/blog/${id}`).then(r => r.json());
+        const sentEmoji = { positive:'😊', neutral:'😐', negative:'😠' };
+        list.innerHTML = comments.length === 0
+            ? '<div style="color:#bbb;font-size:13px">No comments yet. Be the first!</div>'
+            : comments.map(c =>
+                `<div class="comment-item">
+                    <div class="comment-user">${esc(c.username)}
+                        <span class="sentiment-badge ${c.sentiment}">${sentEmoji[c.sentiment]||''} ${c.sentiment}</span>
+                    </div>
+                    <div>${esc(c.content)}</div>
+                 </div>`).join('');
+    } catch(e) { if (list) list.innerHTML = '<div style="color:#bbb;font-size:13px">Could not load comments.</div>'; }
+}
+
+async function postBlogModalComment(id) {
+    const userEl = document.getElementById('blogModalCommentUser');
+    const textEl = document.getElementById('blogModalCommentText');
+    const username = (userEl?.value || '').trim();
+    const content  = (textEl?.value  || '').trim();
+    if (!username || !content) { showToast('⚠️ Please fill in both fields.'); return; }
+    try {
+        await fetch(`${BASE}/comments`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, content, item_type: 'blog', item_id: id })
+        });
+        if (textEl) textEl.value = '';
+        await loadBlogModalComments(id);
+    } catch(e) { showToast('❌ Failed to post comment.'); }
+}
+
+function closeBlogModal() {
+    document.getElementById('blogModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+// Close modal on backdrop click
+document.getElementById('blogModal').addEventListener('click', function(e) {
+    if (e.target === this) closeBlogModal();
+});
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeBlogModal();
+});
+
 // 🚀 INITIAL LOAD — page is already parsed when inline script runs
 loadSettings();
 loadQuotes();

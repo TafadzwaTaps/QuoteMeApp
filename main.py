@@ -309,7 +309,7 @@ def delete_quote(quote_id: int, username: str = Depends(require_admin)):
 # STORIES
 # =========================
 @app.get("/stories")
-def get_stories(limit: int = 10, offset: int = 0):
+def get_stories(limit: int = 15, offset: int = 0):
     try:
         res = (
             supabase.table("stories")
@@ -374,6 +374,20 @@ def get_blogs(limit: int = 6, offset: int = 0):
         .execute()
         .data
     )
+
+
+@app.get("/blogs/{blog_id}")
+def get_blog(blog_id: int):
+    try:
+        res = supabase.table("blogs").select("*").eq("id", blog_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Blog not found")
+        return res.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"get_blog {blog_id}: {e}")
+        raise HTTPException(500, str(e))
 
 
 @app.post("/blogs")
@@ -564,6 +578,63 @@ def create_post(data: dict):
     except Exception as e:
         logger.error(f"forum post insert error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to save post: {e}")
+
+
+@app.put("/forum/posts/{post_id}")
+def update_forum_post(post_id: int, data: dict, username: str = Depends(require_admin)):
+    """Edit a forum post's name and/or message. Requires admin auth."""
+    name    = (data.get("name")    or "").strip()
+    message = (data.get("message") or "").strip()
+    if not name and not message:
+        raise HTTPException(status_code=400, detail="Provide at least name or message to update")
+    payload = {}
+    if name:    payload["name"]    = name
+    if message: payload["message"] = message
+    try:
+        res = supabase.table("forumpost").update(payload).eq("id", post_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Forum post not found")
+        logger.info(f"Forum post {post_id} updated by admin '{username}'")
+        return res.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"update_forum_post {post_id}: {e}")
+        raise HTTPException(500, str(e))
+
+
+@app.delete("/forum/posts/{post_id}")
+def delete_forum_post(post_id: int, username: str = Depends(require_admin)):
+    """Delete a forum post by ID. Requires admin auth."""
+    try:
+        supabase.table("forumpost").delete().eq("id", post_id).execute()
+        logger.info(f"Forum post {post_id} deleted by admin '{username}'")
+        return {"message": "Forum post deleted", "id": post_id}
+    except Exception as e:
+        logger.error(f"delete_forum_post {post_id}: {e}")
+        raise HTTPException(500, str(e))
+
+
+@app.post("/forum/posts/{post_id}/reply")
+def reply_to_forum_post(post_id: int, data: dict, username: str = Depends(require_admin)):
+    """Admin reply to a forum post — stored as a new forum post with @mention prefix."""
+    message = (data.get("message") or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Reply message is required")
+    # Check original post exists
+    original = supabase.table("forumpost").select("id, name").eq("id", post_id).execute()
+    if not original.data:
+        raise HTTPException(status_code=404, detail="Original post not found")
+    original_name = original.data[0].get("name", "User")
+    reply_message = f"@{original_name} — {message}"
+    payload = {"name": f"Admin ({username})", "message": reply_message}
+    try:
+        res = supabase.table("forumpost").insert(payload).execute()
+        logger.info(f"Admin '{username}' replied to forum post {post_id}")
+        return res.data[0] if res.data else {"message": "Reply posted"}
+    except Exception as e:
+        logger.error(f"reply_to_forum_post {post_id}: {e}")
+        raise HTTPException(500, str(e))
 
 
 # =========================
