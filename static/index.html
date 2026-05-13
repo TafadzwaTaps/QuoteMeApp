@@ -643,6 +643,201 @@
     body.dark #blogModalInner{background:#2c2c2c;color:#f0f0f0}
     body.dark #blogModalTitle{color:#f472b6}
     body.dark #blogModalBody{color:#ddd}
+
+    /* ══════════════════════════════════════════
+       CAROUSEL / SLIDESHOW STYLES
+    ══════════════════════════════════════════ */
+    .carousel-section { padding: 60px 0 40px; overflow: hidden; }
+    .carousel-header { text-align:center; padding: 0 20px 28px; }
+    .carousel-header h2 { font-size: 28px; margin-bottom: 6px; }
+    .carousel-sub { color: #aaa; font-size: 14px; }
+    body.dark .carousel-sub { color: #7a6a8a; }
+
+    /* Outer wrapper — clips overflow */
+    .carousel-wrapper {
+        position: relative;
+        overflow: hidden;
+        padding: 0 60px;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    @media(max-width:600px){ .carousel-wrapper { padding: 0 10px; } }
+
+    /* The scrollable track */
+    .carousel-track {
+        display: flex;
+        gap: 22px;
+        transition: transform 0.52s cubic-bezier(0.25, 0.8, 0.25, 1);
+        will-change: transform;
+        align-items: stretch;
+    }
+
+    /* ── CAROUSEL CARD (shared base) ── */
+    .c-card {
+        flex: 0 0 calc(33.333% - 16px);
+        min-width: 260px;
+        max-width: 380px;
+        background: #fff;
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(214,51,132,.09);
+        display: flex;
+        flex-direction: column;
+        transition: transform .32s ease, box-shadow .32s ease, opacity .32s ease;
+        opacity: 0.72;
+        transform: scale(0.96);
+        cursor: pointer;
+    }
+    body.dark .c-card { background: #2c2c2c; box-shadow: 0 4px 24px rgba(0,0,0,.3); }
+    .c-card.active {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 12px 48px rgba(214,51,132,.22);
+    }
+    .c-card:hover { transform: scale(1.02); box-shadow: 0 16px 52px rgba(214,51,132,.27); }
+    .c-card.active:hover { transform: scale(1.03); }
+
+    /* Image area */
+    .c-img-wrap { position: relative; overflow: hidden; height: 210px; flex-shrink: 0; }
+    .c-img-wrap img {
+        width: 100%; height: 100%; object-fit: cover;
+        transition: transform 0.55s ease;
+    }
+    .c-card:hover .c-img-wrap img { transform: scale(1.06); }
+    .c-img-placeholder {
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #fce7ef, #f3e5f5);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 48px;
+    }
+    body.dark .c-img-placeholder { background: linear-gradient(135deg, #2a1020, #1e0a28); }
+
+    /* Sentiment overlay badge on image */
+    .c-sentiment-overlay {
+        position: absolute; top: 12px; right: 12px;
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(8px);
+        padding: 3px 10px; border-radius: 20px;
+        font-size: 11px; font-weight: 700;
+        display: flex; align-items: center; gap: 4px;
+    }
+    body.dark .c-sentiment-overlay { background: rgba(30,20,40,0.88); color: #f0e0f8; }
+    .c-sent-pos { color: #2e7d32; }
+    .c-sent-neu { color: #1565c0; }
+    .c-sent-neg { color: #c62828; }
+
+    /* Card body */
+    .c-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .c-title {
+        font-size: 17px; font-weight: 700; color: #1a1025; line-height: 1.3;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    body.dark .c-title { color: #f0e8f5; }
+    .c-excerpt {
+        font-size: 13px; color: #666; line-height: 1.65; flex: 1;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    body.dark .c-excerpt { color: #aaa; }
+    .c-author { font-size: 12px; color: #d63384; font-weight: 600; font-style: italic; }
+    body.dark .c-author { color: #f472b6; }
+    .c-meta { font-size: 11px; color: #bbb; }
+
+    /* Card footer */
+    .c-footer {
+        display: flex; align-items: center; gap: 8px;
+        padding: 12px 20px; border-top: 1px solid rgba(214,51,132,.1);
+        background: rgba(255,240,248,.4); flex-wrap: wrap;
+    }
+    body.dark .c-footer { background: rgba(40,20,50,.4); border-color: rgba(244,114,182,.1); }
+    .c-like-btn {
+        background: transparent; border: 1.5px solid #f0c0d8; color: #d63384;
+        padding: 4px 12px; border-radius: 16px; cursor: pointer; font-size: 12px;
+        font-weight: 700; font-family: 'Poppins', sans-serif; transition: all .2s;
+    }
+    .c-like-btn:hover, .c-like-btn.liked { background: #d63384; color: #fff; border-color: #d63384; }
+    body.dark .c-like-btn { border-color: #5a2050; color: #f472b6; }
+    body.dark .c-like-btn:hover, body.dark .c-like-btn.liked { background: #f472b6; color: #1a0a14; border-color: #f472b6; }
+    .c-comment-count { font-size: 12px; color: #999; }
+    body.dark .c-comment-count { color: #7a6a8a; }
+    .c-read-btn {
+        margin-left: auto; background: linear-gradient(135deg,#d63384,#9c27b0);
+        color: #fff; border: none; padding: 6px 16px; border-radius: 16px;
+        font-size: 12px; font-weight: 700; cursor: pointer;
+        font-family: 'Poppins', sans-serif; transition: opacity .2s, transform .2s;
+        text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .c-read-btn:hover { opacity: .85; transform: translateY(-1px); }
+
+    /* Quote card variant (no image by default) */
+    .c-card.quote-variant .c-img-wrap { display: none; }
+    .c-card.quote-variant.has-image .c-img-wrap { display: block; }
+    .c-card.quote-variant .c-body { justify-content: center; min-height: 160px; }
+    .c-card.quote-variant .c-title {
+        font-size: 15px; font-style: italic; font-weight: 600;
+        -webkit-line-clamp: 5; color: #333; text-align: center; line-height: 1.7;
+    }
+    body.dark .c-card.quote-variant .c-title { color: #f0e8f5; }
+
+    /* ── ARROW BUTTONS ── */
+    .carousel-arrow {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 46px; height: 46px; border-radius: 50%;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(10px);
+        border: 1.5px solid rgba(214,51,132,.2);
+        color: #d63384; font-size: 28px; font-weight: 300;
+        cursor: pointer; z-index: 10;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 20px rgba(214,51,132,.18);
+        transition: all .2s ease;
+        line-height: 1;
+    }
+    body.dark .carousel-arrow { background: rgba(40,20,50,.92); border-color: rgba(244,114,182,.25); color: #f472b6; }
+    .carousel-arrow:hover { transform: translateY(-50%) scale(1.1); box-shadow: 0 8px 28px rgba(214,51,132,.32); }
+    .carousel-arrow:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+    .carousel-prev { left: 8px; }
+    .carousel-next { right: 8px; }
+    @media(max-width:600px){
+        .carousel-arrow { width:36px; height:36px; font-size:22px; }
+        .carousel-prev { left:2px; }
+        .carousel-next { right:2px; }
+    }
+
+    /* ── DOTS ── */
+    .carousel-dots {
+        display: flex; justify-content: center; gap: 8px;
+        padding: 18px 0 0; flex-wrap: wrap;
+    }
+    .carousel-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #f0c0d8; border: none; cursor: pointer;
+        transition: all .25s ease; padding: 0;
+    }
+    body.dark .carousel-dot { background: #5a2050; }
+    .carousel-dot.active { background: #d63384; transform: scale(1.35); }
+    body.dark .carousel-dot.active { background: #f472b6; }
+
+    /* ── SKELETON LOADER ── */
+    .carousel-skeleton {
+        flex: 0 0 calc(33.333% - 16px); min-width: 260px; max-width: 380px;
+        height: 380px; border-radius: 22px;
+        background: linear-gradient(90deg, #fce7ef 25%, #fff0f7 50%, #fce7ef 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.6s infinite;
+    }
+    body.dark .carousel-skeleton {
+        background: linear-gradient(90deg, #2a1428 25%, #3a1e38 50%, #2a1428 75%);
+        background-size: 200% 100%;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* ── RESPONSIVE CARD WIDTHS ── */
+    @media(max-width:1100px){ .c-card, .carousel-skeleton { flex-basis: calc(50% - 11px); } }
+    @media(max-width:680px){
+        .c-card, .carousel-skeleton { flex-basis: calc(85vw); min-width: unset; }
+        .c-img-wrap { height: 170px; }
+        .carousel-wrapper { padding: 0 6px; }
+    }
 </style>
 </head>
 <body>
@@ -681,25 +876,72 @@
     </section>
 
 
-    <section id="explore" class="quotes-section fade-in">
-        <h2>Featured Quotes</h2>
-        <div id="quoteGrid" class="quote-grid"></div>
-    </section>
-
-    <section id="stories" class="stories-section fade-in">
-        <h2>Women Empowerment Stories</h2>
-        <div id="storyGrid" class="story-grid"></div>
-    </section>
-    <div id="storyLoader" style="display:none;text-align:center;padding:20px;color:#d63384;font-size:14px;">
-        ✨ Loading more stories…
-    </div>
-
-    <section id="blog" class="blog-section fade-in">
-        <h2>Motivational Blog</h2>
-        <div id="blogGrid" class="blog-grid"></div>
-        <div id="blogLoader" style="display:none;text-align:center;padding:20px;color:#d63384;font-size:14px;">
-            ✨ Loading more blogs…
+    <!-- ══════════════════════════════════════════
+         QUOTES CAROUSEL SECTION
+    ══════════════════════════════════════════ -->
+    <section id="explore" class="quotes-section carousel-section fade-in">
+        <div class="carousel-header">
+            <h2>💬 Featured Quotes</h2>
+            <p class="carousel-sub">Words that inspire, motivate and empower</p>
         </div>
+        <div class="carousel-wrapper" id="quoteCarouselWrapper">
+            <div class="carousel-track" id="quoteCarouselTrack">
+                <div class="carousel-skeleton"></div>
+                <div class="carousel-skeleton"></div>
+                <div class="carousel-skeleton"></div>
+            </div>
+            <button class="carousel-arrow carousel-prev" id="quotePrev" onclick="quoteCarousel.prev()" aria-label="Previous quote">&#8249;</button>
+            <button class="carousel-arrow carousel-next" id="quoteNext" onclick="quoteCarousel.next()" aria-label="Next quote">&#8250;</button>
+        </div>
+        <div class="carousel-dots" id="quoteDots"></div>
+        <div id="quoteGrid" style="display:none"></div>
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         STORIES CAROUSEL SECTION
+    ══════════════════════════════════════════ -->
+    <section id="stories" class="stories-section carousel-section fade-in">
+        <div class="carousel-header">
+            <h2>✨ Women Empowerment Stories</h2>
+            <p class="carousel-sub">Real voices, real victories — swipe to explore</p>
+        </div>
+        <div class="carousel-wrapper" id="storyCarouselWrapper">
+            <!-- Skeleton loaders shown until data arrives -->
+            <div class="carousel-track" id="storyCarouselTrack">
+                <div class="carousel-skeleton"></div>
+                <div class="carousel-skeleton"></div>
+                <div class="carousel-skeleton"></div>
+            </div>
+            <button class="carousel-arrow carousel-prev" id="storyPrev" onclick="storyCarousel.prev()" aria-label="Previous story">&#8249;</button>
+            <button class="carousel-arrow carousel-next" id="storyNext" onclick="storyCarousel.next()" aria-label="Next story">&#8250;</button>
+        </div>
+        <div class="carousel-dots" id="storyDots"></div>
+        <!-- Legacy storyGrid kept for backward compat (hidden) -->
+        <div id="storyGrid" style="display:none"></div>
+    </section>
+    <div id="storyLoader" style="display:none;text-align:center;padding:10px;color:#d63384;font-size:13px;">✨ Loading…</div>
+
+    <!-- ══════════════════════════════════════════
+         BLOG CAROUSEL SECTION
+    ══════════════════════════════════════════ -->
+    <section id="blog" class="blog-section carousel-section fade-in">
+        <div class="carousel-header">
+            <h2>📰 Motivational Blog</h2>
+            <p class="carousel-sub">Ideas and insights to fuel your journey</p>
+        </div>
+        <div class="carousel-wrapper" id="blogCarouselWrapper">
+            <div class="carousel-track" id="blogCarouselTrack">
+                <div class="carousel-skeleton"></div>
+                <div class="carousel-skeleton"></div>
+                <div class="carousel-skeleton"></div>
+            </div>
+            <button class="carousel-arrow carousel-prev" id="blogPrev" onclick="blogCarousel.prev()" aria-label="Previous blog">&#8249;</button>
+            <button class="carousel-arrow carousel-next" id="blogNext" onclick="blogCarousel.next()" aria-label="Next blog">&#8250;</button>
+        </div>
+        <div class="carousel-dots" id="blogDots"></div>
+        <!-- Legacy blogGrid kept for backward compat (hidden) -->
+        <div id="blogGrid" style="display:none"></div>
+        <div id="blogLoader" style="display:none;text-align:center;padding:10px;color:#d63384;font-size:13px;">✨ Loading…</div>
     </section>
 
     <!-- ── BLOG READ-MORE MODAL ── -->
@@ -1001,10 +1243,6 @@
 
     <script>
     const BASE = window.location.origin;
-    let storyOffset = 0;
-    const STORY_LIMIT = 25;
-    let loadingStories = false;
-    let allStoriesLoaded = false;
 
     // MOBILE MENU
     function toggleMenu() {
@@ -1111,175 +1349,318 @@
 
     function esc(s) { return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+    // ══════════════════════════════════════════
+    // CAROUSEL ENGINE
+    // ══════════════════════════════════════════
+    class Carousel {
+        constructor({ trackId, dotsId, autoMs = 5000 }) {
+            this.track     = document.getElementById(trackId);
+            this.dotsEl    = document.getElementById(dotsId);
+            this.cards     = [];
+            this.current   = 0;
+            this.autoMs    = autoMs;
+            this._timer    = null;
+            this._dragging = false;
+            this._startX   = 0;
+            this._diffX    = 0;
+            this._visCount = this._calcVisible();
+            this._setupResizeObserver();
+        }
+
+        _calcVisible() {
+            const w = window.innerWidth;
+            if (w <= 680) return 1;
+            if (w <= 1100) return 2;
+            return 3;
+        }
+
+        loadCards(items, renderFn) {
+            // Remove skeletons
+            if (this.track) this.track.innerHTML = '';
+            this.cards = items.map(item => {
+                const el = renderFn(item);
+                this.track.appendChild(el);
+                return el;
+            });
+            this._buildDots();
+            this._update(false);
+            this._startAuto();
+            this._bindDrag();
+        }
+
+        _buildDots() {
+            if (!this.dotsEl) return;
+            this.dotsEl.innerHTML = '';
+            const totalSlides = Math.max(1, this.cards.length - this._visCount + 1);
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('button');
+                dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+                dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+                dot.addEventListener('click', () => this.goTo(i));
+                this.dotsEl.appendChild(dot);
+            }
+        }
+
+        _updateDots() {
+            if (!this.dotsEl) return;
+            const dots = this.dotsEl.querySelectorAll('.carousel-dot');
+            dots.forEach((d, i) => d.classList.toggle('active', i === this.current));
+        }
+
+        _update(animate = true) {
+            if (!this.track) return;
+            const cardWidth  = this.cards[0] ? this.cards[0].offsetWidth + 22 : 0;
+            const offset     = this.current * cardWidth;
+            this.track.style.transition = animate ? 'transform 0.52s cubic-bezier(0.25,0.8,0.25,1)' : 'none';
+            this.track.style.transform  = `translateX(-${offset}px)`;
+            // Active highlight
+            this.cards.forEach((c, i) => {
+                c.classList.toggle('active', i >= this.current && i < this.current + this._visCount);
+            });
+            this._updateDots();
+        }
+
+        goTo(idx) {
+            const max = Math.max(0, this.cards.length - this._visCount);
+            this.current = Math.max(0, Math.min(idx, max));
+            this._update();
+        }
+
+        next() { this.goTo(this.current + 1); this._resetAuto(); }
+        prev() { this.goTo(this.current - 1); this._resetAuto(); }
+
+        _startAuto() {
+            this._stopAuto();
+            this._timer = setInterval(() => {
+                const max = Math.max(0, this.cards.length - this._visCount);
+                this.goTo(this.current < max ? this.current + 1 : 0);
+            }, this.autoMs);
+        }
+        _stopAuto() { if (this._timer) clearInterval(this._timer); }
+        _resetAuto() { this._startAuto(); }
+
+        _bindDrag() {
+            const el = this.track;
+            if (!el) return;
+            // Touch
+            el.addEventListener('touchstart', e => { this._startX = e.touches[0].clientX; this._stopAuto(); }, { passive: true });
+            el.addEventListener('touchmove',  e => { this._diffX = e.touches[0].clientX - this._startX; }, { passive: true });
+            el.addEventListener('touchend',   () => { if (this._diffX < -40) this.next(); else if (this._diffX > 40) this.prev(); this._diffX = 0; this._startAuto(); });
+            // Mouse
+            el.addEventListener('mousedown', e => { this._dragging = true; this._startX = e.clientX; this._stopAuto(); el.style.cursor = 'grabbing'; });
+            window.addEventListener('mousemove', e => { if (this._dragging) this._diffX = e.clientX - this._startX; });
+            window.addEventListener('mouseup', () => { if (!this._dragging) return; if (this._diffX < -40) this.next(); else if (this._diffX > 40) this.prev(); this._dragging = false; this._diffX = 0; if (el) el.style.cursor = ''; this._startAuto(); });
+            // Pause on hover
+            el.closest('.carousel-wrapper')?.addEventListener('mouseenter', () => this._stopAuto());
+            el.closest('.carousel-wrapper')?.addEventListener('mouseleave', () => this._startAuto());
+        }
+
+        _setupResizeObserver() {
+            let debounce;
+            const ro = new ResizeObserver(() => {
+                clearTimeout(debounce);
+                debounce = setTimeout(() => {
+                    this._visCount = this._calcVisible();
+                    this._buildDots();
+                    this._update(false);
+                }, 120);
+            });
+            if (this.track) ro.observe(this.track);
+        }
+    }
+
+    // Instantiate carousels
+    const storyCarousel = new Carousel({ trackId: 'storyCarouselTrack', dotsId: 'storyDots', autoMs: 6000 });
+    const blogCarousel  = new Carousel({ trackId: 'blogCarouselTrack',  dotsId: 'blogDots',  autoMs: 7000 });
+    const quoteCarousel = new Carousel({ trackId: 'quoteCarouselTrack', dotsId: 'quoteDots', autoMs: 5000 });
+
+    // Sentiment badge helper
+    function sentimentBadgeHTML(text) {
+        if (!text) return '';
+        const words = new Set(text.toLowerCase().split(/\s+/));
+        const POS = new Set(['love','great','amazing','wonderful','inspiring','beautiful','excellent','fantastic','awesome','good','brilliant','perfect','happy','joy','thank','best','outstanding']);
+        const NEG = new Set(['hate','terrible','awful','bad','horrible','worst','ugly','boring','disappointing','sad','angry','useless','poor','disgusting','failed','wrong']);
+        let pos = 0, neg = 0;
+        words.forEach(w => { if (POS.has(w)) pos++; if (NEG.has(w)) neg++; });
+        if (pos > neg) return '<span class="c-sent-pos">😊 Positive</span>';
+        if (neg > pos) return '<span class="c-sent-neg">⚠️ Negative</span>';
+        return '<span class="c-sent-neu">😐 Neutral</span>';
+    }
+
     // ── LOAD QUOTES ──
     async function loadQuotes() {
         try {
             const res = await fetch(`${BASE}/quotes`, { cache: "no-store" });
             if (!res.ok) throw new Error("Failed to fetch quotes");
             const quotes = await res.json();
-            const grid = document.getElementById('quoteGrid');
-            grid.innerHTML = '';
-            if (!quotes.length) { grid.innerHTML = '<p style="color:#888">✨ No quotes yet. Be the first to add inspiration!</p>'; return; }
             const statQ = document.getElementById('statQuotes');
             if (statQ) statQ.textContent = quotes.length;
-            quotes.forEach(q => {
+            if (!quotes.length) {
+                const t = document.getElementById('quoteCarouselTrack');
+                if (t) t.innerHTML = '<p style="color:#888;padding:30px">✨ No quotes yet.</p>';
+                return;
+            }
+            quoteCarousel.loadCards(quotes, q => {
                 const card = document.createElement('div');
-                card.className = 'quote-card';
-                card.innerHTML = (q.image_url ? `<img src="${esc(q.image_url)}" alt="Quote image" loading="lazy">` : '') +
-                    `<p>${esc(q.text)}</p>` +
-                    (q.author ? `<small style="color:#888">— ${esc(q.author)}</small>` : '') +
-                    commentSection('quote', q.id, q.likes);
-                grid.appendChild(card);
+                const hasImg = !!q.image_url;
+                card.className = 'c-card quote-variant' + (hasImg ? ' has-image' : '');
+                const key = `quote-${q.id}`;
+                const liked = likedItems[key];
+                card.innerHTML = `
+                    ${hasImg ? `<div class="c-img-wrap"><img src="${esc(q.image_url)}" alt="Quote image" loading="lazy" onerror="this.parentElement.style.display='none'">
+                    <div class="c-sentiment-overlay">${sentimentBadgeHTML(q.text)}</div></div>` : ''}
+                    <div class="c-body">
+                        <div class="c-title">"${esc(q.text)}"</div>
+                        ${q.author ? `<div class="c-author">— ${esc(q.author)}</div>` : ''}
+                    </div>
+                    <div class="c-footer">
+                        <button class="c-like-btn ${liked ? 'liked' : ''}" id="like-${key}" onclick="event.stopPropagation();toggleLike('quote',${q.id},this)">❤️ ${q.likes || 0}</button>
+                        <button class="comments-toggle c-comment-count" onclick="event.stopPropagation();toggleComments('${key}')">💬 Comments</button>
+                    </div>
+                    <div class="comments-section" id="comments-${key}" style="padding:10px 20px 14px">
+                        <div id="comment-list-${key}"></div>
+                        <div class="comment-form">
+                            <input id="cu-${key}" placeholder="Your name">
+                            <input id="ct-${key}" placeholder="Write a comment…">
+                            <button onclick="postComment('${key}')">Post</button>
+                        </div>
+                    </div>`;
+                return card;
             });
         } catch(e) { console.error('Failed to load quotes', e); }
     }
 
     // ── LOAD STORIES ──
+    let storyOffset = 0;
+    const STORY_LIMIT = 25;
+    let loadingStories = false;
+    let allStoriesLoaded = false;
+
     async function loadStories() {
         if (loadingStories || allStoriesLoaded) return;
         loadingStories = true;
-
-        // Show loader
-        const loaderEl = document.getElementById('storyLoader');
-        if (loaderEl) loaderEl.style.display = 'block';
-
         try {
-            const res = await fetch(
-                `${BASE}/stories?limit=${STORY_LIMIT}&offset=${storyOffset}`,
-                { cache: 'no-store' }
-            );
+            const res = await fetch(`${BASE}/stories?limit=${STORY_LIMIT}&offset=${storyOffset}`, { cache: 'no-store' });
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const stories = await res.json();
             const list = Array.isArray(stories) ? stories : (stories.stories || []);
-
-            const grid = document.getElementById('storyGrid');
-
-            // Empty state on first page
-            if (storyOffset === 0 && list.length === 0) {
-                grid.innerHTML = '<p style="color:#888">No stories yet.</p>';
-                allStoriesLoaded = true;
-                return; // finally will still run
-            }
-
-            // No more pages
-            if (list.length === 0) {
+            if (!list.length && storyOffset === 0) {
+                const t = document.getElementById('storyCarouselTrack');
+                if (t) t.innerHTML = '<p style="color:#888;padding:30px">No stories yet.</p>';
                 allStoriesLoaded = true;
                 return;
             }
-
-            // Append cards
-            list.forEach(s => {
-                const card = document.createElement('div');
-                card.className = 'story-card';
-                const imgHtml = s.image_url
-                    ? `<img src="${esc(s.image_url)}" alt="${esc(s.title)}"
-                         loading="lazy"
-                         style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:10px"
-                         onerror="this.style.display='none'">`
-                    : '';
-                card.innerHTML =
-                    imgHtml +
-                    `<h3>${esc(s.title)}</h3>` +
-                    `<p style="color:#555;font-size:14px;line-height:1.6">
-                        ${esc((s.content || '').substring(0, 150))}…
-                     </p>` +
-                    `<a href="/story/${s.id}"
-                        style="display:inline-block;margin:8px 0 6px;padding:7px 18px;
-                        background:#d63384;color:#fff;border-radius:20px;text-decoration:none;
-                        font-size:13px;font-weight:600">
-                        📖 Read More
-                     </a>` +
-                    commentSection('story', s.id, s.likes);
-                grid.appendChild(card);
-            });
-
-            storyOffset += list.length;
-
-            // Update stat counter
+            if (!list.length) { allStoriesLoaded = true; return; }
             const statEl = document.getElementById('statStories');
-            if (statEl) statEl.textContent = storyOffset;
-
-            // Mark done if last page
+            if (statEl) statEl.textContent = storyOffset + list.length;
+            storyCarousel.loadCards(list, s => {
+                const card = document.createElement('div');
+                card.className = 'c-card';
+                const key  = `story-${s.id}`;
+                const liked = likedItems[key];
+                const excerpt = esc((s.content || '').substring(0, 130));
+                const dateStr = s.created_at ? new Date(s.created_at).toLocaleDateString('en-GB', { year:'numeric', month:'short', day:'numeric' }) : '';
+                card.innerHTML = `
+                    <div class="c-img-wrap">
+                        ${s.image_url
+                            ? `<img src="${esc(s.image_url)}" alt="${esc(s.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'c-img-placeholder\\'>📖</div>'">`
+                            : `<div class="c-img-placeholder">📖</div>`}
+                        <div class="c-sentiment-overlay">${sentimentBadgeHTML(s.content || '')}</div>
+                    </div>
+                    <div class="c-body">
+                        <div class="c-title">${esc(s.title)}</div>
+                        <div class="c-excerpt">${excerpt}…</div>
+                        ${dateStr ? `<div class="c-meta">📅 ${dateStr}</div>` : ''}
+                    </div>
+                    <div class="c-footer">
+                        <button class="c-like-btn ${liked ? 'liked' : ''}" id="like-${key}" onclick="event.stopPropagation();toggleLike('story',${s.id},this)">❤️ ${s.likes || 0}</button>
+                        <button class="comments-toggle c-comment-count" onclick="event.stopPropagation();toggleComments('${key}')">💬 Comments</button>
+                        <a href="/story/${s.id}" class="c-read-btn" onclick="event.stopPropagation()">📖 Read More</a>
+                    </div>
+                    <div class="comments-section" id="comments-${key}" style="padding:10px 20px 14px">
+                        <div id="comment-list-${key}"></div>
+                        <div class="comment-form">
+                            <input id="cu-${key}" placeholder="Your name">
+                            <input id="ct-${key}" placeholder="Write a comment…">
+                            <button onclick="postComment('${key}')">Post</button>
+                        </div>
+                    </div>`;
+                return card;
+            });
+            storyOffset += list.length;
             if (list.length < STORY_LIMIT) allStoriesLoaded = true;
-
-        } catch (e) {
+        } catch(e) {
             console.error('Failed to load stories:', e);
         } finally {
-            // Always runs — release lock and hide loader
             loadingStories = false;
             const loaderEl = document.getElementById('storyLoader');
             if (loaderEl) loaderEl.style.display = 'none';
         }
     }
 
-    // ── LOAD BLOGS ──
     // ── BLOG INFINITE SCROLL STATE ──
     let blogOffset = 0;
     const BLOG_LIMIT = 6;
     let loadingBlogs = false;
     let allBlogsLoaded = false;
 
+    // ── LOAD BLOGS ──
     async function loadBlogs() {
         if (loadingBlogs || allBlogsLoaded) return;
         loadingBlogs = true;
-
-        // Show loading indicator
         const loaderEl = document.getElementById('blogLoader');
         if (loaderEl) loaderEl.style.display = 'block';
-
         try {
-            const blogs = await fetch(
-                `${BASE}/blogs?limit=${BLOG_LIMIT}&offset=${blogOffset}`,
-                { cache: 'no-store' }
-            ).then(r => r.json());
-
-            const grid = document.getElementById('blogGrid');
-
+            const blogs = await fetch(`${BASE}/blogs?limit=${BLOG_LIMIT}&offset=${blogOffset}`, { cache: 'no-store' }).then(r => r.json());
             if (blogOffset === 0 && (!blogs || !blogs.length)) {
-                grid.innerHTML = '<p style="color:#888">No blogs yet.</p>';
+                const t = document.getElementById('blogCarouselTrack');
+                if (t) t.innerHTML = '<p style="color:#888;padding:30px">No blogs yet.</p>';
                 allBlogsLoaded = true;
                 return;
             }
-
-            if (!blogs.length) {
-                allBlogsLoaded = true;
-                return;
-            }
-
+            if (!blogs.length) { allBlogsLoaded = true; return; }
             const statB = document.getElementById('statBlogs');
-            blogs.forEach(b => {
+            if (statB) statB.textContent = blogOffset + blogs.length;
+            blogCarousel.loadCards(blogs, b => {
                 const card = document.createElement('div');
-                card.className = 'blog-card';
-                const imgHtml = b.image_url
-                    ? `<img src="${esc(b.image_url)}" alt="${esc(b.title)}"
-                         loading="lazy"
-                         style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin-bottom:10px"
-                         onerror="this.style.display='none'">`
-                    : '';
-                card.innerHTML =
-                    imgHtml +
-                    `<h3 style="margin-bottom:8px">${esc(b.title)}</h3>` +
-                    `<p style="color:#666;font-size:13px;line-height:1.6;margin-bottom:10px">${esc((b.content || '').substring(0, 120))}…</p>` +
-                    `<button onclick="openBlogModal(${b.id})"
-                        style="display:inline-block;margin:4px 8px 6px 0;padding:7px 18px;
-                        background:#d63384;color:#fff;border-radius:20px;border:none;cursor:pointer;
-                        font-size:13px;font-weight:600;font-family:'Poppins',sans-serif">
-                        📖 Read More
-                     </button>` +
-                    commentSection('blog', b.id, b.likes);
-                grid.appendChild(card);
+                card.className = 'c-card';
+                const key = `blog-${b.id}`;
+                const liked = likedItems[key];
+                const excerpt = esc((b.content || '').substring(0, 120));
+                const dateStr = b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB', { year:'numeric', month:'short', day:'numeric' }) : '';
+                card.innerHTML = `
+                    <div class="c-img-wrap">
+                        ${b.image_url
+                            ? `<img src="${esc(b.image_url)}" alt="${esc(b.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'c-img-placeholder\\'>📰</div>'">`
+                            : `<div class="c-img-placeholder">📰</div>`}
+                        <div class="c-sentiment-overlay">${sentimentBadgeHTML(b.content || '')}</div>
+                    </div>
+                    <div class="c-body">
+                        <div class="c-title">${esc(b.title)}</div>
+                        <div class="c-excerpt">${excerpt}…</div>
+                        ${dateStr ? `<div class="c-meta">📅 ${dateStr}</div>` : ''}
+                    </div>
+                    <div class="c-footer">
+                        <button class="c-like-btn ${liked ? 'liked' : ''}" id="like-${key}" onclick="event.stopPropagation();toggleLike('blog',${b.id},this)">❤️ ${b.likes || 0}</button>
+                        <button class="comments-toggle c-comment-count" onclick="event.stopPropagation();toggleComments('${key}')">💬 Comments</button>
+                        <button class="c-read-btn" onclick="event.stopPropagation();openBlogModal(${b.id})">📖 Read More</button>
+                    </div>
+                    <div class="comments-section" id="comments-${key}" style="padding:10px 20px 14px">
+                        <div id="comment-list-${key}"></div>
+                        <div class="comment-form">
+                            <input id="cu-${key}" placeholder="Your name">
+                            <input id="ct-${key}" placeholder="Write a comment…">
+                            <button onclick="postComment('${key}')">Post</button>
+                        </div>
+                    </div>`;
+                return card;
             });
-
             blogOffset += BLOG_LIMIT;
-            if (statB) statB.textContent = blogOffset;
-
             if (blogs.length < BLOG_LIMIT) allBlogsLoaded = true;
-
         } catch(e) {
             console.error('Failed to load blogs', e);
         } finally {
             loadingBlogs = false;
-            const loaderEl = document.getElementById('blogLoader');
             if (loaderEl) loaderEl.style.display = 'none';
         }
     }
@@ -1683,16 +2064,18 @@ loadStories();
 loadBlogs();
 loadPosts();
 
-// Auto-refresh every 3000s — reset pagination state before reloading
+// Auto-refresh every 3000s — reset carousel state before reloading
 setInterval(function() {
     loadQuotes();
-    // Reset story infinite scroll state
+    // Reset story carousel state
     storyOffset = 0; loadingStories = false; allStoriesLoaded = false;
-    document.getElementById('storyGrid').innerHTML = '';
+    storyCarousel.cards = []; storyCarousel.current = 0;
+    document.getElementById('storyCarouselTrack').innerHTML = '<div class="carousel-skeleton"></div><div class="carousel-skeleton"></div><div class="carousel-skeleton"></div>';
     loadStories();
-    // Reset blog infinite scroll state
+    // Reset blog carousel state
     blogOffset = 0; loadingBlogs = false; allBlogsLoaded = false;
-    document.getElementById('blogGrid').innerHTML = '';
+    blogCarousel.cards = []; blogCarousel.current = 0;
+    document.getElementById('blogCarouselTrack').innerHTML = '<div class="carousel-skeleton"></div><div class="carousel-skeleton"></div><div class="carousel-skeleton"></div>';
     loadBlogs();
     loadPosts();
 }, 3000000);
