@@ -838,6 +838,164 @@
         .c-img-wrap { height: 170px; }
         .carousel-wrapper { padding: 0 6px; }
     }
+
+    /* ══════════════════════════════════════════
+       MOBILE OVERFLOW & SCROLL FIX  (additive)
+    ══════════════════════════════════════════ */
+
+    /* 1 ─ Lock viewport width — no element may push past 100vw */
+    html {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+    body {
+        overflow-x: hidden;
+        max-width: 100vw;
+        position: relative; /* needed for overflow-x:hidden to work in Safari */
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 2 ─ Carousel: hard-clamp the wrapper so it can never bleed */
+    .carousel-section {
+        max-width: 100vw;
+        overflow: hidden;
+    }
+    .carousel-wrapper {
+        /* Override: remove fixed padding on very small screens */
+        box-sizing: border-box;
+        max-width: 100%;
+        overflow: hidden;          /* belt-and-suspenders clip */
+        touch-action: pan-y;       /* allow vertical scroll; horizontal drag handled by JS */
+    }
+    .carousel-track {
+        /* Prevent the track itself from creating overflow context */
+        min-width: 0;
+    }
+
+    /* 3 ─ Cards: absolute floor prevents 260px min from blowing out layout */
+    .c-card, .carousel-skeleton {
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+    @media (max-width: 400px) {
+        .c-card, .carousel-skeleton {
+            flex-basis: calc(92vw) !important;
+            min-width: 0 !important;
+        }
+        .carousel-wrapper { padding: 0 4px; }
+        .carousel-arrow { display: none; } /* arrows take up too much room at 320px */
+    }
+    @media (min-width: 401px) and (max-width: 680px) {
+        .c-card, .carousel-skeleton {
+            flex-basis: calc(88vw) !important;
+            min-width: 0 !important;
+        }
+    }
+
+    /* 4 ─ All images are safe */
+    img { max-width: 100%; height: auto; box-sizing: border-box; }
+
+    /* 5 ─ Header: prevent wrap-overflow on tiny screens */
+    .header {
+        box-sizing: border-box;
+        max-width: 100vw;
+        overflow: hidden;
+    }
+    .logo-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
+    }
+    @media (max-width: 360px) { .logo-text { max-width: 100px; font-size: 15px; } }
+
+    /* 6 ─ Hero section */
+    .hero {
+        box-sizing: border-box;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* 7 ─ General sections */
+    section, .about-section, .forum-section, .donate-section, .instagram-section {
+        box-sizing: border-box;
+        max-width: 100vw;
+        overflow: hidden;
+    }
+
+    /* 8 ─ Forum compose & search rows */
+    @media (max-width: 480px) {
+        .forum-compose-row { flex-direction: column; gap: 8px; }
+        .forum-search-row  { flex-direction: column; gap: 8px; }
+        .forum-sort-select, .forum-search-input { width: 100%; box-sizing: border-box; }
+        .forum-inner { padding: 0 2px; }
+    }
+
+    /* 9 ─ Contact form */
+    @media (max-width: 480px) {
+        .contact-form input, .contact-form textarea { box-sizing: border-box; width: 100%; }
+    }
+
+    /* 10 ─ Donate card & amounts */
+    @media (max-width: 400px) {
+        .donate-card { padding: 24px 14px; }
+        .donate-amounts { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .donate-amt-btn { font-size: 13px; padding: 9px 4px; }
+    }
+
+    /* 11 ─ Blog modal */
+    #blogModalInner { box-sizing: border-box; max-width: calc(100vw - 24px) !important; }
+
+    /* 12 ─ Chatbox on tiny screens */
+    @media (max-width: 360px) {
+        #chatBox { width: calc(100vw - 24px); right: 0; }
+        #chatWidget { right: 12px; }
+    }
+
+    /* 13 ─ About section image */
+    @media (max-width: 400px) {
+        .about-founder-img { width: 160px; height: 160px; }
+        .about-content-col h2 { font-size: 20px; }
+    }
+
+    /* 14 ─ Instagram embed */
+    .instagram-section iframe {
+        max-width: 100%;
+        width: min(400px, calc(100vw - 32px));
+    }
+
+    /* 15 ─ Back-to-top & donate FAB — keep inside viewport */
+    @media (max-width: 380px) {
+        #backToTop { right: 12px; bottom: 20px; }
+        #donateFab { right: 12px; bottom: 76px; padding: 9px 12px; font-size: 12px; }
+    }
+
+    /* 16 ─ Smooth vertical scroll for the whole page */
+    html { scroll-behavior: smooth; }
+
+    /* 17 ─ Touch momentum on scrollable inner containers */
+    .chat-messages,
+    .comment-thread,
+    .comments-section,
+    .forum-posts-list {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+
+    /* 18 ─ c-footer wrap tighter on mobile */
+    @media (max-width: 480px) {
+        .c-footer { padding: 10px 14px; gap: 6px; }
+        .c-body    { padding: 14px 16px; }
+        .c-title   { font-size: 15px; }
+        .c-excerpt { font-size: 12px; }
+    }
+
+    /* 19 ─ Carousel section padding fix on very small screens */
+    @media (max-width: 480px) {
+        .carousel-section { padding: 36px 0 24px; }
+        .carousel-header  { padding: 0 16px 20px; }
+        .carousel-header h2 { font-size: 22px; }
+    }
 </style>
 </head>
 <body>
