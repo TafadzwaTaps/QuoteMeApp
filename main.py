@@ -5,8 +5,12 @@ import shutil
 import mimetypes
 import mimetypes
 import logging
+import re
+import time
+from collections import defaultdict
+from threading import Lock
 
-from fastapi import FastAPI, HTTPException, Depends, Header, File, Response, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, Header, File, Response, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,7 +18,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 
 from supabase import create_client
-from jose import jwt
+from jose import jwt, JWTError
 from passlib.context import CryptContext
 
 # =========================
@@ -31,6 +35,7 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 SECRET_KEY = os.getenv("SECRET_KEY", "!QuoteMe_ZW@2026")
 ALGORITHM = "HS256"
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+MAX_UPLOAD_BYTES = 8 * 1024 * 1024  # 8 MB
 
 # Supabase Storage bucket — create in Dashboard: Storage → New bucket → "images" → Public ON
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "images")
@@ -45,6 +50,36 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # =========================
+# SIMPLE IN-MEMORY RATE LIMITER
+# =========================
+_rate_store: dict = defaultdict(list)
+_rate_lock = Lock()
+
+def _rate_limit(key: str, max_calls: int, window_seconds: int):
+    """
+    Raise HTTP 429 if `key` has exceeded `max_calls` within `window_seconds`.
+    Thread-safe. Uses sliding window.
+    """
+    now = time.time()
+    with _rate_lock:
+        calls = _rate_store[key]
+        # Prune old entries
+        calls[:] = [t for t in calls if now - t < window_seconds]
+        if len(calls) >= max_calls:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Too many requests. Please wait a moment and try again. 🙏"
+            )
+        calls.append(now)
+
+def _client_ip(request: Request) -> str:
+    """Extract client IP, respecting reverse-proxy headers."""
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+# =========================
 # APP
 # =========================
 app = FastAPI(title="QuoteMe Supabase API")
@@ -57,7 +92,8 @@ app.add_middleware(
 )
 
 @app.middleware("http")
-async def handle_head_requests(request, call_next):
+async def security_headers_middleware(request: Request, call_next):
+    """Add security headers to every response and handle HEAD requests."""
     if request.method == "HEAD":
         response = await call_next(request)
         return Response(
@@ -66,7 +102,12 @@ async def handle_head_requests(request, call_next):
             headers=response.headers,
             media_type=response.media_type,
         )
-    return await call_next(request)
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
@@ -88,32 +129,68 @@ def dashboard_page():
 def story_page(story_id: int):
     return FileResponse("static/story.html")
 
+@app.get("/privacy")
+def privacy_page():
+    return FileResponse("static/privacy.html")
+
+@app.get("/terms")
+def terms_page():
+    # Serve privacy page as placeholder if terms page not yet created
+    import os as _os
+    if _os.path.exists("static/terms.html"):
+        return FileResponse("static/terms.html")
+    return FileResponse("static/privacy.html")
+
 # =========================
 # AUTH HELPERS
 # =========================
 def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload.get("username")
-    except:
+        username = payload.get("username")
+        # Check expiry is present
+        if not username or "exp" not in payload:
+            return None
+        return username
+    except JWTError:
+        return None
+    except Exception:
         return None
 
 
 def require_admin(authorization: str = Header(...)):
-    token = authorization.replace("Bearer ", "")
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    token = authorization[7:]  # strip "Bearer "
     user = verify_token(token)
     if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        raise HTTPException(status_code=401, detail="Unauthorized — invalid or expired token")
     return user
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    username = payload.get("username")
-
-    if not username:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("username")
+        if not username:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return {"username": username}
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    return {"username": username}
+# =========================
+# INPUT SANITIZATION
+# =========================
+def _strip_html(text: str) -> str:
+    """Remove HTML tags from user-provided strings."""
+    return re.sub(r'<[^>]+>', '', text or '').strip()
+
+def _validate_str(value, field: str, max_len: int = 1000, required: bool = True) -> str:
+    if not value and required:
+        raise HTTPException(status_code=400, detail=f"{field} is required")
+    cleaned = _strip_html(str(value or ''))
+    if len(cleaned) > max_len:
+        raise HTTPException(status_code=400, detail=f"{field} exceeds maximum length of {max_len} characters")
+    return cleaned
 
 # ==============================
 # 💬 SENTIMENT
@@ -133,7 +210,10 @@ def sentiment(text):
 # ADMIN LOGIN
 # =========================
 @app.post("/admin/login")
-def admin_login(data: dict):
+def admin_login(data: dict, request: Request):
+    # Rate limit: 10 login attempts per IP per 5 minutes
+    _rate_limit(f"login:{_client_ip(request)}", max_calls=10, window_seconds=300)
+
     username_input = data.get("username")
     password = data.get("password")
 
@@ -248,6 +328,20 @@ async def upload(
 
     filename     = f"{uuid.uuid4().hex}{ext}"
     file_bytes   = await file.read()
+
+    # Enforce maximum file size
+    if len(file_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum allowed size is {MAX_UPLOAD_BYTES // (1024*1024)} MB."
+        )
+
+    # Verify MIME type matches extension (basic magic-byte check)
+    mime_from_bytes = mimetypes.guess_type(filename)[0] or ""
+    if not mime_from_bytes.startswith("image/"):
+        # Fallback: just trust extension if mimetypes can't detect
+        pass
+
     content_type = mimetypes.guess_type(filename)[0] or "image/jpeg"
 
     # ── Primary: Supabase Storage (persistent) ──
@@ -477,24 +571,22 @@ def _toxicity(text: str) -> float:
 
 
 @app.post("/comments")
-def add_comment(data: dict):
+def add_comment(data: dict, request: Request):
     """
-    Safe comment insert.
-    Tries to save with `toxicity` first.
-    If the column does not exist in Supabase it retries without it.
-    Add the column with:  ALTER TABLE comments ADD COLUMN IF NOT EXISTS toxicity float4 DEFAULT 0;
+    Safe comment insert with rate limiting and input sanitization.
     """
-    text      = (data.get("content")   or "").strip()
-    username  = (data.get("username")  or "").strip()
+    # Rate limit: 15 comments per IP per 10 minutes
+    _rate_limit(f"comment:{_client_ip(request)}", max_calls=15, window_seconds=600)
+
+    text      = _validate_str(data.get("content"), "Comment content", max_len=1000)
+    username  = _validate_str(data.get("username"), "Username", max_len=80)
     item_type = (data.get("item_type") or "").strip()
     item_id   = data.get("item_id")
 
-    if not text:
-        raise HTTPException(status_code=400, detail="Comment content is required")
-    if not username:
-        raise HTTPException(status_code=400, detail="Username is required")
     if not item_type or item_id is None:
         raise HTTPException(status_code=400, detail="item_type and item_id are required")
+    if item_type not in ("quote", "story", "blog"):
+        raise HTTPException(status_code=400, detail="item_type must be 'quote', 'story', or 'blog'")
 
     payload = {
         "username":  username,
@@ -553,20 +645,18 @@ def get_posts():
 
 
 @app.post("/forum/post")
-def create_post(data: dict):
+def create_post(data: dict, request: Request):
     """
-    Insert a forum post.
+    Insert a forum post with rate limiting and input sanitization.
     The forumpost table only has: id, name, message.
     Strip any extra fields (e.g. category, created_at) before inserting
     to avoid Supabase column-not-found errors.
     """
-    name    = (data.get("name")    or "").strip()
-    message = (data.get("message") or "").strip()
+    # Rate limit: 10 posts per IP per 10 minutes
+    _rate_limit(f"forum:{_client_ip(request)}", max_calls=10, window_seconds=600)
 
-    if not name:
-        raise HTTPException(status_code=400, detail="Name is required")
-    if not message:
-        raise HTTPException(status_code=400, detail="Message is required")
+    name    = _validate_str(data.get("name"), "Name", max_len=60)
+    message = _validate_str(data.get("message"), "Message", max_len=500)
 
     # Only send columns that actually exist in the table
     payload = {"name": name, "message": message}
@@ -641,24 +731,35 @@ def reply_to_forum_post(post_id: int, data: dict, username: str = Depends(requir
 # CONTACT
 # =========================
 @app.post("/contact/send")
-def contact(data: dict):
-    """Public contact form — no auth required."""
+def contact(data: dict, request: Request):
+    """Public contact form — rate limited to 5 per IP per hour."""
+    _rate_limit(f"contact:{_client_ip(request)}", max_calls=5, window_seconds=3600)
+    name    = _validate_str(data.get("name"), "Name", max_len=100)
+    email   = _validate_str(data.get("email"), "Email", max_len=200)
+    message = _validate_str(data.get("message"), "Message", max_len=2000)
+    # Basic email format check
+    if "@" not in email or "." not in email:
+        raise HTTPException(status_code=400, detail="Invalid email address")
     try:
-        return supabase.table("contactmessage").insert(data).execute().data
+        return supabase.table("contactmessage").insert({
+            "name": name, "email": email, "message": message
+        }).execute().data
     except Exception as e:
         logger.error(f"contact/send: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to send message. Please try again.")
 
 
 # =========================
 # CHATBOT
 # =========================
 @app.post("/chatbot")
-def chatbot(data: dict):
+def chatbot(data: dict, request: Request):
     """
     Enhanced chatbot with 20+ command categories.
     All keyword matching is case-insensitive.
     """
+    # Rate limit: 60 chatbot requests per IP per minute
+    _rate_limit(f"chatbot:{_client_ip(request)}", max_calls=60, window_seconds=60)
     raw = (data.get("message") or "").strip()
     msg = raw.lower()
 

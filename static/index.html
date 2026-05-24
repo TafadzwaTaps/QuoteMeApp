@@ -1361,6 +1361,11 @@
     <footer class="footer">
         <p>© 2026 QuoteMe ZW • Inspiration Everyday</p>
         <p>Follow us on Instagram @quoteme_zw</p>
+        <p style="margin-top:10px;font-size:13px;opacity:.8">
+            <a href="/privacy" style="color:rgba(255,255,255,.85);text-decoration:underline;margin:0 8px">Privacy Policy</a>
+            <span style="opacity:.5">·</span>
+            <a href="/terms" style="color:rgba(255,255,255,.85);text-decoration:underline;margin:0 8px">Terms &amp; Conditions</a>
+        </p>
     </footer>
 
     
@@ -1371,6 +1376,9 @@
     </button>
 
     <button id="backToTop" onclick="scrollToTop()">↑</button>
+
+    <!-- Global toast notification -->
+    <div id="toastEl" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:20px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center"></div>
 
     <!-- ── CHATBOT WIDGET ── -->
     <div id="chatWidget">
@@ -1443,8 +1451,10 @@
     async function toggleLike(type, id, btn) {
         const key = `${type}-${id}`;
         if (likedItems[key]) { btn.classList.add('liked'); return; }
+        if (_onCooldown('like-' + key, 2000)) return; // prevent double-click spam
         try {
             const res = await fetch(`${BASE}/like/${type}/${id}`, { method: 'POST' });
+            if (!res.ok) return;
             const data = await res.json();
             likedItems[key] = true;
             localStorage.setItem('likedItems', JSON.stringify(likedItems));
@@ -1474,17 +1484,53 @@
                     </div>`).join('');
         } catch(e) { list.innerHTML = ''; }
     }
+    // ── SECURITY HELPERS ──
+    // Debounce/cooldown registry to prevent spam submissions
+    const _cooldowns = {};
+    function _onCooldown(key, ms) {
+        const now = Date.now();
+        if (_cooldowns[key] && now - _cooldowns[key] < ms) return true;
+        _cooldowns[key] = now;
+        return false;
+    }
+    // Strip any HTML tags from user input (extra XSS defense on top of esc())
+    function sanitize(s) {
+        return (s || '').replace(/<[^>]*>/g, '').trim().substring(0, 1000);
+    }
+
     async function postComment(itemId) {
+        if (_onCooldown('comment-' + itemId, 4000)) {
+            showToast('⏳ Please wait a moment before posting again.');
+            return;
+        }
         const [type, id] = itemId.split('-');
-        const username = document.getElementById(`cu-${itemId}`).value.trim();
-        const content = document.getElementById(`ct-${itemId}`).value.trim();
-        if (!username || !content) { alert('Please fill in both fields.'); return; }
-        await fetch(`${BASE}/comments`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, content, item_type: type, item_id: Number(id) })
-        });
-        document.getElementById(`ct-${itemId}`).value = '';
-        await loadComments(itemId);
+        const userEl    = document.getElementById(`cu-${itemId}`);
+        const contentEl = document.getElementById(`ct-${itemId}`);
+        const btn       = contentEl?.closest('.comment-form')?.querySelector('button');
+        const username  = sanitize(userEl?.value || '');
+        const content   = sanitize(contentEl?.value || '');
+        if (!username || !content) { showToast('⚠️ Please fill in both fields.'); return; }
+        if (username.length > 80)  { showToast('⚠️ Name too long (max 80 chars).'); return; }
+        if (content.length > 1000) { showToast('⚠️ Comment too long (max 1000 chars).'); return; }
+        if (btn) { btn.disabled = true; btn.textContent = '…'; }
+        try {
+            const res = await fetch(`${BASE}/comments`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, content, item_type: type, item_id: Number(id) })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                showToast('❌ ' + (err.detail || 'Failed to post comment.'));
+                return;
+            }
+            if (contentEl) contentEl.value = '';
+            showToast('✅ Comment posted!');
+            await loadComments(itemId);
+        } catch(e) {
+            showToast('❌ Network error. Please try again.');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Post'; }
+        }
     }
 
     function commentSection(type, id, likes) {
@@ -1498,11 +1544,24 @@
             <div class="comments-section" id="comments-${key}">
                 <div id="comment-list-${key}"></div>
                 <div class="comment-form">
-                    <input id="cu-${key}" placeholder="Your name">
-                    <input id="ct-${key}" placeholder="Write a comment…">
+                    <input id="cu-${key}" placeholder="Your name" maxlength="80" autocomplete="off">
+                    <input id="ct-${key}" placeholder="Write a comment…" maxlength="1000">
                     <button onclick="postComment('${key}')">Post</button>
                 </div>
             </div>`;
+    }
+
+    // Toast helper (shared with story/blog modals)
+    function showToast(msg, duration) {
+        // Use existing toast if present, else fallback to console
+        const el = document.getElementById('storyToast') || document.getElementById('toastEl');
+        if (el) {
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), duration || 3000);
+        } else {
+            console.info('[Toast]', msg);
+        }
     }
 
     function esc(s) { return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -1665,8 +1724,7 @@
                 const key = `quote-${q.id}`;
                 const liked = likedItems[key];
                 card.innerHTML = `
-                    ${hasImg ? `<div class="c-img-wrap"><img src="${esc(q.image_url)}" alt="Quote image" loading="lazy" onerror="this.parentElement.style.display='none'">
-                    <div class="c-sentiment-overlay">${sentimentBadgeHTML(q.text)}</div></div>` : ''}
+                    ${hasImg ? `<div class="c-img-wrap"><img src="${esc(q.image_url)}" alt="Quote image" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
                     <div class="c-body">
                         <div class="c-title">"${esc(q.text)}"</div>
                         ${q.author ? `<div class="c-author">— ${esc(q.author)}</div>` : ''}
@@ -1723,7 +1781,6 @@
                         ${s.image_url
                             ? `<img src="${esc(s.image_url)}" alt="${esc(s.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'c-img-placeholder\\'>📖</div>'">`
                             : `<div class="c-img-placeholder">📖</div>`}
-                        <div class="c-sentiment-overlay">${sentimentBadgeHTML(s.content || '')}</div>
                     </div>
                     <div class="c-body">
                         <div class="c-title">${esc(s.title)}</div>
@@ -1791,7 +1848,6 @@
                         ${b.image_url
                             ? `<img src="${esc(b.image_url)}" alt="${esc(b.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'c-img-placeholder\\'>📰</div>'">`
                             : `<div class="c-img-placeholder">📰</div>`}
-                        <div class="c-sentiment-overlay">${sentimentBadgeHTML(b.content || '')}</div>
                     </div>
                     <div class="c-body">
                         <div class="c-title">${esc(b.title)}</div>
@@ -1962,12 +2018,15 @@
     }
 
     async function submitForumPost() {
-        const name    = (document.getElementById('userName')      || {}).value?.trim();
-        const message = (document.getElementById('userMessage')   || {}).value?.trim();
+        if (_onCooldown('forum-post', 8000)) { showToast('⏳ Please wait before posting again.'); return; }
+        const name    = sanitize((document.getElementById('userName')      || {}).value || '');
+        const message = sanitize((document.getElementById('userMessage')   || {}).value || '');
         const cat     = (document.getElementById('forumCategory') || {}).value || 'general';
         const btn     = document.getElementById('forumSubmitBtn');
         if (!name)    { showToast('⚠️ Please enter your name.'); return; }
         if (!message) { showToast('⚠️ Please write a message.'); return; }
+        if (name.length > 60)    { showToast('⚠️ Name too long (max 60 chars).'); return; }
+        if (message.length > 500){ showToast('⚠️ Message too long (max 500 chars).'); return; }
         if (btn) { btn.disabled = true; btn.textContent = 'Posting…'; }
         try {
             const res = await fetch(`${BASE}/forum/post`, {
@@ -1997,16 +2056,26 @@
     // ── CONTACT ──
     document.getElementById('contactForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        await fetch(`${BASE}/contact/send`, {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({
-                name: document.getElementById('contactName').value,
-                email: document.getElementById('contactEmail').value,
-                message: document.getElementById('contactMessage').value,
-            })
-        });
-        document.getElementById('contactForm').reset();
-        showToast('✅ Message sent! We will get back to you soon.');
+        if (_onCooldown('contact-form', 15000)) { showToast('⏳ Please wait before sending another message.'); return; }
+        const btn = e.target.querySelector('button[type="submit"]');
+        if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+        try {
+            const res = await fetch(`${BASE}/contact/send`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    name:    sanitize(document.getElementById('contactName').value),
+                    email:   document.getElementById('contactEmail').value.trim().substring(0, 200),
+                    message: sanitize(document.getElementById('contactMessage').value),
+                })
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            document.getElementById('contactForm').reset();
+            showToast('✅ Message sent! We will get back to you soon.');
+        } catch(e) {
+            showToast('❌ Could not send. Please try again.');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Send Message'; }
+        }
     });
 
     // ── CHATBOT ──
