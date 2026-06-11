@@ -115,3 +115,102 @@ class ContactSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+# =========================================
+# STORY SUBMISSION & PARTNERSHIP PACKAGES
+# =========================================
+
+PACKAGE_CONFIG = {
+    "bronze":      {"label": "Bronze",       "amount": 25,  "duration_days": 14, "ig": 0, "fb": 0, "partner_badge": False},
+    "silver":      {"label": "Silver",       "amount": 75,  "duration_days": 30, "ig": 1, "fb": 1, "partner_badge": True},
+    "gold":        {"label": "Gold",         "amount": 150, "duration_days": 42, "ig": 3, "fb": 3, "partner_badge": True},
+    "partnership": {"label": "Partnership",  "amount": 300, "duration_days": 30, "ig": 2, "fb": 2, "partner_badge": True},
+}
+
+PAYMENT_STATUSES = [
+    "pending_payment", "paid", "under_review", "approved", "rejected", "published"
+]
+
+
+class StorySubmissionCreate(BaseModel):
+    full_name: str
+    organization: Optional[str] = None
+    email: EmailStr
+    phone: Optional[str] = None
+    story_title: str
+    story_content: str
+    image_url: Optional[str] = None
+    logo_url: Optional[str] = None
+    social_links: Optional[str] = None
+    notes: Optional[str] = None
+    package: str  # bronze | silver | gold | partnership
+
+
+class StorySubmissionOut(BaseModel):
+    id: int
+    tracking_number: str
+    full_name: str
+    organization: Optional[str] = None
+    email: str
+    phone: Optional[str] = None
+    story_title: str
+    story_content: str
+    image_url: Optional[str] = None
+    logo_url: Optional[str] = None
+    social_links: Optional[str] = None
+    notes: Optional[str] = None
+    package: str
+    amount: int = 0
+    payment_status: str = "pending_payment"
+    paypal_order_id: Optional[str] = None
+    paypal_txn_id: Optional[str] = None
+    published_story_id: Optional[int] = None
+    published_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    duration_days: int = 14
+    instagram_promos_total: int = 0
+    instagram_promos_done: int = 0
+    facebook_promos_total: int = 0
+    facebook_promos_done: int = 0
+    is_partner_badge: int = 0
+    is_active: int = 1
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True
+
+
+class StorySubmissionUpdate(BaseModel):
+    payment_status: Optional[str] = None
+    paypal_order_id: Optional[str] = None
+    paypal_txn_id: Optional[str] = None
+    story_title: Optional[str] = None
+    story_content: Optional[str] = None
+    image_url: Optional[str] = None
+    logo_url: Optional[str] = None
+    notes: Optional[str] = None
+    duration_days: Optional[int] = None
+    expires_at: Optional[datetime] = None
+    is_partner_badge: Optional[int] = None
+    is_active: Optional[int] = None
+    instagram_promos_done: Optional[int] = None
+    facebook_promos_done: Optional[int] = None
+
+
+# Partners
+class PartnerOut(BaseModel):
+    id: int
+    submission_id: Optional[int] = None
+    organization: str
+    description: Optional[str] = None
+    logo_url: Optional[str] = None
+    website: Optional[str] = None
+    status: str = "active"
+    is_featured: int = 0
+    started_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True

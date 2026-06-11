@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Share Your Story – QuoteMe ZW</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; overflow-x: hidden; max-width: 100vw; }
+body {
+    font-family: 'Poppins', sans-serif; background: #ffeaf4; color: #333;
+    line-height: 1.6; transition: background .3s, color .3s;
+    overflow-x: hidden; max-width: 100vw; position: relative;
+    -webkit-overflow-scrolling: touch;
+}
+body.dark { background: #1e1e1e; color: #f0f0f0; }
+img { max-width: 100%; height: auto; }
+
+/* ── HEADER ── */
+.ss-header {
+    padding: 14px 40px; display: flex; justify-content: space-between; align-items: center;
+    background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,.05);
+    position: sticky; top: 0; z-index: 100; gap: 16px;
+    box-sizing: border-box; max-width: 100vw; overflow: hidden;
+}
+body.dark .ss-header { background: #2c2c2c; }
+.ss-nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.ss-nav-logo { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+.ss-logo-text { font-size: 18px; font-weight: 700; color: #d63384; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.ss-header-right { display: flex; align-items: center; gap: 10px; }
+.ss-back-btn {
+    background: transparent; border: 1.5px solid #d63384; color: #d63384;
+    padding: 7px 16px; border-radius: 20px; cursor: pointer; font-family: 'Poppins', sans-serif;
+    font-size: 13px; font-weight: 600; text-decoration: none; transition: all .2s;
+}
+.ss-back-btn:hover { background: #d63384; color: #fff; }
+.ss-dark-btn { background: #d63384; color: #fff; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; }
+.ss-dark-btn:hover { background: #b12a6f; }
+@media (max-width: 480px) {
+    .ss-header { padding: 12px 16px; }
+    .ss-logo-text { max-width: 90px; font-size: 14px; }
+    .ss-back-btn { padding: 6px 12px; font-size: 12px; }
+}
+
+/* ── HERO ── */
+.ss-hero {
+    background: linear-gradient(135deg, #ffb3d9, #ffe6f2);
+    padding: 60px 20px 50px; text-align: center; border-bottom: 4px solid #d63384;
+    position: relative; overflow: hidden;
+}
+body.dark .ss-hero { background: linear-gradient(135deg, #2a0a18, #1a0a28); border-color: #f472b6; }
+.ss-hero::before { content: '✨'; position: absolute; top: -30px; right: -10px; font-size: 180px; opacity: .05; pointer-events: none; }
+.ss-hero h1 { font-size: clamp(26px, 5vw, 42px); color: #d63384; margin-bottom: 12px; animation: fadeSlide .6s ease both; }
+body.dark .ss-hero h1 { color: #f472b6; }
+.ss-hero p { font-size: 15px; color: #666; max-width: 620px; margin: 0 auto; animation: fadeSlide .6s ease .1s both; }
+body.dark .ss-hero p { color: #b8a8c8; }
+.ss-badge {
+    display: inline-block; background: rgba(214,51,132,.12); color: #d63384;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 4px 14px; border-radius: 20px; margin-bottom: 14px;
+    animation: fadeSlide .6s ease both;
+}
+body.dark .ss-badge { background: rgba(244,114,182,.15); color: #f472b6; }
+@keyframes fadeSlide { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+
+/* ── CONTENT WRAPPER ── */
+.ss-content { max-width: 1100px; margin: 0 auto; padding: 50px 20px 30px; box-sizing: border-box; }
+
+/* ── GUIDELINES BANNER ── */
+.ss-guidelines {
+    background: #fff; border-radius: 18px; padding: 22px 28px; margin-bottom: 40px;
+    box-shadow: 0 4px 20px rgba(214,51,132,.07); border-left: 5px solid #d63384;
+    animation: fadeSlide .5s ease both;
+}
+body.dark .ss-guidelines { background: #2c2c2c; border-color: #f472b6; }
+.ss-guidelines h3 { color: #d63384; font-size: 15px; margin-bottom: 8px; }
+body.dark .ss-guidelines h3 { color: #f472b6; }
+.ss-guidelines p { font-size: 13px; color: #666; line-height: 1.8; }
+body.dark .ss-guidelines p { color: #bbb; }
+
+/* ── SECTION HEADERS ── */
+.ss-section-title { text-align: center; margin-bottom: 30px; }
+.ss-section-title h2 { font-size: clamp(20px, 4vw, 28px); color: #d63384; margin-bottom: 8px; }
+body.dark .ss-section-title h2 { color: #f472b6; }
+.ss-section-title p { font-size: 14px; color: #999; }
+body.dark .ss-section-title p { color: #998aa8; }
+
+/* ── PRICING GRID ── */
+.ss-pricing-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px; margin-bottom: 60px;
+}
+.ss-pkg-card {
+    background: #fff; border-radius: 22px; padding: 30px 26px;
+    box-shadow: 0 4px 24px rgba(214,51,132,.09);
+    display: flex; flex-direction: column; gap: 14px;
+    border: 2px solid transparent; transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+    position: relative; overflow: hidden; cursor: pointer;
+    animation: fadeSlide .5s ease both;
+}
+body.dark .ss-pkg-card { background: #2c2c2c; box-shadow: 0 4px 24px rgba(0,0,0,.3); }
+.ss-pkg-card:hover { transform: translateY(-6px); box-shadow: 0 16px 48px rgba(214,51,132,.22); }
+.ss-pkg-card.selected { border-color: #d63384; box-shadow: 0 16px 48px rgba(214,51,132,.28); }
+.ss-pkg-card.featured { border-color: #f0c0d8; }
+.ss-pkg-card.featured::before {
+    content: '⭐ MOST POPULAR'; position: absolute; top: 14px; right: -34px;
+    background: linear-gradient(135deg, #d63384, #9c27b0); color: #fff;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    padding: 4px 40px; transform: rotate(40deg);
+}
+.ss-pkg-icon { font-size: 32px; }
+.ss-pkg-name { font-size: 18px; font-weight: 700; color: #1a1025; }
+body.dark .ss-pkg-name { color: #f0e8f5; }
+.ss-pkg-price { font-size: 30px; font-weight: 800; color: #d63384; }
+body.dark .ss-pkg-price { color: #f472b6; }
+.ss-pkg-price span { font-size: 13px; font-weight: 500; color: #999; }
+.ss-pkg-features { list-style: none; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.ss-pkg-features li { font-size: 13px; color: #666; line-height: 1.5; padding-left: 22px; position: relative; }
+body.dark .ss-pkg-features li { color: #bbb; }
+.ss-pkg-features li::before { content: '✓'; position: absolute; left: 0; color: #d63384; font-weight: 700; }
+body.dark .ss-pkg-features li::before { color: #f472b6; }
+.ss-pkg-select-btn {
+    background: linear-gradient(135deg, #d63384, #9c27b0); color: #fff; border: none;
+    padding: 12px 20px; border-radius: 24px; font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: 'Poppins', sans-serif; transition: opacity .2s, transform .2s;
+    text-align: center;
+}
+.ss-pkg-select-btn:hover { opacity: .85; transform: translateY(-1px); }
+.ss-pkg-card.selected .ss-pkg-select-btn { background: linear-gradient(135deg, #4caf50, #2e7d32); }
+
+/* ── PARTNERSHIP HIGHLIGHT CARD ── */
+.ss-partnership-card {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #d63384, #9c27b0);
+    color: #fff;
+}
+.ss-partnership-card .ss-pkg-name,
+.ss-partnership-card .ss-pkg-price { color: #fff; }
+.ss-partnership-card .ss-pkg-price span { color: rgba(255,255,255,.8); }
+.ss-partnership-card .ss-pkg-features li { color: rgba(255,255,255,.92); }
+.ss-partnership-card .ss-pkg-features li::before { color: #fff; }
+.ss-partnership-card .ss-pkg-select-btn { background: #fff; color: #d63384; }
+.ss-partnership-card .ss-pkg-select-btn:hover { background: #ffeaf4; }
+.ss-partnership-card.selected .ss-pkg-select-btn { background: #fff; color: #2e7d32; }
+
+/* ── SUBMISSION FORM ── */
+.ss-form-wrap {
+    background: #fff; border-radius: 24px; padding: 40px;
+    box-shadow: 0 8px 40px rgba(214,51,132,.1); margin-bottom: 60px;
+    animation: fadeSlide .5s ease both;
+}
+body.dark .ss-form-wrap { background: #2c2c2c; }
+.ss-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.ss-form-group { display: flex; flex-direction: column; gap: 6px; }
+.ss-form-group.full { grid-column: 1 / -1; }
+.ss-form-group label { font-size: 13px; font-weight: 600; color: #d63384; }
+body.dark .ss-form-group label { color: #f472b6; }
+.ss-form-group label .opt { font-weight: 400; color: #aaa; font-size: 11px; }
+.ss-form-group input,
+.ss-form-group select,
+.ss-form-group textarea {
+    padding: 12px 14px; border-radius: 12px; border: 1.5px solid #f0c0d8;
+    font-family: 'Poppins', sans-serif; font-size: 14px; outline: none;
+    transition: border .2s; background: #fdfafa; color: #333;
+    width: 100%; box-sizing: border-box;
+}
+body.dark .ss-form-group input,
+body.dark .ss-form-group select,
+body.dark .ss-form-group textarea { background: #3a3a3a; border-color: #555; color: #f0f0f0; }
+.ss-form-group input:focus,
+.ss-form-group select:focus,
+.ss-form-group textarea:focus { border-color: #d63384; }
+.ss-form-group textarea { resize: vertical; min-height: 140px; }
+.ss-char-counter { font-size: 11px; color: #bbb; text-align: right; }
+.ss-field-error { font-size: 12px; color: #c62828; display: none; }
+.ss-field-error.show { display: block; }
+
+/* ── FILE DROP ZONES ── */
+.ss-drop-zone {
+    border: 2px dashed #f0c0d8; border-radius: 14px; padding: 24px;
+    text-align: center; cursor: pointer; transition: all .2s;
+    color: #999; font-size: 13px;
+}
+.ss-drop-zone:hover, .ss-drop-zone.drag-over { background: rgba(214,51,132,.05); border-color: #d63384; color: #d63384; }
+body.dark .ss-drop-zone { border-color: #5a2050; color: #998aa8; }
+body.dark .ss-drop-zone:hover { background: rgba(244,114,182,.08); border-color: #f472b6; color: #f472b6; }
+.ss-drop-icon { font-size: 28px; margin-bottom: 6px; }
+.ss-img-preview { max-width: 160px; max-height: 160px; border-radius: 12px; margin-top: 10px; display: none; object-fit: cover; }
+.ss-upload-status { font-size: 12px; color: #d63384; margin-top: 6px; min-height: 16px; }
+
+/* ── PACKAGE SUMMARY BAR ── */
+.ss-summary-bar {
+    grid-column: 1 / -1;
+    background: rgba(214,51,132,.06); border-radius: 14px; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    border: 1.5px dashed #f0c0d8;
+}
+body.dark .ss-summary-bar { background: rgba(244,114,182,.08); border-color: #5a2050; }
+.ss-summary-bar .label { font-size: 13px; color: #666; }
+body.dark .ss-summary-bar .label { color: #bbb; }
+.ss-summary-bar .value { font-size: 18px; font-weight: 800; color: #d63384; }
+body.dark .ss-summary-bar .value { color: #f472b6; }
+
+/* ── SUBMIT BUTTON ── */
+.ss-submit-btn {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #d63384, #9c27b0); color: #fff; border: none;
+    padding: 16px 32px; border-radius: 30px; font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: 'Poppins', sans-serif; transition: opacity .2s, transform .2s;
+    box-shadow: 0 10px 30px rgba(214,51,132,.3);
+}
+.ss-submit-btn:hover { opacity: .9; transform: translateY(-2px); }
+.ss-submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+/* ── CONTENT GUIDELINES NOTICE (in form) ── */
+.ss-form-notice {
+    grid-column: 1 / -1;
+    background: rgba(255,193,7,.08); border-left: 4px solid #ffc107;
+    border-radius: 0 10px 10px 0; padding: 12px 16px; font-size: 12px; color: #8a6d00;
+}
+body.dark .ss-form-notice { background: rgba(255,193,7,.1); color: #ffd54f; }
+
+/* ── TOAST ── */
+#ssToast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: #333; color: #fff; padding: 10px 22px; border-radius: 20px;
+    font-size: 14px; z-index: 9999; opacity: 0; transition: opacity .3s;
+    pointer-events: none; max-width: 90vw; text-align: center; white-space: normal;
+}
+#ssToast.show { opacity: 1; }
+
+/* ── FOOTER ── */
+.ss-footer { background: #d63384; color: #fff; text-align: center; padding: 24px 20px; }
+.ss-footer a { color: rgba(255,255,255,.85); text-decoration: underline; margin: 0 8px; font-size: 13px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 760px) {
+    .ss-form-grid { grid-template-columns: 1fr; }
+    .ss-form-wrap { padding: 26px 20px; }
+}
+@media (max-width: 600px) {
+    .ss-content { padding: 30px 14px 20px; }
+    .ss-hero { padding: 40px 16px 36px; }
+    .ss-pricing-grid { gap: 16px; }
+    .ss-pkg-card { padding: 22px 18px; }
+    .ss-form-wrap { border-radius: 18px; padding: 20px 16px; }
+}
+@media (max-width: 400px) {
+    .ss-pkg-card.featured::before { font-size: 9px; padding: 3px 34px; top: 12px; right: -36px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="ss-header">
+    <a href="/" class="ss-nav-brand">
+        <img src="/static/QuoteMe Logo.jpg" alt="QuoteMe ZW Logo" class="ss-nav-logo" onerror="this.style.display='none'">
+        <span class="ss-logo-text">QuoteMe ZW</span>
+    </a>
+    <div class="ss-header-right">
+        <a href="/" class="ss-back-btn">← Home</a>
+        <button class="ss-dark-btn" onclick="toggleDark()">🌙</button>
+    </div>
+</header>
+
+<!-- HERO -->
+<section class="ss-hero">
+    <span class="ss-badge">Get Featured</span>
+    <h1>📝 Share Your Story</h1>
+    <p>
+        Tell your story of empowerment, resilience, or community impact — and reach thousands
+        of readers across QuoteMe ZW. Choose a package below and submit your details.
+    </p>
+</section>
+
+<div class="ss-content">
+
+    <!-- GUIDELINES -->
+    <div class="ss-guidelines">
+        <h3>📋 Content Guidelines</h3>
+        <p>
+            All submitted stories must align with QuoteMe ZW's values of empowerment, respect,
+            inspiration, community development, and positive social impact. Submissions containing
+            hate speech, discrimination, harassment, misinformation, explicit content, or harmful
+            material may be rejected.
+        </p>
+    </div>
+
+    <!-- PRICING -->
+    <div class="ss-section-title">
+        <h2>💎 Choose Your Package</h2>
+        <p>Select the package that best fits your story or organization</p>
+    </div>
+
+    <div class="ss-pricing-grid" id="pricingGrid">
+        <!-- Skeleton loaders shown until package data loads -->
+        <div class="ss-pkg-card" style="min-height:340px;opacity:.5">
+            <div style="height:32px;width:32px;background:#f0c0d8;border-radius:8px"></div>
+            <div style="height:18px;width:60%;background:#f0c0d8;border-radius:6px"></div>
+            <div style="height:30px;width:40%;background:#f0c0d8;border-radius:6px"></div>
+        </div>
+        <div class="ss-pkg-card" style="min-height:340px;opacity:.5">
+            <div style="height:32px;width:32px;background:#f0c0d8;border-radius:8px"></div>
+            <div style="height:18px;width:60%;background:#f0c0d8;border-radius:6px"></div>
+            <div style="height:30px;width:40%;background:#f0c0d8;border-radius:6px"></div>
+        </div>
+        <div class="ss-pkg-card" style="min-height:340px;opacity:.5">
+            <div style="height:32px;width:32px;background:#f0c0d8;border-radius:8px"></div>
+            <div style="height:18px;width:60%;background:#f0c0d8;border-radius:6px"></div>
+            <div style="height:30px;width:40%;background:#f0c0d8;border-radius:6px"></div>
+        </div>
+    </div>
+
+    <!-- SUBMISSION FORM -->
+    <div class="ss-section-title">
+        <h2>✍️ Tell Us Your Story</h2>
+        <p>Fill in the details below — fields marked * are required</p>
+    </div>
+
+    <div class="ss-form-wrap">
+        <form id="storyForm" class="ss-form-grid" novalidate>
+
+            <!-- Selected package summary -->
+            <div class="ss-summary-bar">
+                <span class="label">Selected Package:</span>
+                <span class="value" id="summaryPackage">— Please select a package above —</span>
+            </div>
+
+            <!-- Full Name -->
+            <div class="ss-form-group">
+                <label>Full Name *</label>
+                <input type="text" id="fullName" maxlength="150" placeholder="Your full name" required>
+                <div class="ss-field-error" id="err-fullName">Full name is required.</div>
+            </div>
+
+            <!-- Organization -->
+            <div class="ss-form-group">
+                <label>Organization Name <span class="opt">(optional)</span></label>
+                <input type="text" id="organization" maxlength="200" placeholder="Your organization (if any)">
+            </div>
+
+            <!-- Email -->
+            <div class="ss-form-group">
+                <label>Email Address *</label>
+                <input type="email" id="email" maxlength="200" placeholder="you@example.com" required>
+                <div class="ss-field-error" id="err-email">A valid email address is required.</div>
+            </div>
+
+            <!-- Phone -->
+            <div class="ss-form-group">
+                <label>Phone Number <span class="opt">(optional)</span></label>
+                <input type="tel" id="phone" maxlength="40" placeholder="+263 7X XXX XXXX">
+            </div>
+
+            <!-- Story Title -->
+            <div class="ss-form-group full">
+                <label>Story Title *</label>
+                <input type="text" id="storyTitle" maxlength="250" placeholder="Give your story a title" required>
+                <div class="ss-char-counter" id="titleCounter">0 / 250</div>
+                <div class="ss-field-error" id="err-storyTitle">Story title is required.</div>
+            </div>
+
+            <!-- Story Content -->
+            <div class="ss-form-group full">
+                <label>Story Content *</label>
+                <textarea id="storyContent" maxlength="10000" placeholder="Share your story here…" required></textarea>
+                <div class="ss-char-counter" id="contentCounter">0 / 10000</div>
+                <div class="ss-field-error" id="err-storyContent">Story content is required.</div>
+            </div>
+
+            <!-- Story Image -->
+            <div class="ss-form-group">
+                <label>Story Image <span class="opt">(optional)</span></label>
+                <div class="ss-drop-zone" id="storyImageDrop" onclick="document.getElementById('storyImageFile').click()">
+                    <div class="ss-drop-icon">🖼️</div>
+                    <div>Click or drag an image here</div>
+                    <input type="file" id="storyImageFile" accept="image/*" style="display:none">
+                </div>
+                <img id="storyImagePreview" class="ss-img-preview" alt="Story image preview">
+                <div class="ss-upload-status" id="storyImageStatus"></div>
+            </div>
+
+            <!-- Organization Logo -->
+            <div class="ss-form-group">
+                <label>Organization Logo <span class="opt">(if applicable)</span></label>
+                <div class="ss-drop-zone" id="logoDrop" onclick="document.getElementById('logoFile').click()">
+                    <div class="ss-drop-icon">🏢</div>
+                    <div>Click or drag your logo here</div>
+                    <input type="file" id="logoFile" accept="image/*" style="display:none">
+                </div>
+                <img id="logoPreview" class="ss-img-preview" alt="Logo preview">
+                <div class="ss-upload-status" id="logoStatus"></div>
+            </div>
+
+            <!-- Social Media Links -->
+            <div class="ss-form-group full">
+                <label>Social Media Links <span class="opt">(optional — separate with commas)</span></label>
+                <input type="text" id="socialLinks" maxlength="1000" placeholder="https://instagram.com/yourpage, https://facebook.com/yourpage">
+            </div>
+
+            <!-- Additional Notes -->
+            <div class="ss-form-group full">
+                <label>Additional Notes <span class="opt">(optional)</span></label>
+                <textarea id="notes" maxlength="2000" placeholder="Anything else you'd like us to know?" style="min-height:90px"></textarea>
+                <div class="ss-char-counter" id="notesCounter">0 / 2000</div>
+            </div>
+
+            <div class="ss-form-notice">
+                ⚠️ By submitting, you confirm your story complies with our content guidelines above.
+                After submission, you'll receive a tracking number and be redirected to PayPal to
+                complete payment for your selected package.
+            </div>
+
+            <button type="submit" class="ss-submit-btn" id="submitBtn">📝 Submit My Story</button>
+        </form>
+    </div>
+
+</div><!-- /ss-content -->
+
+<!-- FOOTER -->
+<footer class="ss-footer">
+    <p>© 2026 QuoteMe ZW • Inspiration Everyday</p>
+    <p style="margin-top:8px">
+        <a href="/">Home</a>
+        <a href="/partners">Partners</a>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms &amp; Conditions</a>
+    </p>
+</footer>
+
+<div id="ssToast"></div>
+
+<script>
+const BASE = window.location.origin;
+
+// ── DARK MODE ──
+function toggleDark() {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark') ? '1' : '0');
+}
+if (localStorage.getItem('darkMode') === '1') document.body.classList.add('dark');
+
+// ── TOAST ──
+function showToast(msg, duration) {
+    const el = document.getElementById('ssToast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), duration || 3500);
+}
+
+// ── SANITIZE ──
+function sanitize(s) { return (s || '').replace(/<[^>]*>/g, '').trim(); }
+function esc(s) { return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ── COOLDOWN ──
+const _cooldowns = {};
+function _onCooldown(key, ms) {
+    const now = Date.now();
+    if (_cooldowns[key] && now - _cooldowns[key] < ms) return true;
+    _cooldowns[key] = now;
+    return false;
+}
+
+// ── STATE ──
+let selectedPackage = null;
+let packageData = {};
+let storyImageUrl = '';
+let logoImageUrl  = '';
+
+// ── LOAD PACKAGES ──
+async function loadPackages() {
+    const grid = document.getElementById('pricingGrid');
+    try {
+        const res = await fetch(`${BASE}/story-packages`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        packageData = data.packages || {};
+        grid.innerHTML = '';
+
+        const order = ['bronze', 'silver', 'gold', 'partnership'];
+        const icons = { bronze: '🥉', silver: '🥈', gold: '🥇', partnership: '🤝' };
+
+        order.forEach(key => {
+            const pkg = packageData[key];
+            if (!pkg) return;
+            const card = document.createElement('div');
+            card.className = 'ss-pkg-card' + (key === 'gold' ? ' featured' : '') + (key === 'partnership' ? ' ss-partnership-card' : '');
+            card.dataset.package = key;
+            card.onclick = () => selectPackage(key);
+
+            const priceUnit = key === 'partnership' ? '<span>/ month</span>' : '<span>one-time</span>';
+
+            card.innerHTML = `
+                <div class="ss-pkg-icon">${icons[key] || '📦'}</div>
+                <div class="ss-pkg-name">${esc(pkg.title)}</div>
+                <div class="ss-pkg-price">${esc(pkg.price_display)} ${priceUnit}</div>
+                <ul class="ss-pkg-features">
+                    ${pkg.features.map(f => `<li>${esc(f)}</li>`).join('')}
+                </ul>
+                <button type="button" class="ss-pkg-select-btn">Select ${esc(pkg.label)}</button>
+            `;
+            grid.appendChild(card);
+        });
+    } catch(e) {
+        grid.innerHTML = '<p style="text-align:center;color:#999;grid-column:1/-1">Could not load packages. Please refresh the page.</p>';
+        console.error('loadPackages error', e);
+    }
+}
+
+function selectPackage(key) {
+    selectedPackage = key;
+    document.querySelectorAll('.ss-pkg-card').forEach(c => {
+        c.classList.toggle('selected', c.dataset.package === key);
+        const btn = c.querySelector('.ss-pkg-select-btn');
+        if (btn) btn.textContent = (c.dataset.package === key ? '✓ Selected' : `Select ${esc(packageData[c.dataset.package]?.label || '')}`);
+    });
+    const pkg = packageData[key];
+    const summary = document.getElementById('summaryPackage');
+    if (pkg) {
+        summary.textContent = `${pkg.title} — ${pkg.price_display}`;
+    }
+    // Scroll to form on mobile for convenience
+    if (window.innerWidth <= 760) {
+        document.querySelector('.ss-form-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// ── CHARACTER COUNTERS ──
+function wireCounter(inputId, counterId, max) {
+    const el = document.getElementById(inputId);
+    const counter = document.getElementById(counterId);
+    if (!el || !counter) return;
+    el.addEventListener('input', () => {
+        counter.textContent = `${el.value.length} / ${max}`;
+    });
+}
+wireCounter('storyTitle', 'titleCounter', 250);
+wireCounter('storyContent', 'contentCounter', 10000);
+wireCounter('notes', 'notesCounter', 2000);
+
+// ── IMAGE UPLOAD (public, no auth — uses a lightweight unauthenticated path if available,
+//    else falls back to embedding as data URL for admin to handle manually) ──
+async function handleImageUpload(file, statusEl, previewEl, onSuccess) {
+    if (!file) return;
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowed.includes(ext)) {
+        statusEl.textContent = '⚠️ Invalid file type. Allowed: JPG, PNG, WEBP, GIF';
+        statusEl.style.color = '#c62828';
+        return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+        statusEl.textContent = '⚠️ File too large. Maximum size is 8 MB.';
+        statusEl.style.color = '#c62828';
+        return;
+    }
+
+    // Show local preview immediately
+    const reader = new FileReader();
+    reader.onload = e => {
+        previewEl.src = e.target.result;
+        previewEl.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+
+    statusEl.textContent = '⏳ Uploading…';
+    statusEl.style.color = '#d63384';
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        // Public submission upload endpoint (no admin auth required)
+        const res = await fetch(`${BASE}/upload-image-public`, { method: 'POST', body: formData });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || 'Upload failed');
+        }
+        const data = await res.json();
+        onSuccess(data.url);
+        statusEl.textContent = '✅ Uploaded successfully';
+        statusEl.style.color = '#2e7d32';
+    } catch(e) {
+        statusEl.textContent = '⚠️ ' + (e.message || 'Upload failed — your story will still be submitted, our team can attach images manually.');
+        statusEl.style.color = '#e65100';
+        console.error('Image upload error', e);
+    }
+}
+
+// Wire story image
+const storyImageFile = document.getElementById('storyImageFile');
+const storyImageDrop = document.getElementById('storyImageDrop');
+storyImageFile.addEventListener('change', () => {
+    handleImageUpload(
+        storyImageFile.files[0],
+        document.getElementById('storyImageStatus'),
+        document.getElementById('storyImagePreview'),
+        url => storyImageUrl = url
+    );
+});
+['dragover', 'dragleave', 'drop'].forEach(evt => {
+    storyImageDrop.addEventListener(evt, e => {
+        e.preventDefault();
+        storyImageDrop.classList.toggle('drag-over', evt === 'dragover');
+        if (evt === 'drop' && e.dataTransfer.files[0]) {
+            storyImageFile.files = e.dataTransfer.files;
+            storyImageFile.dispatchEvent(new Event('change'));
+        }
+    });
+});
+
+// Wire logo
+const logoFile = document.getElementById('logoFile');
+const logoDrop = document.getElementById('logoDrop');
+logoFile.addEventListener('change', () => {
+    handleImageUpload(
+        logoFile.files[0],
+        document.getElementById('logoStatus'),
+        document.getElementById('logoPreview'),
+        url => logoImageUrl = url
+    );
+});
+['dragover', 'dragleave', 'drop'].forEach(evt => {
+    logoDrop.addEventListener(evt, e => {
+        e.preventDefault();
+        logoDrop.classList.toggle('drag-over', evt === 'dragover');
+        if (evt === 'drop' && e.dataTransfer.files[0]) {
+            logoFile.files = e.dataTransfer.files;
+            logoFile.dispatchEvent(new Event('change'));
+        }
+    });
+});
+
+// ── FORM VALIDATION & SUBMIT ──
+function validateField(id, errId, condition) {
+    const errEl = document.getElementById(errId);
+    if (!condition) {
+        errEl.classList.add('show');
+        return false;
+    }
+    errEl.classList.remove('show');
+    return true;
+}
+
+document.getElementById('storyForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (_onCooldown('story-submit', 5000)) {
+        showToast('⏳ Please wait a moment before submitting again.');
+        return;
+    }
+
+    const fullName     = sanitize(document.getElementById('fullName').value);
+    const organization = sanitize(document.getElementById('organization').value);
+    const email        = document.getElementById('email').value.trim();
+    const phone        = sanitize(document.getElementById('phone').value);
+    const storyTitle   = sanitize(document.getElementById('storyTitle').value);
+    const storyContent = sanitize(document.getElementById('storyContent').value);
+    const socialLinks  = sanitize(document.getElementById('socialLinks').value);
+    const notes        = sanitize(document.getElementById('notes').value);
+
+    let valid = true;
+    valid = validateField('fullName', 'err-fullName', fullName.length > 0) && valid;
+    valid = validateField('email', 'err-email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) && valid;
+    valid = validateField('storyTitle', 'err-storyTitle', storyTitle.length > 0) && valid;
+    valid = validateField('storyContent', 'err-storyContent', storyContent.length > 0) && valid;
+
+    if (!selectedPackage) {
+        showToast('⚠️ Please select a package before submitting.');
+        document.getElementById('pricingGrid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
+    if (!valid) {
+        showToast('⚠️ Please fill in all required fields.');
+        return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Submitting…';
+
+    try {
+        const res = await fetch(`${BASE}/story-submissions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                full_name: fullName,
+                organization: organization || null,
+                email,
+                phone: phone || null,
+                story_title: storyTitle,
+                story_content: storyContent,
+                image_url: storyImageUrl || null,
+                logo_url: logoImageUrl || null,
+                social_links: socialLinks || null,
+                notes: notes || null,
+                package: selectedPackage,
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || 'Submission failed');
+        }
+
+        const data = await res.json();
+        const tracking = data.tracking_number;
+        const amount   = data.amount;
+
+        showToast('✅ Story submitted! Redirecting to confirmation…', 2000);
+
+        // Redirect to success page with tracking number and amount as query params
+        setTimeout(() => {
+            window.location.href = `/submission-success?tracking=${encodeURIComponent(tracking)}&amount=${encodeURIComponent(amount)}&package=${encodeURIComponent(selectedPackage)}`;
+        }, 1200);
+
+    } catch(e) {
+        showToast('❌ ' + (e.message || 'Could not submit. Please try again.'));
+        btn.disabled = false;
+        btn.textContent = '📝 Submit My Story';
+    }
+});
+
+// ── INIT ──
+loadPackages();
+</script>
+</body>
+</html>
