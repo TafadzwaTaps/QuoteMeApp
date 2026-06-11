@@ -841,11 +841,6 @@ html, body {
           <div class="hstat-num" id="pkg-stat-gold">—</div>
           <div class="hstat-label">Gold</div>
         </div>
-        <div class="hstat loading">
-          <div class="hstat-icon">🤝</div>
-          <div class="hstat-num" id="pkg-stat-partnerships">—</div>
-          <div class="hstat-label">Partnerships</div>
-        </div>
       </div>
       <div class="hero-stats" style="margin-top:10px">
         <div class="hstat loading">
@@ -875,7 +870,6 @@ html, body {
               <option value="bronze">🥉 Bronze</option>
               <option value="silver">🥈 Silver</option>
               <option value="gold">🥇 Gold</option>
-              <option value="partnership">🤝 Partnership</option>
             </select>
             <select id="pkgFilterStatus" class="select-sm">
               <option value="">All Statuses</option>
@@ -2668,10 +2662,9 @@ async function changeUsername() {
 
 // ================== STORY PACKAGES (ADMIN) ==================
 const PACKAGE_LABELS_ADMIN = {
-  bronze: '🥉 Bronze ($25)',
-  silver: '🥈 Silver ($75)',
-  gold:   '🥇 Gold ($150)',
-  partnership: '🤝 Partnership ($300/mo)',
+  bronze: '🥉 Bronze ($15)',
+  silver: '🥈 Silver ($30)',
+  gold:   '🥇 Gold ($45)',
 };
 const PAYMENT_STATUS_LABELS = {
   pending_payment: ['⏳ Pending Payment', '#fff3e0', '#e65100'],
@@ -2708,7 +2701,6 @@ async function loadSubmissionStats() {
     safeSet('pkg-stat-bronze', s.bronze ?? 0);
     safeSet('pkg-stat-silver', s.silver ?? 0);
     safeSet('pkg-stat-gold', s.gold ?? 0);
-    safeSet('pkg-stat-partnerships', s.partnerships ?? 0);
     safeSet('pkg-stat-revenue', '$' + (s.revenue ?? 0));
     safeSet('pkg-stat-active', s.active_sponsored ?? 0);
     safeSet('pkg-stat-expiring', s.expiring_soon ?? 0);
@@ -3078,7 +3070,7 @@ function renderPartnersAdmin() {
   const container = document.getElementById('partnersAdminList');
   if (!container) return;
   if (!_allPartnersAdmin.length) {
-    container.innerHTML = '<div class="empty-state"><div class="emoji">🤝</div><p>No partners yet. Partners are created automatically when Silver/Gold/Partnership submissions are published.</p></div>';
+    container.innerHTML = '<div class="empty-state"><div class="emoji">🤝</div><p>No partners yet. Partners are created automatically when Silver/Gold submissions are published.</p></div>';
     return;
   }
   container.innerHTML = '';

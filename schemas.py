@@ -122,10 +122,9 @@ class ContactSchema(BaseModel):
 # =========================================
 
 PACKAGE_CONFIG = {
-    "bronze":      {"label": "Bronze",       "amount": 25,  "duration_days": 14, "ig": 0, "fb": 0, "partner_badge": False},
-    "silver":      {"label": "Silver",       "amount": 75,  "duration_days": 30, "ig": 1, "fb": 1, "partner_badge": True},
-    "gold":        {"label": "Gold",         "amount": 150, "duration_days": 42, "ig": 3, "fb": 3, "partner_badge": True},
-    "partnership": {"label": "Partnership",  "amount": 300, "duration_days": 30, "ig": 2, "fb": 2, "partner_badge": True},
+    "bronze":      {"label": "Bronze",       "amount": 15,  "duration_days": 14, "ig": 0, "fb": 0, "partner_badge": False},
+    "silver":      {"label": "Silver",       "amount": 30,  "duration_days": 30, "ig": 1, "fb": 1, "partner_badge": True},
+    "gold":        {"label": "Gold",         "amount": 45,  "duration_days": 42, "ig": 3, "fb": 3, "partner_badge": True},
 }
 
 PAYMENT_STATUSES = [
@@ -144,7 +143,7 @@ class StorySubmissionCreate(BaseModel):
     logo_url: Optional[str] = None
     social_links: Optional[str] = None
     notes: Optional[str] = None
-    package: str  # bronze | silver | gold | partnership
+    package: str  # bronze | silver | gold
 
 
 class StorySubmissionOut(BaseModel):

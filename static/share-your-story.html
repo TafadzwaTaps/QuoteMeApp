@@ -130,21 +130,6 @@ body.dark .ss-pkg-features li::before { color: #f472b6; }
 .ss-pkg-select-btn:hover { opacity: .85; transform: translateY(-1px); }
 .ss-pkg-card.selected .ss-pkg-select-btn { background: linear-gradient(135deg, #4caf50, #2e7d32); }
 
-/* ── PARTNERSHIP HIGHLIGHT CARD ── */
-.ss-partnership-card {
-    grid-column: 1 / -1;
-    background: linear-gradient(135deg, #d63384, #9c27b0);
-    color: #fff;
-}
-.ss-partnership-card .ss-pkg-name,
-.ss-partnership-card .ss-pkg-price { color: #fff; }
-.ss-partnership-card .ss-pkg-price span { color: rgba(255,255,255,.8); }
-.ss-partnership-card .ss-pkg-features li { color: rgba(255,255,255,.92); }
-.ss-partnership-card .ss-pkg-features li::before { color: #fff; }
-.ss-partnership-card .ss-pkg-select-btn { background: #fff; color: #d63384; }
-.ss-partnership-card .ss-pkg-select-btn:hover { background: #ffeaf4; }
-.ss-partnership-card.selected .ss-pkg-select-btn { background: #fff; color: #2e7d32; }
-
 /* ── SUBMISSION FORM ── */
 .ss-form-wrap {
     background: #fff; border-radius: 24px; padding: 40px;
@@ -480,18 +465,18 @@ async function loadPackages() {
         packageData = data.packages || {};
         grid.innerHTML = '';
 
-        const order = ['bronze', 'silver', 'gold', 'partnership'];
-        const icons = { bronze: '🥉', silver: '🥈', gold: '🥇', partnership: '🤝' };
+        const order = ['bronze', 'silver', 'gold'];
+        const icons = { bronze: '🥉', silver: '🥈', gold: '🥇' };
 
         order.forEach(key => {
             const pkg = packageData[key];
             if (!pkg) return;
             const card = document.createElement('div');
-            card.className = 'ss-pkg-card' + (key === 'gold' ? ' featured' : '') + (key === 'partnership' ? ' ss-partnership-card' : '');
+            card.className = 'ss-pkg-card' + (key === 'gold' ? ' featured' : '');
             card.dataset.package = key;
             card.onclick = () => selectPackage(key);
 
-            const priceUnit = key === 'partnership' ? '<span>/ month</span>' : '<span>one-time</span>';
+            const priceUnit = '<span>one-time</span>';
 
             card.innerHTML = `
                 <div class="ss-pkg-icon">${icons[key] || '📦'}</div>

@@ -222,10 +222,9 @@ def sentiment(text):
 # 📦 STORY SUBMISSION PACKAGES
 # ==============================
 PACKAGE_CONFIG = {
-    "bronze":      {"label": "Bronze",      "amount": 25,  "duration_days": 14, "ig": 0, "fb": 0, "partner_badge": False},
-    "silver":      {"label": "Silver",      "amount": 75,  "duration_days": 30, "ig": 1, "fb": 1, "partner_badge": True},
-    "gold":        {"label": "Gold",        "amount": 150, "duration_days": 42, "ig": 3, "fb": 3, "partner_badge": True},
-    "partnership": {"label": "Partnership", "amount": 300, "duration_days": 30, "ig": 2, "fb": 2, "partner_badge": True},
+    "bronze":      {"label": "Bronze",      "amount": 15,  "duration_days": 14, "ig": 0, "fb": 0, "partner_badge": False},
+    "silver":      {"label": "Silver",      "amount": 30,  "duration_days": 30, "ig": 1, "fb": 1, "partner_badge": True},
+    "gold":        {"label": "Gold",        "amount": 45,  "duration_days": 42, "ig": 3, "fb": 3, "partner_badge": True},
 }
 PAYMENT_STATUSES = ["pending_payment", "paid", "under_review", "approved", "rejected", "published"]
 SUBMISSION_TABLE = "story_submissions"
@@ -1102,7 +1101,7 @@ def get_story_packages():
             "bronze": {
                 **PACKAGE_CONFIG["bronze"],
                 "title": "Bronze Package",
-                "price_display": "$25",
+                "price_display": "$15",
                 "features": [
                     "Story published on QuoteMe ZW",
                     "Appears in the main Stories feed",
@@ -1114,7 +1113,7 @@ def get_story_packages():
             "silver": {
                 **PACKAGE_CONFIG["silver"],
                 "title": "Silver Package",
-                "price_display": "$75",
+                "price_display": "$30",
                 "features": [
                     "Story published on QuoteMe ZW",
                     "Remains live for 1 month",
@@ -1126,7 +1125,7 @@ def get_story_packages():
             "gold": {
                 **PACKAGE_CONFIG["gold"],
                 "title": "Gold Package",
-                "price_display": "$150",
+                "price_display": "$45",
                 "features": [
                     "Story published on QuoteMe ZW",
                     "Remains live for 6 weeks",
@@ -1135,20 +1134,6 @@ def get_story_packages():
                     "Featured Partner logo displayed",
                     "Social media tagging support",
                     "Priority placement in story listings",
-                ],
-            },
-            "partnership": {
-                **PACKAGE_CONFIG["partnership"],
-                "title": "Monthly Partnership",
-                "price_display": "$300/month",
-                "features": [
-                    "Two featured stories each month",
-                    "Two Instagram promotions",
-                    "Two Facebook promotions",
-                    "Organization logo displayed on Partners page",
-                    "Tagged in all promotional posts",
-                    "Partner badge displayed on sponsored stories",
-                    "Featured placement within the website",
                 ],
             },
         },
@@ -1420,7 +1405,7 @@ def admin_publish_submission(submission_id: int, username: str = Depends(require
     Admin — publish a story submission to the public Stories feed.
     Creates a row in `stories`, links it back to the submission, sets
     published_at / expires_at based on the package duration, and (for
-    silver/gold/partnership) creates or links a Partner record.
+    silver/gold) creates or links a Partner record.
     """
     try:
         sub_res = supabase.table(SUBMISSION_TABLE).select("*").eq("id", submission_id).execute()
@@ -1460,7 +1445,7 @@ def admin_publish_submission(submission_id: int, username: str = Depends(require
         }
         sub_update = supabase.table(SUBMISSION_TABLE).update(update_payload).eq("id", submission_id).execute()
 
-        # Create/refresh Partner record for silver/gold/partnership packages
+        # Create/refresh Partner record for silver/gold packages
         if sub.get("is_partner_badge") and sub.get("organization"):
             existing_partner = supabase.table(PARTNERS_TABLE).select("id").eq("submission_id", submission_id).execute()
             partner_payload = {
@@ -1470,7 +1455,7 @@ def admin_publish_submission(submission_id: int, username: str = Depends(require
                 "logo_url":      sub.get("logo_url"),
                 "website":       None,
                 "status":        "active",
-                "is_featured":   1 if sub.get("package") in ("gold", "partnership") else 0,
+                "is_featured":   1 if sub.get("package") == "gold" else 0,
                 "started_at":    now.isoformat(),
                 "expires_at":    expires_at.isoformat(),
             }
@@ -1598,7 +1583,6 @@ def admin_submissions_stats(username: str = Depends(require_admin)):
     bronze = sum(1 for r in rows if r.get("package") == "bronze")
     silver = sum(1 for r in rows if r.get("package") == "silver")
     gold   = sum(1 for r in rows if r.get("package") == "gold")
-    partnerships = sum(1 for r in rows if r.get("package") == "partnership")
 
     # Revenue: count amount for anything that has been paid or further along
     revenue_statuses = {"paid", "under_review", "approved", "published"}
@@ -1626,7 +1610,6 @@ def admin_submissions_stats(username: str = Depends(require_admin)):
         "bronze": bronze,
         "silver": silver,
         "gold": gold,
-        "partnerships": partnerships,
         "revenue": revenue,
         "active_sponsored": active_sponsored,
         "expiring_soon": expiring_soon,
