@@ -1083,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const token = getToken();
   if (!token) {
     showToast('Session expired. Redirecting…', 'warn');
-    setTimeout(() => window.location.href = '/admin.html', 900);
+    setTimeout(() => window.location.href = '/admin', 900);
     return;
   }
   const payload = decodeJwt(token);
@@ -1129,7 +1129,7 @@ function wireEventListeners() {
 
   safeOn('logoutBtn', 'click', () => {
     localStorage.removeItem('adminToken');
-    window.location.href = '/admin.html';
+    window.location.href = '/admin';
   });
 
   safeOn('refreshBtn', 'click', () => {
@@ -1496,7 +1496,7 @@ async function loadActivityFeed() {
 async function fetchItemsFromApi() {
   try {
     const res = await fetch(API[state.tab] + '?limit=200', { headers: authHeaders() });
-    if (res.status === 401) { window.location.href = '/admin.html'; return []; }
+    if (res.status === 401) { window.location.href = '/admin'; return []; }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const items = await res.json();
     return Array.isArray(items) ? items : [];
@@ -2522,7 +2522,7 @@ let _allUsersAdmin = [];
 async function loadUsersAdmin() {
   const container = document.getElementById('usersAdminList');
   if (!container) return;
-  container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Loading users…</div>';
+  container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Loading users&#8230;</div>';
   try {
     const res = await fetch(`${BASE}/admin/users`, { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -2537,35 +2537,38 @@ async function loadUsersAdmin() {
 function renderUsersAdmin() {
   const container = document.getElementById('usersAdminList');
   if (!container) return;
-  const q      = (document.getElementById('userSearchInput')?.value || '').toLowerCase().trim();
-  const banned = document.getElementById('userFilterBanned')?.value ?? '';
+  const searchEl  = document.getElementById('userSearchInput');
+  const bannedEl  = document.getElementById('userFilterBanned');
+  const q         = searchEl ? searchEl.value.toLowerCase().trim() : '';
+  const bannedVal = bannedEl ? bannedEl.value : '';
   let rows = _allUsersAdmin;
-  if (q)        rows = rows.filter(r => (r.username||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q));
-  if (banned !== '') rows = rows.filter(r => String(r.is_banned || 0) === banned);
+  if (q)          rows = rows.filter(function(r){ return (r.username||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q); });
+  if (bannedVal !== '') rows = rows.filter(function(r){ return String(r.is_banned || 0) === bannedVal; });
   if (!rows.length) {
-    container.innerHTML = '<div class="empty-state"><div class="emoji">\u{1F465}</div><p>No users found.</p></div>';
+    container.innerHTML = '<div class="empty-state"><div class="emoji">&#128101;</div><p>No users found.</p></div>';
     return;
   }
   container.innerHTML = '';
-  rows.forEach(u => {
-    const card = document.createElement('div');
+  rows.forEach(function(u) {
+    const card     = document.createElement('div');
     card.className = 'item-card';
     card.style.cssText = 'margin-bottom:10px;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:12px';
-    card.onclick = () => openUserModal(u.id);
-    const initials = (u.username || '?')[0].toUpperCase();
-    const isBanned = u.is_banned;
-    const joined   = u.created_at ? new Date(u.created_at).toLocaleDateString() : '\u2014';
-    const lastSeen = u.last_seen  ? new Date(u.last_seen).toLocaleDateString()  : '\u2014';
-    card.innerHTML = `
-      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#9c27b0);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${esc(initials)}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:14px">${esc(u.username)} ${isBanned ? '<span style="font-size:11px;background:#ffebee;color:#c62828;padding:2px 8px;border-radius:10px;font-weight:700">\uD83D\uDEAB Banned</span>' : ''}</div>
-        <div style="font-size:12px;color:var(--muted)">${esc(u.email)}</div>
-      </div>
-      <div style="text-align:right;font-size:11px;color:var(--muted);flex-shrink:0">
-        <div>Joined: ${joined}</div>
-        <div>Last seen: ${lastSeen}</div>
-      </div>`;
+    card.onclick   = function() { openUserModal(u.id); };
+    const initials  = (u.username || '?')[0].toUpperCase();
+    const isBanned  = u.is_banned;
+    const joined    = u.created_at ? new Date(u.created_at).toLocaleDateString() : '&mdash;';
+    const lastSeen  = u.last_seen  ? new Date(u.last_seen).toLocaleDateString()  : '&mdash;';
+    const bannedBadge = isBanned ? '<span style="font-size:11px;background:#ffebee;color:#c62828;padding:2px 8px;border-radius:10px;font-weight:700">Banned</span>' : '';
+    card.innerHTML =
+      '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#9c27b0);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + esc(initials) + '</div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-weight:700;font-size:14px">' + esc(u.username) + ' ' + bannedBadge + '</div>' +
+        '<div style="font-size:12px;color:var(--muted)">' + esc(u.email) + '</div>' +
+      '</div>' +
+      '<div style="text-align:right;font-size:11px;color:var(--muted);flex-shrink:0">' +
+        '<div>Joined: ' + joined + '</div>' +
+        '<div>Last seen: ' + lastSeen + '</div>' +
+      '</div>';
     container.appendChild(card);
   });
 }
@@ -2573,35 +2576,34 @@ function renderUsersAdmin() {
 let _currentUserAdmin = null;
 
 function openUserModal(id) {
-  const u = _allUsersAdmin.find(x => x.id === id);
+  const u = _allUsersAdmin.find(function(x){ return x.id === id; });
   if (!u) return;
   _currentUserAdmin = u;
-  document.getElementById('userModalTitle').textContent = '\u{1F464} ' + u.username;
-  const joined   = u.created_at ? new Date(u.created_at).toLocaleString() : '\u2014';
-  const lastSeen = u.last_seen  ? new Date(u.last_seen).toLocaleString()  : '\u2014';
-  const isBanned = u.is_banned;
-  document.getElementById('userModalBody').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-      <div><strong style="font-size:12px;color:var(--muted)">Username</strong><div style="font-size:14px;font-weight:700">${esc(u.username)}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Email</strong><div style="font-size:14px">${esc(u.email)}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Joined</strong><div style="font-size:13px">${joined}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Last Seen</strong><div style="font-size:13px">${lastSeen}</div></div>
-      <div style="grid-column:1/-1"><strong style="font-size:12px;color:var(--muted)">Status</strong>
-        <div>${isBanned
-          ? \`<span style="background:#ffebee;color:#c62828;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">Banned</span>\${u.ban_reason ? \`<div style="font-size:12px;color:var(--muted);margin-top:4px">Reason: \${esc(u.ban_reason)}</div>\` : ''}\`
-          : '<span style="background:#e8f5e9;color:#2e7d32;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">Active</span>'}
-        </div>
-      </div>
-    </div>
-    \${!isBanned ? \`<div class="form-group"><label>Ban Reason</label><input id="userBanReason" class="form-control" maxlength="300" placeholder="e.g. Spamming or harassment"></div>\` : ''}`;
+  document.getElementById('userModalTitle').textContent = 'User: ' + u.username;
+  const joined    = u.created_at ? new Date(u.created_at).toLocaleString() : '&mdash;';
+  const lastSeen  = u.last_seen  ? new Date(u.last_seen).toLocaleString()  : '&mdash;';
+  const isBanned  = u.is_banned;
+  const statusHtml = isBanned
+    ? '<span style="background:#ffebee;color:#c62828;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">&#128683; Banned</span>' +
+      (u.ban_reason ? '<div style="font-size:12px;color:var(--muted);margin-top:4px">Reason: ' + esc(u.ban_reason) + '</div>' : '')
+    : '<span style="background:#e8f5e9;color:#2e7d32;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">&#9989; Active</span>';
+  const banReasonField = !isBanned
+    ? '<div class="form-group" style="margin-top:14px"><label class="form-label">Ban Reason <span style="color:var(--muted);font-weight:400;font-size:12px">(shown to user)</span></label><input id="userBanReason" class="form-control" maxlength="300" placeholder="e.g. Spamming or harassment"></div>'
+    : '';
+  document.getElementById('userModalBody').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">' +
+      '<div><strong style="font-size:12px;color:var(--muted)">Username</strong><div style="font-size:14px;font-weight:700">' + esc(u.username) + '</div></div>' +
+      '<div><strong style="font-size:12px;color:var(--muted)">Email</strong><div style="font-size:14px">' + esc(u.email) + '</div></div>' +
+      '<div><strong style="font-size:12px;color:var(--muted)">Joined</strong><div style="font-size:13px">' + joined + '</div></div>' +
+      '<div><strong style="font-size:12px;color:var(--muted)">Last Seen</strong><div style="font-size:13px">' + lastSeen + '</div></div>' +
+      '<div style="grid-column:1/-1"><strong style="font-size:12px;color:var(--muted)">Status</strong><div style="margin-top:4px">' + statusHtml + '</div></div>' +
+    '</div>' + banReasonField;
   const banBtn   = document.getElementById('userModalBanBtn');
   const unbanBtn = document.getElementById('userModalUnbanBtn');
   const delBtn   = document.getElementById('userModalDeleteBtn');
-  banBtn.style.display   = isBanned ? 'none' : '';
-  unbanBtn.style.display = isBanned ? '' : 'none';
-  banBtn.onclick   = () => banUserAdmin(id);
-  unbanBtn.onclick = () => unbanUserAdmin(id);
-  delBtn.onclick   = () => deleteUserAdmin(id);
+  if (banBtn)   { banBtn.style.display   = isBanned ? 'none' : ''; banBtn.onclick   = function(){ banUserAdmin(id); }; }
+  if (unbanBtn) { unbanBtn.style.display = isBanned ? ''     : 'none'; unbanBtn.onclick = function(){ unbanUserAdmin(id); }; }
+  if (delBtn)   { delBtn.onclick = function(){ deleteUserAdmin(id); }; }
   document.getElementById('userModalBackdrop').classList.add('show');
 }
 
@@ -2611,42 +2613,44 @@ function closeUserModal() {
 }
 
 async function banUserAdmin(id) {
-  const reason = document.getElementById('userBanReason')?.value.trim() || 'Suspended by admin';
-  if (!confirm('Ban this user?')) return;
+  const reasonEl = document.getElementById('userBanReason');
+  const reason   = reasonEl ? reasonEl.value.trim() : '';
+  if (!confirm('Ban this user? They will no longer be able to comment or post.')) return;
   try {
-    const res = await fetch(`${BASE}/admin/users/${id}/ban`, {
+    const res = await fetch(BASE + '/admin/users/' + id + '/ban', {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify({ reason: reason || 'Suspended by admin' }),
     });
     if (!res.ok) throw new Error('Failed');
     showToast('User banned', 'warn');
     closeUserModal();
-    await loadUsersAdmin();
-  } catch { showToast('Failed to ban user', 'error'); }
+    loadUsersAdmin();
+  } catch(e) { showToast('Failed to ban user', 'error'); }
 }
 
 async function unbanUserAdmin(id) {
-  if (!confirm('Lift the ban on this user?')) return;
+  if (!confirm('Lift the ban on this user? They will be able to comment and post again.')) return;
   try {
-    const res = await fetch(`${BASE}/admin/users/${id}/unban`, { method: 'POST', headers: authHeaders() });
+    const res = await fetch(BASE + '/admin/users/' + id + '/unban', { method: 'POST', headers: authHeaders() });
     if (!res.ok) throw new Error('Failed');
     showToast('User unbanned', 'success');
     closeUserModal();
-    await loadUsersAdmin();
-  } catch { showToast('Failed to unban user', 'error'); }
+    loadUsersAdmin();
+  } catch(e) { showToast('Failed to unban user', 'error'); }
 }
 
 async function deleteUserAdmin(id) {
-  if (!confirm('Permanently delete this user account?')) return;
+  if (!confirm('Permanently delete this account? This cannot be undone.')) return;
   try {
-    const res = await fetch(`${BASE}/admin/users/${id}`, { method: 'DELETE', headers: authHeaders() });
+    const res = await fetch(BASE + '/admin/users/' + id, { method: 'DELETE', headers: authHeaders() });
     if (!res.ok) throw new Error('Failed');
     showToast('User deleted', 'success');
     closeUserModal();
-    await loadUsersAdmin();
-  } catch { showToast('Failed to delete user', 'error'); }
+    loadUsersAdmin();
+  } catch(e) { showToast('Failed to delete user', 'error'); }
 }
+
 
 // ================== TOAST ==================
 function showToast(msg, type = 'info') {

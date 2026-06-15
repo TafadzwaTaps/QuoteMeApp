@@ -1106,7 +1106,89 @@
         background: rgba(214,51,132,.1); border-radius: 18px; white-space: nowrap;
         max-width: 110px; overflow: hidden; text-overflow: ellipsis;
     }
-    body.dark .nav-user-chip { background: rgba(244,114,182,.15); color: #f472b6; }
+    body.dark .nav-user-chip { background: rgba(244,114,182,.15); color: #f472b6; }    /* ── FIX: Nav Auth on Mobile ─────────────────────────────────
+       On screens ≤768px, the nav-auth-wrap (Sign In / Join buttons)
+       must shrink so they don't crowd out the hamburger button.
+       On very small screens (≤480px) hide them entirely – users can
+       sign in via the comment/forum auth gate that appears inline.
+    ─────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+        /* Keep header as a single NON-wrapping row */
+        .header {
+            flex-wrap: nowrap !important;
+            padding: 12px 14px !important;
+            gap: 8px !important;
+        }
+
+        /* Nav brand – allow it to shrink */
+        .nav-brand { flex-shrink: 1; min-width: 0; }
+        .logo-text  { font-size: 15px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Auth buttons – compact on tablet */
+        .nav-auth-wrap { gap: 4px; flex-shrink: 0; }
+        .nav-auth-btn  { padding: 5px 10px; font-size: 11px; }
+        .nav-user-chip { font-size: 11px; padding: 4px 8px; max-width: 80px; }
+
+        /* header-right stays on one line */
+        .header-right  { gap: 6px; flex-shrink: 0; margin-left: auto; }
+        .dark-toggle   { padding: 6px 10px; font-size: 12px; flex-shrink: 0; }
+        .mobile-menu-btn { flex-shrink: 0; }
+    }
+    @media (max-width: 480px) {
+        /* On phones, hide auth buttons – sign-in is accessible inline */
+        .nav-auth-wrap { display: none !important; }
+        .header { padding: 10px 12px !important; }
+        .logo-text { font-size: 14px; max-width: 90px; }
+    }
+
+    /* ── FIX: Nav slide-down menu must appear BELOW the header ──
+       The .nav element needs position:relative on the header so
+       the absolute-positioned dropdown sits below it correctly.
+       Override any conflicting flex-wrap rules from style.css.
+    ─────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+        /* The header must be position:relative so .nav can
+           position:absolute relative to it */
+        .header {
+            position: sticky !important;
+            top: 0 !important;
+        }
+
+        /* The nav dropdown */
+        .nav {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12);
+            z-index: 9999;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.35s ease;
+        }
+        body.dark .nav { background: #2c2c2c; }
+        .nav.nav-open { max-height: 500px; }
+
+        /* nav-links inside the dropdown */
+        .nav-links {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0 !important;
+            padding: 8px 0 !important;
+            width: auto !important;
+        }
+        .nav-links li a {
+            display: block;
+            padding: 13px 22px;
+            border-bottom: 1px solid rgba(214,51,132,.08);
+            font-size: 15px;
+            color: #333;
+        }
+        body.dark .nav-links li a { color: #f0f0f0; }
+        .nav-links li:last-child a { border-bottom: none; }
+        .nav-links li a:hover { background: rgba(214,51,132,.06); color: #d63384; }
+    }
 </style>
 </head>
 <body>
