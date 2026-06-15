@@ -54,6 +54,7 @@ class Comment(Base):
     item_type = Column(String(20), nullable=False)    # quote / story / blog
     item_id = Column(Integer, nullable=False)
     sentiment = Column(String(20), default="neutral")
+    is_hidden = Column(Integer, default=0)            # 0=visible, 1=hidden by admin
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class ForumPost(Base):
@@ -81,7 +82,10 @@ class SiteUser(Base):
     username      = Column(String(60), unique=True, nullable=False, index=True)
     email         = Column(String(200), unique=True, nullable=False, index=True)
     password_hash = Column(String(200), nullable=False)
-    is_banned     = Column(Integer, default=0)   # 1 = banned
+    role          = Column(String(20), default="user")    # user / moderator / admin
+    bio           = Column(String(300), nullable=True)
+    avatar_url    = Column(String(400), nullable=True)
+    is_banned     = Column(Integer, default=0)   # 1 = banned/suspended
     ban_reason    = Column(String(300), nullable=True)
     created_at    = Column(DateTime, default=datetime.utcnow)
     last_seen     = Column(DateTime, default=datetime.utcnow)

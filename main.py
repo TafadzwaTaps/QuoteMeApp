@@ -321,13 +321,21 @@ def update_settings(data: dict, username: str = Depends(require_admin)):
 # =========================
 @app.get("/admin/stats")
 def stats(username: str = Depends(require_admin)):
-    return {
-        "quotes": len(supabase.table("quotes").select("*").execute().data),
-        "stories": len(supabase.table("stories").select("*").execute().data),
-        "blogs": len(supabase.table("blogs").select("*").execute().data),
-        "comments": len(supabase.table("comments").select("*").execute().data),
-        "forumpost": len(supabase.table("forumpost").select("*").execute().data),
-    }
+    try:
+        users = supabase.table(USER_TABLE).select("id, is_banned").execute().data or []
+        comments = supabase.table("comments").select("id, toxicity").execute().data or []
+        return {
+            "quotes":    len(supabase.table("quotes").select("id").execute().data),
+            "stories":   len(supabase.table("stories").select("id").execute().data),
+            "blogs":     len(supabase.table("blogs").select("id").execute().data),
+            "comments":  len(comments),
+            "forumpost": len(supabase.table("forumpost").select("id").execute().data),
+            "users":     len(users),
+            "flagged_comments": sum(1 for c in comments if (c.get("toxicity") or 0) >= 0.7),
+        }
+    except Exception as e:
+        logger.error(f"stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # =========================
 # UPLOAD IMAGE
@@ -583,11 +591,21 @@ def like(item_type: str, item_id: int):
 # =========================
 @app.get("/comments/{item_type}/{item_id}")
 def get_comments(item_type: str, item_id: int):
-    return supabase.table("comments")\
-        .select("*")\
-        .eq("item_type", item_type)\
-        .eq("item_id", item_id)\
-        .execute().data
+    """Public — returns non-hidden comments only."""
+    try:
+        return (supabase.table("comments")
+                .select("*")
+                .eq("item_type", item_type)
+                .eq("item_id", item_id)
+                .neq("is_hidden", True)
+                .execute().data)
+    except Exception:
+        # Fallback if is_hidden column doesn't exist yet
+        return supabase.table("comments")\
+            .select("*")\
+            .eq("item_type", item_type)\
+            .eq("item_id", item_id)\
+            .execute().data
 
 
 # ── SENTIMENT & TOXICITY HELPERS ──
@@ -1307,4 +1325,295 @@ def admin_delete_user(user_id: int, username: str = Depends(require_admin)):
         return {"success": True, "user_id": user_id}
     except Exception as e:
         logger.error(f"admin_delete_user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =========================================
+# EXTENDED USER MANAGEMENT
+# =========================================
+
+@app.post("/users/change-password")
+def user_change_password(data: dict, authorization: str = Header(...)):
+    """Authenticated user — change own password."""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing token")
+    user = _verify_user_token(authorization[7:])
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    current_pw  = (data.get("current_password") or "").strip()
+    new_pw      = (data.get("new_password")     or "").strip()
+
+    if not current_pw or not new_pw:
+        raise HTTPException(status_code=400, detail="Both current and new password are required.")
+    if len(new_pw) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters.")
+
+    try:
+        row = supabase.table(USER_TABLE).select("password_hash").eq("id", user["id"]).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Could not verify credentials.")
+
+    if not row.data:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if not pwd_context.verify(current_pw[:72], row.data[0]["password_hash"]):
+        raise HTTPException(status_code=401, detail="Current password is incorrect.")
+
+    hashed = pwd_context.hash(new_pw[:72])
+    supabase.table(USER_TABLE).update({"password_hash": hashed}).eq("id", user["id"]).execute()
+    logger.info(f"User '{user['username']}' changed their password")
+    return {"success": True}
+
+
+@app.post("/admin/users/{user_id}/reset-password")
+def admin_reset_password(user_id: int, data: dict, username: str = Depends(require_admin)):
+    """Admin — reset a user's password to a provided value."""
+    new_pw = (data.get("new_password") or "").strip()
+    if not new_pw or len(new_pw) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters.")
+    hashed = pwd_context.hash(new_pw[:72])
+    try:
+        res = supabase.table(USER_TABLE).update({"password_hash": hashed}).eq("id", user_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        logger.info(f"Admin '{username}' reset password for user {user_id}")
+        return {"success": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/admin/users/{user_id}/promote")
+def admin_promote_user(user_id: int, data: dict, username: str = Depends(require_admin)):
+    """Admin — set a user's role (user / moderator / admin)."""
+    role = (data.get("role") or "").strip().lower()
+    if role not in ("user", "moderator", "admin"):
+        raise HTTPException(status_code=400, detail="Role must be 'user', 'moderator', or 'admin'.")
+    try:
+        res = supabase.table(USER_TABLE).update({"role": role}).eq("id", user_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        logger.info(f"Admin '{username}' set user {user_id} role to '{role}'")
+        return {"success": True, "role": role}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/admin/users/{user_id}/suspend")
+def admin_suspend_user(user_id: int, data: dict = None, username: str = Depends(require_admin)):
+    """Admin — temporarily suspend a user (same flag as ban, but different label)."""
+    data = data or {}
+    reason = _strip_html((data.get("reason") or "Account temporarily suspended"))[:300]
+    try:
+        res = supabase.table(USER_TABLE).update({
+            "is_banned": 1,
+            "ban_reason": reason,
+        }).eq("id", user_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        logger.info(f"Admin '{username}' suspended user {user_id}: {reason}")
+        return {"success": True, "user_id": user_id, "suspended": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/admin/users/{user_id}/reactivate")
+def admin_reactivate_user(user_id: int, username: str = Depends(require_admin)):
+    """Admin — reactivate a suspended/banned user."""
+    try:
+        res = supabase.table(USER_TABLE).update({
+            "is_banned":  0,
+            "ban_reason": None,
+        }).eq("id", user_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        logger.info(f"Admin '{username}' reactivated user {user_id}")
+        return {"success": True, "user_id": user_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Extended user stats ──
+@app.get("/admin/users/stats")
+def admin_user_stats(username: str = Depends(require_admin)):
+    """Admin — aggregate stats about registered users."""
+    try:
+        rows = supabase.table(USER_TABLE).select("id, is_banned, role, created_at").execute().data or []
+        now = datetime.utcnow()
+        week_ago = now - timedelta(days=7)
+        total   = len(rows)
+        active  = sum(1 for r in rows if not r.get("is_banned"))
+        banned  = sum(1 for r in rows if r.get("is_banned"))
+        mods    = sum(1 for r in rows if r.get("role") == "moderator")
+        new_7d  = sum(1 for r in rows if r.get("created_at") and
+                      datetime.fromisoformat(str(r["created_at"]).replace("Z","")) >= week_ago)
+        return {
+            "total":   total,
+            "active":  active,
+            "banned":  banned,
+            "moderators": mods,
+            "new_7d":  new_7d,
+        }
+    except Exception as e:
+        logger.error(f"admin_user_stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =========================================
+# EXTENDED COMMENT MODERATION
+# =========================================
+
+@app.get("/admin/comments")
+def admin_get_all_comments(
+    username: str = Depends(require_admin),
+    sentiment_filter: str = None,
+    search: str = None,
+    item_type: str = None,
+    show_hidden: str = "all",   # all | visible | hidden
+):
+    """
+    Admin — retrieve all comments with optional filters.
+    sentiment_filter: positive | neutral | negative | toxic | flagged
+    show_hidden: all | visible | hidden
+    """
+    try:
+        rows = supabase.table("comments").select("*").order("id", desc=True).execute().data or []
+    except Exception as e:
+        logger.error(f"admin_get_all_comments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Filter by hidden status
+    if show_hidden == "visible":
+        rows = [r for r in rows if not r.get("is_hidden")]
+    elif show_hidden == "hidden":
+        rows = [r for r in rows if r.get("is_hidden")]
+
+    # Filter by item_type
+    if item_type and item_type in ("quote", "story", "blog"):
+        rows = [r for r in rows if r.get("item_type") == item_type]
+
+    # Filter by sentiment / toxicity bucket
+    if sentiment_filter:
+        sf = sentiment_filter.lower()
+        if sf == "positive":
+            rows = [r for r in rows if r.get("sentiment") == "positive"]
+        elif sf == "neutral":
+            rows = [r for r in rows if r.get("sentiment") == "neutral"]
+        elif sf == "negative":
+            rows = [r for r in rows if r.get("sentiment") == "negative"]
+        elif sf == "toxic":
+            rows = [r for r in rows if (r.get("toxicity") or 0) >= 0.4]
+        elif sf == "flagged":
+            rows = [r for r in rows if (r.get("toxicity") or 0) >= 0.7]
+
+    # Text search
+    if search:
+        s = search.lower().strip()
+        rows = [r for r in rows if
+                s in (r.get("content") or "").lower() or
+                s in (r.get("username") or "").lower()]
+
+    return rows
+
+
+@app.post("/admin/comments/{comment_id}/hide")
+def admin_hide_comment(comment_id: int, username: str = Depends(require_admin)):
+    """Admin — hide a comment from public view (soft delete)."""
+    try:
+        res = supabase.table("comments").update({"is_hidden": True}).eq("id", comment_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
+        logger.info(f"Admin '{username}' hid comment {comment_id}")
+        return {"success": True, "comment_id": comment_id, "hidden": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"admin_hide_comment {comment_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/admin/comments/{comment_id}/restore")
+def admin_restore_comment(comment_id: int, username: str = Depends(require_admin)):
+    """Admin — restore a previously hidden comment."""
+    try:
+        res = supabase.table("comments").update({"is_hidden": False}).eq("id", comment_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
+        logger.info(f"Admin '{username}' restored comment {comment_id}")
+        return {"success": True, "comment_id": comment_id, "hidden": False}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"admin_restore_comment {comment_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/admin/comments/stats")
+def admin_comment_stats(username: str = Depends(require_admin)):
+    """Admin — aggregate comment moderation stats."""
+    try:
+        rows = supabase.table("comments").select("*").execute().data or []
+    except Exception as e:
+        logger.error(f"admin_comment_stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    total    = len(rows)
+    positive = sum(1 for r in rows if r.get("sentiment") == "positive")
+    neutral  = sum(1 for r in rows if r.get("sentiment") == "neutral")
+    negative = sum(1 for r in rows if r.get("sentiment") == "negative")
+    toxic    = sum(1 for r in rows if (r.get("toxicity") or 0) >= 0.4)
+    flagged  = sum(1 for r in rows if (r.get("toxicity") or 0) >= 0.7)
+    hidden   = sum(1 for r in rows if r.get("is_hidden"))
+
+    return {
+        "total":    total,
+        "positive": positive,
+        "neutral":  neutral,
+        "negative": negative,
+        "toxic":    toxic,
+        "flagged":  flagged,
+        "hidden":   hidden,
+    }
+
+
+# Override the public comments endpoint to exclude hidden comments
+@app.get("/comments/{item_type}/{item_id}/public")
+def get_comments_public(item_type: str, item_id: int):
+    """Public — returns only non-hidden comments."""
+    return (supabase.table("comments")
+            .select("*")
+            .eq("item_type", item_type)
+            .eq("item_id", item_id)
+            .neq("is_hidden", True)
+            .execute().data)
+
+
+# Extended stats including users
+@app.get("/admin/stats/extended")
+def stats_extended(username: str = Depends(require_admin)):
+    """Extended stats including user counts."""
+    try:
+        users = supabase.table(USER_TABLE).select("id, is_banned").execute().data or []
+        comments = supabase.table("comments").select("id, toxicity, is_hidden").execute().data or []
+        return {
+            "quotes":    len(supabase.table("quotes").select("id").execute().data),
+            "stories":   len(supabase.table("stories").select("id").execute().data),
+            "blogs":     len(supabase.table("blogs").select("id").execute().data),
+            "comments":  len(comments),
+            "forumpost": len(supabase.table("forumpost").select("id").execute().data),
+            "users":     len(users),
+            "users_active": sum(1 for u in users if not u.get("is_banned")),
+            "users_banned": sum(1 for u in users if u.get("is_banned")),
+            "flagged_comments": sum(1 for c in comments if (c.get("toxicity") or 0) >= 0.7),
+            "hidden_comments":  sum(1 for c in comments if c.get("is_hidden")),
+        }
+    except Exception as e:
+        logger.error(f"stats_extended: {e}")
         raise HTTPException(status_code=500, detail=str(e))

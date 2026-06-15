@@ -699,9 +699,50 @@ html, body {
           <div class="hstat-label">Forum Posts</div>
           <div class="hstat-bar" id="statbar-forum"></div>
         </div>
+        <div class="hstat loading" data-goto="users" onclick="switchTab('users')">
+          <div class="hstat-icon">👥</div>
+          <div class="hstat-num" id="stat-users">—</div>
+          <div class="hstat-label">Registered Users</div>
+          <div class="hstat-bar" id="statbar-users"></div>
+        </div>
+        <div class="hstat loading" style="cursor:default;background:rgba(198,40,40,.06)">
+          <div class="hstat-icon">🚨</div>
+          <div class="hstat-num" id="stat-flagged" style="color:#c62828">—</div>
+          <div class="hstat-label">Flagged Comments</div>
+        </div>
       </div>
+
+      <!-- User Stats Row -->
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-header"><h2>&#128100; Community Stats</h2></div>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px" id="userStatsGrid">
+            <div style="background:var(--input-bg);border-radius:12px;padding:16px;text-align:center">
+              <div style="font-size:26px;font-weight:800;color:var(--accent)" id="ustat-total">—</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Total Users</div>
+            </div>
+            <div style="background:var(--input-bg);border-radius:12px;padding:16px;text-align:center">
+              <div style="font-size:26px;font-weight:800;color:#2e7d32" id="ustat-active">—</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Active Users</div>
+            </div>
+            <div style="background:var(--input-bg);border-radius:12px;padding:16px;text-align:center">
+              <div style="font-size:26px;font-weight:800;color:#c62828" id="ustat-banned">—</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Banned Users</div>
+            </div>
+            <div style="background:var(--input-bg);border-radius:12px;padding:16px;text-align:center">
+              <div style="font-size:26px;font-weight:800;color:#6a1b9a" id="ustat-mods">—</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">Moderators</div>
+            </div>
+            <div style="background:var(--input-bg);border-radius:12px;padding:16px;text-align:center">
+              <div style="font-size:26px;font-weight:800;color:#e65100" id="ustat-new">—</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">New (7 days)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Recent Activity -->
-      <div class="panel">
+      <div class="panel" style="margin-top:14px">
         <div class="panel-header"><h2>Recent Activity</h2></div>
         <div class="panel-body" id="activityFeed">
           <div style="color:var(--muted);text-align:center;padding:20px">Loading activity…</div>
@@ -745,8 +786,66 @@ html, body {
 
     <!-- ===== COMMENTS TAB ===== -->
     <div id="tab-comments" style="display:none">
+      <!-- Comment stats strip -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px" id="commentStatsRow">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:var(--accent)" id="cs-total">—</div>
+          <div style="font-size:11px;color:var(--muted)">Total</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#2e7d32" id="cs-positive">—</div>
+          <div style="font-size:11px;color:var(--muted)">Positive</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#555" id="cs-neutral">—</div>
+          <div style="font-size:11px;color:var(--muted)">Neutral</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#c62828" id="cs-negative">—</div>
+          <div style="font-size:11px;color:var(--muted)">Negative</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#e65100" id="cs-toxic">—</div>
+          <div style="font-size:11px;color:var(--muted)">Toxic</div>
+        </div>
+        <div style="background:rgba(198,40,40,.07);border:1px solid rgba(198,40,40,.2);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#c62828" id="cs-flagged">—</div>
+          <div style="font-size:11px;color:var(--muted)">Flagged</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#6a1b9a" id="cs-hidden">—</div>
+          <div style="font-size:11px;color:var(--muted)">Hidden</div>
+        </div>
+      </div>
+
       <div class="panel">
-        <div class="panel-header"><h2>All Comments</h2></div>
+        <div class="panel-header" style="flex-wrap:wrap;gap:10px">
+          <h2>Comment Moderation</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input id="commentSearchInput" class="search-input" placeholder="&#128269; Search comments…" style="width:180px"
+              oninput="filterAndRenderComments()">
+            <select id="commentSentimentFilter" class="select-sm" onchange="loadAdminComments()">
+              <option value="">All Sentiment</option>
+              <option value="positive">&#128522; Positive</option>
+              <option value="neutral">&#128528; Neutral</option>
+              <option value="negative">&#128533; Negative</option>
+              <option value="toxic">&#9888;&#65039; Toxic (0.4+)</option>
+              <option value="flagged">&#128680; Flagged (0.7+)</option>
+            </select>
+            <select id="commentTypeFilter" class="select-sm" onchange="loadAdminComments()">
+              <option value="">All Types</option>
+              <option value="story">Stories</option>
+              <option value="blog">Blogs</option>
+              <option value="quote">Quotes</option>
+            </select>
+            <select id="commentHiddenFilter" class="select-sm" onchange="loadAdminComments()">
+              <option value="all">All Status</option>
+              <option value="visible">Visible Only</option>
+              <option value="hidden">Hidden Only</option>
+            </select>
+            <button class="btn btn-ghost" onclick="loadAdminComments()">&#8635; Refresh</button>
+          </div>
+        </div>
         <div class="panel-body">
           <div id="allCommentsList"></div>
         </div>
@@ -819,16 +918,22 @@ html, body {
     <!-- ===== USERS TAB ===== -->
     <div id="tab-users" style="display:none">
       <div class="panel">
-        <div class="panel-header">
-          <h2>👥 Community Users</h2>
+        <div class="panel-header" style="flex-wrap:wrap;gap:10px">
+          <h2>&#128100; User Management</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input id="userSearchInput" class="search-input" placeholder="🔍 Search by name or email…" style="width:220px" oninput="renderUsersAdmin()">
-            <select id="userFilterBanned" class="select-sm" onchange="renderUsersAdmin()">
-              <option value="">All Users</option>
-              <option value="0">✅ Active</option>
-              <option value="1">🚫 Banned</option>
+            <input id="userSearchInput" class="search-input" placeholder="&#128269; Search name or email…" style="width:190px" oninput="renderUsersAdmin()">
+            <select id="userFilterStatus" class="select-sm" onchange="renderUsersAdmin()">
+              <option value="">All Status</option>
+              <option value="active">&#9989; Active</option>
+              <option value="banned">&#128683; Banned</option>
             </select>
-            <button class="btn btn-ghost" onclick="loadUsersAdmin()">⟳ Refresh</button>
+            <select id="userFilterRole" class="select-sm" onchange="renderUsersAdmin()">
+              <option value="">All Roles</option>
+              <option value="user">User</option>
+              <option value="moderator">Moderator</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button class="btn btn-ghost" onclick="loadUsersAdmin()">&#8635; Refresh</button>
           </div>
         </div>
         <div class="panel-body">
@@ -839,17 +944,41 @@ html, body {
 
     <!-- USER DETAIL MODAL -->
     <div class="modal-backdrop" id="userModalBackdrop">
-      <div class="modal" style="max-width:480px">
+      <div class="modal" style="max-width:540px">
         <div class="modal-header">
           <h3 id="userModalTitle">User Details</h3>
-          <button class="btn-icon" onclick="closeUserModal()">✕</button>
+          <button class="btn-icon" onclick="closeUserModal()">&#10005;</button>
         </div>
         <div class="modal-body" id="userModalBody"></div>
-        <div class="modal-footer" style="flex-wrap:wrap">
+        <div class="modal-footer" style="flex-wrap:wrap;gap:8px">
           <button class="btn btn-ghost" onclick="closeUserModal()">Close</button>
-          <button class="btn btn-danger" id="userModalDeleteBtn">🗑️ Delete</button>
-          <button class="btn btn-danger" id="userModalBanBtn">🚫 Ban</button>
-          <button class="btn btn-primary" id="userModalUnbanBtn">✅ Unban</button>
+          <button class="btn btn-danger" id="userModalDeleteBtn">&#128465; Delete</button>
+          <button class="btn btn-danger" id="userModalBanBtn">&#128683; Ban/Suspend</button>
+          <button class="btn btn-primary" id="userModalUnbanBtn">&#9989; Reactivate</button>
+          <button class="btn btn-ghost" id="userModalResetPwdBtn">&#128274; Reset Password</button>
+          <button class="btn btn-ghost" id="userModalPromoteBtn">&#11014; Promote to Mod</button>
+          <button class="btn btn-ghost" id="userModalDemoteBtn">&#11015; Demote to User</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESET PASSWORD MODAL -->
+    <div class="modal-backdrop" id="resetPwdModalBackdrop">
+      <div class="modal" style="max-width:380px">
+        <div class="modal-header">
+          <h3>&#128274; Reset Password</h3>
+          <button class="btn-icon" onclick="closeResetPwdModal()">&#10005;</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Set a new password for <strong id="resetPwdUsername"></strong>.</p>
+          <div class="form-group">
+            <label class="required">New Password (min 6 characters)</label>
+            <input type="password" id="resetPwdValue" class="form-control" placeholder="New password" minlength="6">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeResetPwdModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="doResetPassword()">Set Password</button>
         </div>
       </div>
     </div>
@@ -1335,7 +1464,8 @@ function switchTab(tab) {
 
   } else if (tab === 'comments') {
     document.getElementById('tab-comments').style.display = 'block';
-    loadAllComments();
+    loadAdminComments();
+    loadCommentStats();
 
   } else if (tab === 'forum') {
     document.getElementById('tab-forum').style.display = 'block';
@@ -1365,7 +1495,7 @@ function configureModalFields(tab) {
 
 function loadCurrentTab() {
   if      (state.tab === 'overview')  { loadStats(); loadActivityFeed(); }
-  else if (state.tab === 'comments')  loadAllComments();
+  else if (state.tab === 'comments')  { loadAdminComments(); loadCommentStats(); }
   else if (state.tab === 'forum')     loadForum();
   else if (['quotes','stories','blogs'].includes(state.tab)) loadList(true);
 }
@@ -1404,7 +1534,7 @@ async function loadStats() {
     // Animate numbers in
     const map = { quotes: stats.quotes||0, stories: stats.stories||0,
                   blogs: stats.blogs||0, comments: stats.comments||0,
-                  forum: stats.forum||0 };
+                  forum: stats.forumpost||stats.forum||0 };
     const total = Object.values(map).reduce((a,b)=>a+b,0) || 1;
 
     for (const [key, val] of Object.entries(map)) {
@@ -1418,11 +1548,25 @@ async function loadStats() {
       }
     }
 
+    // Users stat card
+    if (stats.users !== undefined) {
+      const uEl = document.getElementById('stat-users');
+      if (uEl) { animateCount(uEl, stats.users); uEl.closest('.hstat')?.classList.remove('loading'); }
+    }
+    // Flagged comments
+    if (stats.flagged_comments !== undefined) {
+      const fEl = document.getElementById('stat-flagged');
+      if (fEl) { animateCount(fEl, stats.flagged_comments); fEl.closest('.hstat')?.classList.remove('loading'); }
+    }
+
     // Update sidebar nav badges
     updateNavBadge('quotes',   map.quotes);
     updateNavBadge('stories',  map.stories);
     updateNavBadge('blogs',    map.blogs);
     updateNavBadge('comments', map.comments);
+
+    // Load user mini-stats
+    loadUserMiniStats();
 
   } catch (e) {
     console.error('[QuoteMe] loadStats:', e);
@@ -2127,67 +2271,119 @@ async function deleteCommentFromView(commentId, itemId, itemType) {
 }
 
 // ================== ALL COMMENTS TAB ==================
-async function loadAllComments() {
-  const container = document.getElementById('allCommentsList');
-  if (!container) return;
-  container.innerHTML = renderSkeletons(3);
+// ================== COMMENT MODERATION ==================
+let _adminComments = [];
+
+async function loadCommentStats() {
   try {
-    const [quotes, stories, blogs] = await Promise.all([
-      fetch(API.quotes  + '?limit=200').then(r=>r.json()).catch(()=>[]),
-      fetch(API.stories + '?limit=200').then(r=>r.json()).catch(()=>[]),
-      fetch(API.blogs   + '?limit=200').then(r=>r.json()).catch(()=>[]),
-    ]);
-    const sentimentEmoji = { positive:'😊', neutral:'😐', negative:'😠' };
-    const allFetches = [];
-    for (const [type, items] of [['quote',quotes],['story',stories],['blog',blogs]]) {
-      for (const item of (Array.isArray(items) ? items : []).slice(0, 10)) {
-        allFetches.push(
-          fetch(`${API.comments}/${type}/${item.id}`)
-            .then(r=>r.json()).then(comments=>({type,item,comments})).catch(()=>({type,item,comments:[]}))
-        );
-      }
-    }
-    const results = await Promise.all(allFetches);
-    let html = '';
-    for (const { type, item, comments } of results) {
-      if (!comments.length) continue;
-      html += `<div class="panel" style="margin-bottom:14px">
-        <div class="panel-header" style="padding:12px 16px">
-          <h4 style="font-size:15px">${esc(item.title||item.text||'')}
-            <span style="font-size:12px;color:var(--muted)">(${type} #${item.id})</span></h4>
-        </div>
-        <div class="panel-body" style="padding:12px 16px">
-          ${comments.map(c => `
-            <div class="comment-item" style="margin-bottom:8px">
-              <div class="comment-user">
-                ${esc(c.username)}
-                <span class="sentiment-badge ${c.sentiment}">${sentimentEmoji[c.sentiment]||''} ${c.sentiment}</span>
-                <button class="btn-icon" style="margin-left:auto;float:right;color:var(--danger)"
-                        onclick="deleteComment(${c.id})">🗑️</button>
-              </div>
-              <div class="comment-text">${esc(c.content)}</div>
-            </div>`).join('')}
-        </div>
-      </div>`;
-    }
-    container.innerHTML = html ||
-      '<div class="empty-state"><div class="emoji">💭</div><p>No comments yet.</p></div>';
-  } catch (e) {
-    console.error('[QuoteMe] loadAllComments:', e);
-    container.innerHTML = '<div style="padding:24px;color:var(--muted)">Failed to load comments.</div>';
+    const res = await fetch(BASE + '/admin/comments/stats', { headers: authHeaders() });
+    if (!res.ok) return;
+    const d = await res.json();
+    var ids = { total:'cs-total', positive:'cs-positive', neutral:'cs-neutral',
+                negative:'cs-negative', toxic:'cs-toxic', flagged:'cs-flagged', hidden:'cs-hidden' };
+    Object.keys(ids).forEach(function(k){ safeSet(ids[k], d[k] !== undefined ? d[k] : '?'); });
+  } catch(e) { console.error('loadCommentStats', e); }
+}
+
+async function loadAdminComments() {
+  // Keep backward compat: loadAllComments() alias
+  var container = document.getElementById('allCommentsList');
+  if (!container) return;
+  container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Loading comments&#8230;</div>';
+
+  var sentiment = document.getElementById('commentSentimentFilter') ? document.getElementById('commentSentimentFilter').value : '';
+  var itype     = document.getElementById('commentTypeFilter')      ? document.getElementById('commentTypeFilter').value      : '';
+  var showHidden= document.getElementById('commentHiddenFilter')    ? document.getElementById('commentHiddenFilter').value    : 'all';
+
+  var url = BASE + '/admin/comments?show_hidden=' + encodeURIComponent(showHidden);
+  if (sentiment) url += '&sentiment_filter=' + encodeURIComponent(sentiment);
+  if (itype)     url += '&item_type=' + encodeURIComponent(itype);
+
+  try {
+    var res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _adminComments = await res.json();
+    filterAndRenderComments();
+  } catch(e) {
+    console.error('[QuoteMe] loadAdminComments:', e);
+    container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Failed to load comments. Check that the /admin/comments endpoint exists.</div>';
   }
 }
 
+// Keep old name for backward compat
+function loadAllComments() { loadAdminComments(); }
+
+function filterAndRenderComments() {
+  var container = document.getElementById('allCommentsList');
+  if (!container) return;
+  var q = (document.getElementById('commentSearchInput') ? document.getElementById('commentSearchInput').value : '').toLowerCase().trim();
+  var rows = _adminComments;
+  if (q) rows = rows.filter(function(c){ return (c.content||'').toLowerCase().includes(q) || (c.username||'').toLowerCase().includes(q); });
+
+  if (!rows.length) {
+    container.innerHTML = '<div class="empty-state"><div class="emoji">&#128173;</div><p>No comments found.</p></div>';
+    return;
+  }
+
+  var sentEmoji = { positive:'&#128522;', neutral:'&#128528;', negative:'&#128533;' };
+  var html = '';
+  rows.forEach(function(c) {
+    var tox = c.toxicity || 0;
+    var toxBadge = '';
+    if (tox >= 0.7) toxBadge = '<span style="font-size:10px;background:#ffebee;color:#c62828;padding:2px 7px;border-radius:10px;font-weight:700">&#128680; Flagged (' + tox.toFixed(2) + ')</span>';
+    else if (tox >= 0.4) toxBadge = '<span style="font-size:10px;background:#fff3e0;color:#e65100;padding:2px 7px;border-radius:10px;font-weight:700">&#9888; Toxic (' + tox.toFixed(2) + ')</span>';
+
+    var hiddenStyle = c.is_hidden ? 'opacity:.55;background:rgba(0,0,0,.03);' : '';
+    var hiddenBadge = c.is_hidden ? '<span style="font-size:10px;background:#f3e5f5;color:#6a1b9a;padding:2px 7px;border-radius:10px;font-weight:700">Hidden</span>' : '';
+
+    html += '<div class="comment-item" style="margin-bottom:10px;padding:12px 14px;' + hiddenStyle + '">' +
+      '<div class="comment-user" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<strong>' + esc(c.username || 'Unknown') + '</strong>' +
+        '<span style="font-size:11px;color:var(--muted)">' + (c.item_type||'') + ' #' + (c.item_id||'') + '</span>' +
+        '<span class="sentiment-badge ' + (c.sentiment||'neutral') + '">' + (sentEmoji[c.sentiment]||'&#128528;') + ' ' + (c.sentiment||'neutral') + '</span>' +
+        toxBadge + hiddenBadge +
+        '<span style="font-size:11px;color:var(--muted);margin-left:auto">' + (c.created_at ? new Date(c.created_at).toLocaleDateString() : '') + '</span>' +
+      '</div>' +
+      '<div class="comment-text" style="margin-top:6px">' + esc(c.content) + '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:8px">' +
+        (c.is_hidden
+          ? '<button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="restoreAdminComment(' + c.id + ')">&#128065; Restore</button>'
+          : '<button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="hideAdminComment(' + c.id + ')">&#128065; Hide</button>') +
+        '<button class="btn btn-danger" style="font-size:12px;padding:4px 10px" onclick="deleteComment(' + c.id + ')">&#128465; Delete</button>' +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+
 async function deleteComment(id) {
+  if (!confirm('Permanently delete this comment?')) return;
   try {
-    const res = await fetch(`${BASE}/comments/${id}`, { method: 'DELETE', headers: authHeaders() });
-    if (res.ok) { showToast('Comment deleted', 'success'); loadAllComments(); }
+    var res = await fetch(BASE + '/comments/' + id, { method: 'DELETE', headers: authHeaders() });
+    if (res.ok) { showToast('Comment deleted', 'success'); loadAdminComments(); loadCommentStats(); }
     else showToast('Failed to delete comment', 'error');
-  } catch { showToast('Network error', 'error'); }
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function hideAdminComment(id) {
+  try {
+    var res = await fetch(BASE + '/admin/comments/' + id + '/hide', { method: 'POST', headers: authHeaders() });
+    if (res.ok) { showToast('Comment hidden from public', 'warn'); loadAdminComments(); loadCommentStats(); }
+    else showToast('Failed to hide comment', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
+}
+
+async function restoreAdminComment(id) {
+  try {
+    var res = await fetch(BASE + '/admin/comments/' + id + '/restore', { method: 'POST', headers: authHeaders() });
+    if (res.ok) { showToast('Comment restored', 'success'); loadAdminComments(); loadCommentStats(); }
+    else showToast('Failed to restore comment', 'error');
+  } catch(e) { showToast('Network error', 'error'); }
 }
 
 // ================== FORUM ==================
 // ================== FORUM CRUD ==================
+
 let _dashForumPosts = [];
 let _forumEditId    = null;  // null = add mode, number = edit mode
 let _forumReplyId   = null;
@@ -2518,13 +2714,28 @@ async function changeUsername() {
 
 // ================== USERS (ADMIN) ==================
 let _allUsersAdmin = [];
+let _currentUserAdminId = null;
+let _resetPwdUserId = null;
+
+async function loadUserMiniStats() {
+  try {
+    var res = await fetch(BASE + '/admin/users/stats', { headers: authHeaders() });
+    if (!res.ok) return;
+    var d = await res.json();
+    safeSet('ustat-total',  d.total   !== undefined ? d.total   : '?');
+    safeSet('ustat-active', d.active  !== undefined ? d.active  : '?');
+    safeSet('ustat-banned', d.banned  !== undefined ? d.banned  : '?');
+    safeSet('ustat-mods',   d.moderators !== undefined ? d.moderators : '?');
+    safeSet('ustat-new',    d.new_7d  !== undefined ? d.new_7d  : '?');
+  } catch(e) { console.error('loadUserMiniStats', e); }
+}
 
 async function loadUsersAdmin() {
-  const container = document.getElementById('usersAdminList');
+  var container = document.getElementById('usersAdminList');
   if (!container) return;
   container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Loading users&#8230;</div>';
   try {
-    const res = await fetch(`${BASE}/admin/users`, { headers: authHeaders(), cache: 'no-store' });
+    var res = await fetch(BASE + '/admin/users', { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     _allUsersAdmin = await res.json();
     renderUsersAdmin();
@@ -2535,89 +2746,123 @@ async function loadUsersAdmin() {
 }
 
 function renderUsersAdmin() {
-  const container = document.getElementById('usersAdminList');
+  var container = document.getElementById('usersAdminList');
   if (!container) return;
-  const searchEl  = document.getElementById('userSearchInput');
-  const bannedEl  = document.getElementById('userFilterBanned');
-  const q         = searchEl ? searchEl.value.toLowerCase().trim() : '';
-  const bannedVal = bannedEl ? bannedEl.value : '';
-  let rows = _allUsersAdmin;
-  if (q)          rows = rows.filter(function(r){ return (r.username||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q); });
-  if (bannedVal !== '') rows = rows.filter(function(r){ return String(r.is_banned || 0) === bannedVal; });
+
+  var searchEl  = document.getElementById('userSearchInput');
+  var statusEl  = document.getElementById('userFilterStatus');
+  var roleEl    = document.getElementById('userFilterRole');
+
+  var q          = searchEl  ? searchEl.value.toLowerCase().trim()  : '';
+  var statusVal  = statusEl  ? statusEl.value  : '';
+  var roleVal    = roleEl    ? roleEl.value    : '';
+
+  var rows = _allUsersAdmin;
+  if (q) rows = rows.filter(function(r){ return (r.username||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q); });
+  if (statusVal === 'active')  rows = rows.filter(function(r){ return !r.is_banned; });
+  if (statusVal === 'banned')  rows = rows.filter(function(r){ return !!r.is_banned; });
+  if (roleVal)  rows = rows.filter(function(r){ return (r.role || 'user') === roleVal; });
+
   if (!rows.length) {
-    container.innerHTML = '<div class="empty-state"><div class="emoji">&#128101;</div><p>No users found.</p></div>';
+    container.innerHTML = '<div class="empty-state"><div class="emoji">&#128100;</div><p>No users found.</p></div>';
     return;
   }
+
+  var ROLE_COLORS = { admin: '#c62828', moderator: '#6a1b9a', user: '#1565c0' };
+
   container.innerHTML = '';
   rows.forEach(function(u) {
-    const card     = document.createElement('div');
+    var card = document.createElement('div');
     card.className = 'item-card';
     card.style.cssText = 'margin-bottom:10px;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:12px';
-    card.onclick   = function() { openUserModal(u.id); };
-    const initials  = (u.username || '?')[0].toUpperCase();
-    const isBanned  = u.is_banned;
-    const joined    = u.created_at ? new Date(u.created_at).toLocaleDateString() : '&mdash;';
-    const lastSeen  = u.last_seen  ? new Date(u.last_seen).toLocaleDateString()  : '&mdash;';
-    const bannedBadge = isBanned ? '<span style="font-size:11px;background:#ffebee;color:#c62828;padding:2px 8px;border-radius:10px;font-weight:700">Banned</span>' : '';
+    card.onclick = function() { openUserModal(u.id); };
+
+    var initials = (u.username || '?')[0].toUpperCase();
+    var isBanned = !!u.is_banned;
+    var role     = u.role || 'user';
+    var roleColor = ROLE_COLORS[role] || '#1565c0';
+    var joined   = u.created_at ? new Date(u.created_at).toLocaleDateString() : '&mdash;';
+    var lastSeen = u.last_seen  ? new Date(u.last_seen).toLocaleDateString()  : 'Never';
+
+    var statusBadge = isBanned
+      ? '<span style="font-size:10px;background:#ffebee;color:#c62828;padding:2px 7px;border-radius:10px;font-weight:700">&#128683; Banned</span>'
+      : '<span style="font-size:10px;background:#e8f5e9;color:#2e7d32;padding:2px 7px;border-radius:10px;font-weight:700">&#9989; Active</span>';
+    var roleBadge = '<span style="font-size:10px;background:rgba(0,0,0,.06);color:' + roleColor + ';padding:2px 7px;border-radius:10px;font-weight:700">' + role.charAt(0).toUpperCase() + role.slice(1) + '</span>';
+
     card.innerHTML =
-      '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#9c27b0);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + esc(initials) + '</div>' +
+      '<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#9c27b0);color:#fff;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + esc(initials) + '</div>' +
       '<div style="flex:1;min-width:0">' +
-        '<div style="font-weight:700;font-size:14px">' + esc(u.username) + ' ' + bannedBadge + '</div>' +
+        '<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">' + esc(u.username) + ' ' + statusBadge + ' ' + roleBadge + '</div>' +
         '<div style="font-size:12px;color:var(--muted)">' + esc(u.email) + '</div>' +
       '</div>' +
-      '<div style="text-align:right;font-size:11px;color:var(--muted);flex-shrink:0">' +
+      '<div style="text-align:right;font-size:11px;color:var(--muted);flex-shrink:0;display:none">' +
+        '<div>ID: ' + (u.id||'?') + '</div>' +
         '<div>Joined: ' + joined + '</div>' +
-        '<div>Last seen: ' + lastSeen + '</div>' +
       '</div>';
     container.appendChild(card);
   });
 }
 
-let _currentUserAdmin = null;
-
 function openUserModal(id) {
-  const u = _allUsersAdmin.find(function(x){ return x.id === id; });
+  var u = _allUsersAdmin.find(function(x){ return x.id === id; });
   if (!u) return;
-  _currentUserAdmin = u;
+  _currentUserAdminId = id;
+
   document.getElementById('userModalTitle').textContent = 'User: ' + u.username;
-  const joined    = u.created_at ? new Date(u.created_at).toLocaleString() : '&mdash;';
-  const lastSeen  = u.last_seen  ? new Date(u.last_seen).toLocaleString()  : '&mdash;';
-  const isBanned  = u.is_banned;
-  const statusHtml = isBanned
-    ? '<span style="background:#ffebee;color:#c62828;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">&#128683; Banned</span>' +
+  var isBanned = !!u.is_banned;
+  var role     = u.role || 'user';
+  var joined   = u.created_at ? new Date(u.created_at).toLocaleString() : '&mdash;';
+  var lastSeen = u.last_seen  ? new Date(u.last_seen).toLocaleString()  : 'Never';
+  var ROLE_COLORS = { admin: '#c62828', moderator: '#6a1b9a', user: '#1565c0' };
+
+  var statusHtml = isBanned
+    ? '<span style="background:#ffebee;color:#c62828;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">&#128683; Banned/Suspended</span>' +
       (u.ban_reason ? '<div style="font-size:12px;color:var(--muted);margin-top:4px">Reason: ' + esc(u.ban_reason) + '</div>' : '')
     : '<span style="background:#e8f5e9;color:#2e7d32;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">&#9989; Active</span>';
-  const banReasonField = !isBanned
-    ? '<div class="form-group" style="margin-top:14px"><label class="form-label">Ban Reason <span style="color:var(--muted);font-weight:400;font-size:12px">(shown to user)</span></label><input id="userBanReason" class="form-control" maxlength="300" placeholder="e.g. Spamming or harassment"></div>'
+
+  var banReasonField = !isBanned
+    ? '<div class="form-group" style="margin-top:12px"><label>Reason (optional)</label><input id="userBanReason" class="form-control" maxlength="300" placeholder="e.g. Spam or harassment"></div>'
     : '';
+
   document.getElementById('userModalBody').innerHTML =
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">' +
-      '<div><strong style="font-size:12px;color:var(--muted)">Username</strong><div style="font-size:14px;font-weight:700">' + esc(u.username) + '</div></div>' +
-      '<div><strong style="font-size:12px;color:var(--muted)">Email</strong><div style="font-size:14px">' + esc(u.email) + '</div></div>' +
+      '<div><strong style="font-size:12px;color:var(--muted)">ID</strong><div>' + (u.id||'?') + '</div></div>' +
+      '<div><strong style="font-size:12px;color:var(--muted)">Username</strong><div style="font-weight:700">' + esc(u.username) + '</div></div>' +
+      '<div><strong style="font-size:12px;color:var(--muted)">Email</strong><div>' + esc(u.email) + '</div></div>' +
+      '<div><strong style="font-size:12px;color:var(--muted)">Role</strong><div style="color:' + (ROLE_COLORS[role]||'inherit') + ';font-weight:700">' + role.charAt(0).toUpperCase() + role.slice(1) + '</div></div>' +
       '<div><strong style="font-size:12px;color:var(--muted)">Joined</strong><div style="font-size:13px">' + joined + '</div></div>' +
       '<div><strong style="font-size:12px;color:var(--muted)">Last Seen</strong><div style="font-size:13px">' + lastSeen + '</div></div>' +
       '<div style="grid-column:1/-1"><strong style="font-size:12px;color:var(--muted)">Status</strong><div style="margin-top:4px">' + statusHtml + '</div></div>' +
     '</div>' + banReasonField;
-  const banBtn   = document.getElementById('userModalBanBtn');
-  const unbanBtn = document.getElementById('userModalUnbanBtn');
-  const delBtn   = document.getElementById('userModalDeleteBtn');
-  if (banBtn)   { banBtn.style.display   = isBanned ? 'none' : ''; banBtn.onclick   = function(){ banUserAdmin(id); }; }
-  if (unbanBtn) { unbanBtn.style.display = isBanned ? ''     : 'none'; unbanBtn.onclick = function(){ unbanUserAdmin(id); }; }
-  if (delBtn)   { delBtn.onclick = function(){ deleteUserAdmin(id); }; }
+
+  var banBtn      = document.getElementById('userModalBanBtn');
+  var unbanBtn    = document.getElementById('userModalUnbanBtn');
+  var delBtn      = document.getElementById('userModalDeleteBtn');
+  var resetBtn    = document.getElementById('userModalResetPwdBtn');
+  var promoteBtn  = document.getElementById('userModalPromoteBtn');
+  var demoteBtn   = document.getElementById('userModalDemoteBtn');
+
+  if (banBtn)     { banBtn.style.display   = isBanned ? 'none' : ''; banBtn.onclick   = function(){ banUserAdmin(id); }; }
+  if (unbanBtn)   { unbanBtn.style.display = isBanned ? '' : 'none'; unbanBtn.onclick = function(){ unbanUserAdmin(id); }; }
+  if (delBtn)     { delBtn.onclick = function(){ deleteUserAdmin(id); }; }
+  if (resetBtn)   { resetBtn.onclick = function(){ openResetPwdModal(id, u.username); }; }
+  if (promoteBtn) { promoteBtn.style.display = role === 'moderator' || role === 'admin' ? 'none' : ''; promoteBtn.onclick = function(){ promoteUserAdmin(id, 'moderator'); }; }
+  if (demoteBtn)  { demoteBtn.style.display  = role === 'user' ? 'none' : ''; demoteBtn.onclick = function(){ promoteUserAdmin(id, 'user'); }; }
+
   document.getElementById('userModalBackdrop').classList.add('show');
 }
 
 function closeUserModal() {
   document.getElementById('userModalBackdrop').classList.remove('show');
-  _currentUserAdmin = null;
+  _currentUserAdminId = null;
 }
 
 async function banUserAdmin(id) {
-  const reasonEl = document.getElementById('userBanReason');
-  const reason   = reasonEl ? reasonEl.value.trim() : '';
-  if (!confirm('Ban this user? They will no longer be able to comment or post.')) return;
+  var reasonEl = document.getElementById('userBanReason');
+  var reason   = reasonEl ? reasonEl.value.trim() : '';
+  if (!confirm('Ban/suspend this user? They will not be able to comment or post.')) return;
   try {
-    const res = await fetch(BASE + '/admin/users/' + id + '/ban', {
+    var res = await fetch(BASE + '/admin/users/' + id + '/ban', {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ reason: reason || 'Suspended by admin' }),
@@ -2630,20 +2875,20 @@ async function banUserAdmin(id) {
 }
 
 async function unbanUserAdmin(id) {
-  if (!confirm('Lift the ban on this user? They will be able to comment and post again.')) return;
+  if (!confirm('Reactivate this user? They will be able to comment and post again.')) return;
   try {
-    const res = await fetch(BASE + '/admin/users/' + id + '/unban', { method: 'POST', headers: authHeaders() });
+    var res = await fetch(BASE + '/admin/users/' + id + '/reactivate', { method: 'POST', headers: authHeaders() });
     if (!res.ok) throw new Error('Failed');
-    showToast('User unbanned', 'success');
+    showToast('User reactivated', 'success');
     closeUserModal();
     loadUsersAdmin();
-  } catch(e) { showToast('Failed to unban user', 'error'); }
+  } catch(e) { showToast('Failed to reactivate user', 'error'); }
 }
 
 async function deleteUserAdmin(id) {
-  if (!confirm('Permanently delete this account? This cannot be undone.')) return;
+  if (!confirm('Permanently delete this account? All their comments will remain but the account will be removed. This cannot be undone.')) return;
   try {
-    const res = await fetch(BASE + '/admin/users/' + id, { method: 'DELETE', headers: authHeaders() });
+    var res = await fetch(BASE + '/admin/users/' + id, { method: 'DELETE', headers: authHeaders() });
     if (!res.ok) throw new Error('Failed');
     showToast('User deleted', 'success');
     closeUserModal();
@@ -2651,6 +2896,52 @@ async function deleteUserAdmin(id) {
   } catch(e) { showToast('Failed to delete user', 'error'); }
 }
 
+async function promoteUserAdmin(id, role) {
+  var label = role === 'moderator' ? 'Promote to Moderator' : 'Demote to User';
+  if (!confirm(label + '?')) return;
+  try {
+    var res = await fetch(BASE + '/admin/users/' + id + '/promote', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ role: role }),
+    });
+    if (!res.ok) throw new Error('Failed');
+    showToast('Role updated to ' + role, 'success');
+    closeUserModal();
+    loadUsersAdmin();
+  } catch(e) { showToast('Failed to update role', 'error'); }
+}
+
+function openResetPwdModal(userId, username) {
+  _resetPwdUserId = userId;
+  safeSet('resetPwdUsername', username || 'user');
+  var inp = document.getElementById('resetPwdValue');
+  if (inp) inp.value = '';
+  document.getElementById('resetPwdModalBackdrop').classList.add('show');
+}
+
+function closeResetPwdModal() {
+  document.getElementById('resetPwdModalBackdrop').classList.remove('show');
+  _resetPwdUserId = null;
+}
+
+async function doResetPassword() {
+  var id  = _resetPwdUserId;
+  var inp = document.getElementById('resetPwdValue');
+  var pwd = inp ? inp.value.trim() : '';
+  if (!pwd || pwd.length < 6) { showToast('Password must be at least 6 characters', 'warn'); return; }
+  try {
+    var res = await fetch(BASE + '/admin/users/' + id + '/reset-password', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ new_password: pwd }),
+    });
+    if (!res.ok) throw new Error('Failed');
+    showToast('Password reset successfully', 'success');
+    closeResetPwdModal();
+    closeUserModal();
+  } catch(e) { showToast('Failed to reset password', 'error'); }
+}
 
 // ================== TOAST ==================
 function showToast(msg, type = 'info') {
