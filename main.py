@@ -141,18 +141,6 @@ def terms_page():
         return FileResponse("static/terms.html")
     return FileResponse("static/privacy.html")
 
-@app.get("/share-your-story")
-def share_story_page():
-    return FileResponse("static/share-your-story.html")
-
-@app.get("/submission-success")
-def submission_success_page():
-    return FileResponse("static/submission-success.html")
-
-@app.get("/partners")
-def partners_page():
-    return FileResponse("static/partners.html")
-
 # =========================
 # AUTH HELPERS
 # =========================
@@ -189,6 +177,33 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+def _verify_user_token(token: str) -> dict | None:
+    """Verify a site-user JWT and return the payload dict, or None if invalid."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "user" or "user_id" not in payload:
+            return None
+        return {
+            "id":        payload["user_id"],
+            "username":  payload["username"],
+            "email":     payload.get("email", ""),
+            "is_banned": payload.get("is_banned", 0),
+        }
+    except (JWTError, Exception):
+        return None
+
+def _make_user_token(user: dict) -> str:
+    """Create a JWT for an authenticated site user (12-hour expiry)."""
+    expire = datetime.utcnow() + timedelta(hours=12)
+    return jwt.encode({
+        "type":      "user",
+        "user_id":   user["id"],
+        "username":  user["username"],
+        "email":     user["email"],
+        "is_banned": user.get("is_banned", 0),
+        "exp":       expire,
+    }, SECRET_KEY, algorithm=ALGORITHM)
+
 # =========================
 # INPUT SANITIZATION
 # =========================
@@ -218,17 +233,6 @@ def sentiment(text):
         return "negative"
     return "neutral"
 
-# ==============================
-# 📦 STORY SUBMISSION PACKAGES
-# ==============================
-PACKAGE_CONFIG = {
-    "bronze":      {"label": "Bronze",      "amount": 15,  "duration_days": 14, "ig": 0, "fb": 0, "partner_badge": False},
-    "silver":      {"label": "Silver",      "amount": 30,  "duration_days": 30, "ig": 1, "fb": 1, "partner_badge": True},
-    "gold":        {"label": "Gold",        "amount": 45,  "duration_days": 42, "ig": 3, "fb": 3, "partner_badge": True},
-}
-PAYMENT_STATUSES = ["pending_payment", "paid", "under_review", "approved", "rejected", "published"]
-SUBMISSION_TABLE = "story_submissions"
-PARTNERS_TABLE   = "partners"
 
 # =========================
 # ADMIN LOGIN
@@ -612,15 +616,24 @@ def _toxicity(text: str) -> float:
 
 
 @app.post("/comments")
-def add_comment(data: dict, request: Request):
+def add_comment(data: dict, request: Request, authorization: str = Header(None)):
     """
-    Safe comment insert with rate limiting and input sanitization.
+    Authenticated comment insert — requires a valid user JWT token.
+    Rate limited per IP.
     """
+    # Require user login
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="You must be logged in to comment. Please create an account or sign in.")
+    user = _verify_user_token(authorization[7:])
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired session. Please sign in again.")
+    if user.get("is_banned"):
+        raise HTTPException(status_code=403, detail="Your account has been suspended. Please contact us if you believe this is an error.")
+
     # Rate limit: 15 comments per IP per 10 minutes
     _rate_limit(f"comment:{_client_ip(request)}", max_calls=15, window_seconds=600)
 
     text      = _validate_str(data.get("content"), "Comment content", max_len=1000)
-    username  = _validate_str(data.get("username"), "Username", max_len=80)
     item_type = (data.get("item_type") or "").strip()
     item_id   = data.get("item_id")
 
@@ -630,7 +643,8 @@ def add_comment(data: dict, request: Request):
         raise HTTPException(status_code=400, detail="item_type must be 'quote', 'story', or 'blog'")
 
     payload = {
-        "username":  username,
+        "username":  user["username"],
+        "user_id":   user["id"],
         "content":   text,
         "item_type": item_type,
         "item_id":   int(item_id),
@@ -641,7 +655,7 @@ def add_comment(data: dict, request: Request):
     try:
         res = supabase.table("comments").insert({**payload, "toxicity": _toxicity(text)}).execute()
         if res.data:
-            logger.info(f"Comment saved (with toxicity) id={res.data[0].get('id')}")
+            logger.info(f"Comment saved by user '{user['username']}' (with toxicity) id={res.data[0].get('id')}")
             return res.data
     except Exception as e:
         err = str(e).lower()
@@ -655,7 +669,7 @@ def add_comment(data: dict, request: Request):
     try:
         res = supabase.table("comments").insert(payload).execute()
         if res.data:
-            logger.info(f"Comment saved (no toxicity) id={res.data[0].get('id')}")
+            logger.info(f"Comment saved by user '{user['username']}' (no toxicity)")
             return res.data
         raise ValueError("Supabase returned empty data")
     except HTTPException:
@@ -686,25 +700,31 @@ def get_posts():
 
 
 @app.post("/forum/post")
-def create_post(data: dict, request: Request):
+def create_post(data: dict, request: Request, authorization: str = Header(None)):
     """
-    Insert a forum post with rate limiting and input sanitization.
-    The forumpost table only has: id, name, message.
-    Strip any extra fields (e.g. category, created_at) before inserting
-    to avoid Supabase column-not-found errors.
+    Authenticated forum post — requires a valid user JWT token.
+    Rate limited per IP.
     """
+    # Require user login
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="You must be logged in to post in the forum. Please create an account or sign in.")
+    user = _verify_user_token(authorization[7:])
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired session. Please sign in again.")
+    if user.get("is_banned"):
+        raise HTTPException(status_code=403, detail="Your account has been suspended.")
+
     # Rate limit: 10 posts per IP per 10 minutes
     _rate_limit(f"forum:{_client_ip(request)}", max_calls=10, window_seconds=600)
 
-    name    = _validate_str(data.get("name"), "Name", max_len=60)
     message = _validate_str(data.get("message"), "Message", max_len=500)
 
-    # Only send columns that actually exist in the table
-    payload = {"name": name, "message": message}
+    # name comes from the authenticated user's username
+    payload = {"name": user["username"], "message": message}
 
     try:
         res = supabase.table("forumpost").insert(payload).execute()
-        logger.info(f"Forum post created by '{name}'")
+        logger.info(f"Forum post created by user '{user['username']}'")
         return res.data
     except Exception as e:
         logger.error(f"forum post insert error: {e}")
@@ -1084,642 +1104,207 @@ def chatbot(data: dict, request: Request):
     ]
     return {"reply": random.choice(fallbacks)}
 
+
 # =========================================
-# STORY SUBMISSION & PARTNERSHIP PACKAGES
+# SITE USER ACCOUNTS
+# Register / Login / Profile
 # =========================================
+USER_TABLE = "site_users"
 
-def _gen_tracking_number() -> str:
-    """Generate a human-friendly tracking number, e.g. QM-7F3K9A2D."""
-    return "QM-" + uuid.uuid4().hex[:8].upper()
-
-
-@app.get("/story-packages")
-def get_story_packages():
-    """Public endpoint — returns the package pricing/feature config for the frontend."""
-    return {
-        "packages": {
-            "bronze": {
-                **PACKAGE_CONFIG["bronze"],
-                "title": "Bronze Package",
-                "price_display": "$15",
-                "features": [
-                    "Story published on QuoteMe ZW",
-                    "Appears in the main Stories feed",
-                    "Remains live for 2 weeks",
-                    "Story automatically expires after the package duration ends",
-                    "Admin can manually extend or restore if required",
-                ],
-            },
-            "silver": {
-                **PACKAGE_CONFIG["silver"],
-                "title": "Silver Package",
-                "price_display": "$30",
-                "features": [
-                    "Story published on QuoteMe ZW",
-                    "Remains live for 1 month",
-                    "One Instagram promotion",
-                    "One Facebook promotion",
-                    "Displayed as 'Featured Partner'",
-                ],
-            },
-            "gold": {
-                **PACKAGE_CONFIG["gold"],
-                "title": "Gold Package",
-                "price_display": "$45",
-                "features": [
-                    "Story published on QuoteMe ZW",
-                    "Remains live for 6 weeks",
-                    "Three Instagram promotions",
-                    "Three Facebook promotions",
-                    "Featured Partner logo displayed",
-                    "Social media tagging support",
-                    "Priority placement in story listings",
-                ],
-            },
-        },
-        "guidelines": (
-            "All submitted stories must align with QuoteMe ZW's values of empowerment, respect, "
-            "inspiration, community development, and positive social impact. Submissions containing "
-            "hate speech, discrimination, harassment, misinformation, explicit content, or harmful "
-            "material may be rejected."
-        ),
-        "paypal_business": "rukuniruvarashe00@gmail.com",
-    }
+EMAIL_RE = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+USERNAME_RE = re.compile(r'^[a-zA-Z0-9_]{3,40}$')
 
 
-@app.post("/story-submissions")
-def create_story_submission(data: dict, request: Request):
+@app.post("/users/register")
+def user_register(data: dict, request: Request):
     """
-    Public endpoint — submit a story for publication under a paid package.
-    Rate limited to prevent spam submissions.
+    Public — create a new site user account.
+    Rate limited to 5 registrations per IP per hour.
     """
-    _rate_limit(f"submission:{_client_ip(request)}", max_calls=5, window_seconds=3600)
+    _rate_limit(f"register:{_client_ip(request)}", max_calls=5, window_seconds=3600)
 
-    full_name     = _validate_str(data.get("full_name"), "Full name", max_len=150)
-    organization  = _validate_str(data.get("organization"), "Organization", max_len=200, required=False)
-    email         = _validate_str(data.get("email"), "Email", max_len=200)
-    phone         = _validate_str(data.get("phone"), "Phone number", max_len=40, required=False)
-    story_title   = _validate_str(data.get("story_title"), "Story title", max_len=250)
-    story_content = _validate_str(data.get("story_content"), "Story content", max_len=10000)
-    image_url     = (data.get("image_url") or "").strip()[:400]
-    logo_url      = (data.get("logo_url") or "").strip()[:400]
-    social_links  = _validate_str(data.get("social_links"), "Social media links", max_len=1000, required=False)
-    notes         = _validate_str(data.get("notes"), "Additional notes", max_len=2000, required=False)
-    package       = (data.get("package") or "").strip().lower()
+    username = _validate_str(data.get("username"), "Username", max_len=40)
+    email    = _validate_str(data.get("email"),    "Email",    max_len=200)
+    password = (data.get("password") or "").strip()
 
-    if "@" not in email or "." not in email:
-        raise HTTPException(status_code=400, detail="Invalid email address")
+    # Validations
+    if not USERNAME_RE.match(username):
+        raise HTTPException(status_code=400, detail="Username must be 3–40 characters and contain only letters, numbers, or underscores.")
+    if not EMAIL_RE.match(email):
+        raise HTTPException(status_code=400, detail="Please enter a valid email address.")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+    if len(password) > 72:
+        password = password[:72]
 
-    if package not in PACKAGE_CONFIG:
-        raise HTTPException(status_code=400, detail="Invalid package selected")
+    email = email.lower()
 
-    cfg = PACKAGE_CONFIG[package]
-    tracking = _gen_tracking_number()
-
-    payload = {
-        "tracking_number": tracking,
-        "full_name":   full_name,
-        "organization": organization or None,
-        "email":       email,
-        "phone":       phone or None,
-        "story_title": story_title,
-        "story_content": story_content,
-        "image_url":   image_url or None,
-        "logo_url":    logo_url or None,
-        "social_links": social_links or None,
-        "notes":       notes or None,
-        "package":     package,
-        "amount":      cfg["amount"],
-        "payment_status": "pending_payment",
-        "duration_days": cfg["duration_days"],
-        "instagram_promos_total": cfg["ig"],
-        "facebook_promos_total":  cfg["fb"],
-        "is_partner_badge": 1 if cfg["partner_badge"] else 0,
-        "is_active": 1,
-    }
-
+    # Check uniqueness
     try:
-        res = supabase.table(SUBMISSION_TABLE).insert(payload).execute()
+        existing_user  = supabase.table(USER_TABLE).select("id").eq("username", username).execute().data
+        existing_email = supabase.table(USER_TABLE).select("id").eq("email", email).execute().data
+    except Exception as e:
+        logger.error(f"user_register check: {e}")
+        raise HTTPException(status_code=500, detail="Could not verify account details. Please try again.")
+
+    if existing_user:
+        raise HTTPException(status_code=409, detail="That username is already taken. Please choose another.")
+    if existing_email:
+        raise HTTPException(status_code=409, detail="An account with that email address already exists. Please sign in.")
+
+    # Hash password and create user
+    hashed = pwd_context.hash(password)
+    try:
+        res = supabase.table(USER_TABLE).insert({
+            "username":      username,
+            "email":         email,
+            "password_hash": hashed,
+            "is_banned":     0,
+        }).execute()
         if not res.data:
-            raise ValueError("Supabase returned empty data")
-        logger.info(f"Story submission created: {tracking} (package={package}, email={email})")
+            raise ValueError("Empty response from Supabase")
+        user = res.data[0]
+        token = _make_user_token(user)
+        logger.info(f"New site user registered: '{username}' ({email})")
         return {
-            "success": True,
-            "tracking_number": tracking,
-            "package": package,
-            "amount": cfg["amount"],
-            "submission": res.data[0],
+            "success":  True,
+            "token":    token,
+            "username": user["username"],
+            "email":    user["email"],
+            "id":       user["id"],
         }
-    except Exception as e:
-        logger.error(f"create_story_submission error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to save submission. Please try again.")
-
-
-@app.get("/story-submissions/track/{tracking_number}")
-def track_story_submission(tracking_number: str, request: Request):
-    """Public endpoint — look up a submission by tracking number (for the success page)."""
-    _rate_limit(f"track:{_client_ip(request)}", max_calls=30, window_seconds=300)
-    tracking_number = _strip_html(tracking_number)[:40]
-    try:
-        res = supabase.table(SUBMISSION_TABLE).select("*").eq("tracking_number", tracking_number).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        row = res.data[0]
-        # Strip sensitive fields from public response
-        safe = {
-            "tracking_number": row.get("tracking_number"),
-            "story_title":     row.get("story_title"),
-            "package":         row.get("package"),
-            "amount":          row.get("amount"),
-            "payment_status":  row.get("payment_status"),
-            "created_at":      row.get("created_at"),
-            "published_at":    row.get("published_at"),
-            "expires_at":      row.get("expires_at"),
-        }
-        return safe
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"track_story_submission {tracking_number}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve submission")
+        logger.error(f"user_register insert: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create account. Please try again.")
 
 
-@app.post("/story-submissions/{tracking_number}/mark-paid")
-def mark_submission_paid(tracking_number: str, data: dict, request: Request):
+@app.post("/users/login")
+def user_login(data: dict, request: Request):
     """
-    Public endpoint called by the frontend after a successful PayPal redirect,
-    to record the PayPal order/transaction ID and flip status to 'paid'.
+    Public — authenticate a site user by email + password.
+    Rate limited to 10 attempts per IP per 5 minutes.
     """
-    _rate_limit(f"markpaid:{_client_ip(request)}", max_calls=10, window_seconds=600)
-    tracking_number = _strip_html(tracking_number)[:40]
-    paypal_order_id = _validate_str(data.get("paypal_order_id"), "PayPal order ID", max_len=120, required=False)
-    paypal_txn_id   = _validate_str(data.get("paypal_txn_id"), "PayPal transaction ID", max_len=120, required=False)
+    _rate_limit(f"userlogin:{_client_ip(request)}", max_calls=10, window_seconds=300)
+
+    email    = (data.get("email")    or "").strip().lower()
+    password = (data.get("password") or "").strip()
+
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required.")
 
     try:
-        existing = supabase.table(SUBMISSION_TABLE).select("id, payment_status").eq("tracking_number", tracking_number).execute()
-        if not existing.data:
-            raise HTTPException(status_code=404, detail="Submission not found")
+        res = supabase.table(USER_TABLE).select("*").eq("email", email).execute()
+    except Exception as e:
+        logger.error(f"user_login lookup: {e}")
+        raise HTTPException(status_code=500, detail="Login failed. Please try again.")
 
-        update_payload = {"payment_status": "paid"}
-        if paypal_order_id:
-            update_payload["paypal_order_id"] = paypal_order_id
-        if paypal_txn_id:
-            update_payload["paypal_txn_id"] = paypal_txn_id
+    if not res.data:
+        raise HTTPException(status_code=401, detail="No account found with that email address.")
 
-        res = supabase.table(SUBMISSION_TABLE).update(update_payload).eq("tracking_number", tracking_number).execute()
-        logger.info(f"Submission {tracking_number} marked as paid")
-        return {"success": True, "submission": res.data[0] if res.data else None}
+    user = res.data[0]
+
+    # Check ban before verifying password (fail fast)
+    if user.get("is_banned"):
+        reason = user.get("ban_reason") or "your account has been suspended"
+        raise HTTPException(status_code=403, detail=f"Access denied — {reason}. Please contact us if you believe this is an error.")
+
+    # Verify password
+    try:
+        if not pwd_context.verify(password[:72], user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"mark_submission_paid {tracking_number}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update payment status")
+        logger.error(f"user_login verify: {e}")
+        raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
 
-
-# ── ADMIN: STORY SUBMISSIONS MANAGEMENT ──
-@app.get("/admin/story-submissions")
-def admin_list_submissions(
-    username: str = Depends(require_admin),
-    package: str = None,
-    payment_status: str = None,
-    search: str = None,
-):
-    """Admin — list all story submissions with optional filters."""
+    # Update last_seen
     try:
-        query = supabase.table(SUBMISSION_TABLE).select("*").order("id", desc=True)
-        if package and package in PACKAGE_CONFIG:
-            query = query.eq("package", package)
-        if payment_status and payment_status in PAYMENT_STATUSES:
-            query = query.eq("payment_status", payment_status)
-        res = query.execute()
+        supabase.table(USER_TABLE).update({"last_seen": datetime.utcnow().isoformat()}).eq("id", user["id"]).execute()
+    except Exception:
+        pass  # non-fatal
+
+    token = _make_user_token(user)
+    logger.info(f"Site user logged in: '{user['username']}'")
+    return {
+        "success":  True,
+        "token":    token,
+        "username": user["username"],
+        "email":    user["email"],
+        "id":       user["id"],
+    }
+
+
+@app.get("/users/me")
+def user_me(authorization: str = Header(...)):
+    """Return the current user's profile from their JWT."""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing token")
+    user = _verify_user_token(authorization[7:])
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return user
+
+
+# ── ADMIN: manage site users ──
+@app.get("/admin/users")
+def admin_list_users(username: str = Depends(require_admin), search: str = None):
+    """Admin — list all registered site users."""
+    try:
+        res = supabase.table(USER_TABLE).select("id, username, email, is_banned, ban_reason, created_at, last_seen").order("id", desc=True).execute()
         rows = res.data or []
-
         if search:
             s = search.lower().strip()
-            rows = [
-                r for r in rows
-                if s in (r.get("full_name") or "").lower()
-                or s in (r.get("organization") or "").lower()
-                or s in (r.get("story_title") or "").lower()
-                or s in (r.get("email") or "").lower()
-                or s in (r.get("tracking_number") or "").lower()
-            ]
+            rows = [r for r in rows if s in (r.get("username") or "").lower() or s in (r.get("email") or "").lower()]
         return rows
     except Exception as e:
-        logger.error(f"admin_list_submissions: {e}")
+        logger.error(f"admin_list_users: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/admin/story-submissions/{submission_id}")
-def admin_get_submission(submission_id: int, username: str = Depends(require_admin)):
-    try:
-        res = supabase.table(SUBMISSION_TABLE).select("*").eq("id", submission_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        return res.data[0]
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"admin_get_submission {submission_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.put("/admin/story-submissions/{submission_id}")
-def admin_update_submission(submission_id: int, data: dict, username: str = Depends(require_admin)):
-    """
-    Admin — generic update for a submission: edit story content/images,
-    change payment status, adjust promo counters, expiry, partner badge, active flag.
-    """
-    allowed_fields = {
-        "payment_status", "paypal_order_id", "paypal_txn_id",
-        "story_title", "story_content", "image_url", "logo_url", "notes",
-        "duration_days", "expires_at", "is_partner_badge", "is_active",
-        "instagram_promos_done", "facebook_promos_done",
-        "full_name", "organization", "email", "phone",
-    }
-    payload = {k: v for k, v in data.items() if k in allowed_fields}
-    if not payload:
-        raise HTTPException(status_code=400, detail="No valid fields provided")
-
-    if "payment_status" in payload and payload["payment_status"] not in PAYMENT_STATUSES:
-        raise HTTPException(status_code=400, detail=f"Invalid payment_status. Must be one of: {', '.join(PAYMENT_STATUSES)}")
-
-    # Sanitize text fields
-    for f in ("story_title", "story_content", "notes", "full_name", "organization"):
-        if f in payload and payload[f] is not None:
-            payload[f] = _strip_html(str(payload[f]))
-
-    try:
-        res = supabase.table(SUBMISSION_TABLE).update(payload).eq("id", submission_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        logger.info(f"Admin '{username}' updated submission {submission_id}: {list(payload.keys())}")
-        return res.data[0]
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"admin_update_submission {submission_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/admin/story-submissions/{submission_id}/approve")
-def admin_approve_submission(submission_id: int, username: str = Depends(require_admin)):
-    """Admin — mark a submission approved (ready to be published)."""
-    try:
-        res = supabase.table(SUBMISSION_TABLE).update({"payment_status": "approved"}).eq("id", submission_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        logger.info(f"Admin '{username}' approved submission {submission_id}")
-        return res.data[0]
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"admin_approve_submission {submission_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/admin/story-submissions/{submission_id}/reject")
-def admin_reject_submission(submission_id: int, data: dict = None, username: str = Depends(require_admin)):
-    """Admin — mark a submission rejected, optionally with a reason in notes."""
+@app.post("/admin/users/{user_id}/ban")
+def admin_ban_user(user_id: int, data: dict = None, username: str = Depends(require_admin)):
+    """Admin — ban a site user."""
     data = data or {}
-    payload = {"payment_status": "rejected", "is_active": 0}
-    reason = (data.get("reason") or "").strip()
-    if reason:
-        payload["notes"] = _strip_html(reason)[:2000]
+    reason = _strip_html((data.get("reason") or "Account suspended by admin"))[:300]
     try:
-        res = supabase.table(SUBMISSION_TABLE).update(payload).eq("id", submission_id).execute()
+        res = supabase.table(USER_TABLE).update({"is_banned": 1, "ban_reason": reason}).eq("id", user_id).execute()
         if not res.data:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        logger.info(f"Admin '{username}' rejected submission {submission_id}")
-        return res.data[0]
+            raise HTTPException(status_code=404, detail="User not found")
+        logger.info(f"Admin '{username}' banned user {user_id}: {reason}")
+        return {"success": True, "user_id": user_id, "banned": True}
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"admin_reject_submission {submission_id}: {e}")
+        logger.error(f"admin_ban_user {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/admin/story-submissions/{submission_id}/publish")
-def admin_publish_submission(submission_id: int, username: str = Depends(require_admin)):
-    """
-    Admin — publish a story submission to the public Stories feed.
-    Creates a row in `stories`, links it back to the submission, sets
-    published_at / expires_at based on the package duration, and (for
-    silver/gold) creates or links a Partner record.
-    """
+@app.post("/admin/users/{user_id}/unban")
+def admin_unban_user(user_id: int, username: str = Depends(require_admin)):
+    """Admin — lift a ban on a site user."""
     try:
-        sub_res = supabase.table(SUBMISSION_TABLE).select("*").eq("id", submission_id).execute()
-        if not sub_res.data:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        sub = sub_res.data[0]
-
-        if sub.get("payment_status") not in ("paid", "under_review", "approved"):
-            raise HTTPException(
-                status_code=400,
-                detail="Submission must be paid/approved before publishing"
-            )
-
-        now = datetime.utcnow()
-        duration_days = sub.get("duration_days") or PACKAGE_CONFIG.get(sub.get("package"), {}).get("duration_days", 14)
-        expires_at = now + timedelta(days=duration_days)
-
-        # Create the public story
-        story_payload = {
-            "title":     sub["story_title"],
-            "content":   sub["story_content"],
-            "image_url": sub.get("image_url"),
-            "likes": 0,
-        }
-        story_res = supabase.table("stories").insert(story_payload).execute()
-        if not story_res.data:
-            raise HTTPException(status_code=500, detail="Failed to create published story")
-        new_story_id = story_res.data[0]["id"]
-
-        # Update the submission record
-        update_payload = {
-            "payment_status": "published",
-            "published_story_id": new_story_id,
-            "published_at": now.isoformat(),
-            "expires_at": expires_at.isoformat(),
-            "is_active": 1,
-        }
-        sub_update = supabase.table(SUBMISSION_TABLE).update(update_payload).eq("id", submission_id).execute()
-
-        # Create/refresh Partner record for silver/gold packages
-        if sub.get("is_partner_badge") and sub.get("organization"):
-            existing_partner = supabase.table(PARTNERS_TABLE).select("id").eq("submission_id", submission_id).execute()
-            partner_payload = {
-                "submission_id": submission_id,
-                "organization":  sub.get("organization"),
-                "description":   (sub.get("story_title") or "")[:300],
-                "logo_url":      sub.get("logo_url"),
-                "website":       None,
-                "status":        "active",
-                "is_featured":   1 if sub.get("package") == "gold" else 0,
-                "started_at":    now.isoformat(),
-                "expires_at":    expires_at.isoformat(),
-            }
-            # Try to extract a website from social_links if present
-            social = sub.get("social_links") or ""
-            for token in social.replace(",", " ").split():
-                if token.startswith("http"):
-                    partner_payload["website"] = token
-                    break
-
-            if existing_partner.data:
-                supabase.table(PARTNERS_TABLE).update(partner_payload).eq("id", existing_partner.data[0]["id"]).execute()
-            else:
-                supabase.table(PARTNERS_TABLE).insert(partner_payload).execute()
-
-        logger.info(f"Admin '{username}' published submission {submission_id} as story {new_story_id}")
-        return {
-            "success": True,
-            "submission": sub_update.data[0] if sub_update.data else None,
-            "published_story_id": new_story_id,
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"admin_publish_submission {submission_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/admin/story-submissions/{submission_id}/extend")
-def admin_extend_submission(submission_id: int, data: dict, username: str = Depends(require_admin)):
-    """Admin — extend (or restore) a sponsored story's expiry by N days."""
-    days = data.get("days")
-    try:
-        days = int(days)
-        if days <= 0 or days > 365:
-            raise ValueError
-    except (TypeError, ValueError):
-        raise HTTPException(status_code=400, detail="'days' must be a positive integer (max 365)")
-
-    try:
-        sub_res = supabase.table(SUBMISSION_TABLE).select("*").eq("id", submission_id).execute()
-        if not sub_res.data:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        sub = sub_res.data[0]
-
-        now = datetime.utcnow()
-        current_expiry = sub.get("expires_at")
-        if current_expiry:
-            try:
-                base = datetime.fromisoformat(str(current_expiry).replace("Z", ""))
-            except ValueError:
-                base = now
-        else:
-            base = now
-        # If already expired, extend from now; otherwise extend from current expiry
-        base = max(base, now)
-        new_expiry = base + timedelta(days=days)
-
-        res = supabase.table(SUBMISSION_TABLE).update({
-            "expires_at": new_expiry.isoformat(),
-            "is_active": 1,
-        }).eq("id", submission_id).execute()
-
-        logger.info(f"Admin '{username}' extended submission {submission_id} by {days} days → {new_expiry.isoformat()}")
-        return res.data[0] if res.data else {"success": True}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"admin_extend_submission {submission_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/admin/story-submissions/{submission_id}/promo")
-def admin_mark_promo_done(submission_id: int, data: dict, username: str = Depends(require_admin)):
-    """Admin — increment completed Instagram/Facebook promo counters."""
-    platform = (data.get("platform") or "").strip().lower()
-    if platform not in ("instagram", "facebook"):
-        raise HTTPException(status_code=400, detail="platform must be 'instagram' or 'facebook'")
-
-    field_done  = "instagram_promos_done" if platform == "instagram" else "facebook_promos_done"
-    field_total = "instagram_promos_total" if platform == "instagram" else "facebook_promos_total"
-
-    try:
-        sub_res = supabase.table(SUBMISSION_TABLE).select(f"{field_done}, {field_total}").eq("id", submission_id).execute()
-        if not sub_res.data:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        row = sub_res.data[0]
-        done  = (row.get(field_done) or 0)
-        total = (row.get(field_total) or 0)
-        new_done = min(done + 1, total) if total else done + 1
-
-        res = supabase.table(SUBMISSION_TABLE).update({field_done: new_done}).eq("id", submission_id).execute()
-        logger.info(f"Admin '{username}' marked {platform} promo done for submission {submission_id} ({new_done}/{total})")
-        return res.data[0] if res.data else {"success": True}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"admin_mark_promo_done {submission_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.delete("/admin/story-submissions/{submission_id}")
-def admin_delete_submission(submission_id: int, username: str = Depends(require_admin)):
-    """Admin — permanently delete a submission record."""
-    try:
-        supabase.table(SUBMISSION_TABLE).delete().eq("id", submission_id).execute()
-        logger.info(f"Admin '{username}' deleted submission {submission_id}")
-        return {"message": "Submission deleted", "id": submission_id}
-    except Exception as e:
-        logger.error(f"admin_delete_submission {submission_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/admin/story-submissions-stats")
-def admin_submissions_stats(username: str = Depends(require_admin)):
-    """Admin — dashboard statistics for the Story Packages section."""
-    try:
-        rows = supabase.table(SUBMISSION_TABLE).select("*").execute().data or []
-    except Exception as e:
-        logger.error(f"admin_submissions_stats: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-    now = datetime.utcnow()
-    total = len(rows)
-    bronze = sum(1 for r in rows if r.get("package") == "bronze")
-    silver = sum(1 for r in rows if r.get("package") == "silver")
-    gold   = sum(1 for r in rows if r.get("package") == "gold")
-
-    # Revenue: count amount for anything that has been paid or further along
-    revenue_statuses = {"paid", "under_review", "approved", "published"}
-    revenue = sum(r.get("amount") or 0 for r in rows if r.get("payment_status") in revenue_statuses)
-
-    active_sponsored = 0
-    expiring_soon = 0
-    for r in rows:
-        if r.get("payment_status") != "published" or not r.get("is_active"):
-            continue
-        exp = r.get("expires_at")
-        if not exp:
-            continue
-        try:
-            exp_dt = datetime.fromisoformat(str(exp).replace("Z", ""))
-        except ValueError:
-            continue
-        if exp_dt > now:
-            active_sponsored += 1
-            if (exp_dt - now).days <= 3:
-                expiring_soon += 1
-
-    return {
-        "total_submissions": total,
-        "bronze": bronze,
-        "silver": silver,
-        "gold": gold,
-        "revenue": revenue,
-        "active_sponsored": active_sponsored,
-        "expiring_soon": expiring_soon,
-    }
-
-
-# =========================================
-# PARTNERS PAGE
-# =========================================
-@app.get("/partners-list")
-def get_partners(search: str = None):
-    """Public endpoint — list active partners for the Partners page."""
-    try:
-        res = supabase.table(PARTNERS_TABLE).select("*").order("is_featured", desc=True).execute()
-        rows = res.data or []
-        rows = [r for r in rows if r.get("status") == "active"]
-        if search:
-            s = search.lower().strip()
-            rows = [r for r in rows if s in (r.get("organization") or "").lower() or s in (r.get("description") or "").lower()]
-        return rows
-    except Exception as e:
-        logger.error(f"get_partners: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/admin/partners")
-def admin_list_partners(username: str = Depends(require_admin)):
-    """Admin — list all partners regardless of status."""
-    try:
-        return supabase.table(PARTNERS_TABLE).select("*").order("id", desc=True).execute().data
-    except Exception as e:
-        logger.error(f"admin_list_partners: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.put("/admin/partners/{partner_id}")
-def admin_update_partner(partner_id: int, data: dict, username: str = Depends(require_admin)):
-    """Admin — edit a partner's details (logo, description, website, status, featured)."""
-    allowed = {"organization", "description", "logo_url", "website", "status", "is_featured", "expires_at"}
-    payload = {k: v for k, v in data.items() if k in allowed}
-    if not payload:
-        raise HTTPException(status_code=400, detail="No valid fields provided")
-    for f in ("organization", "description"):
-        if f in payload and payload[f] is not None:
-            payload[f] = _strip_html(str(payload[f]))
-    try:
-        res = supabase.table(PARTNERS_TABLE).update(payload).eq("id", partner_id).execute()
+        res = supabase.table(USER_TABLE).update({"is_banned": 0, "ban_reason": None}).eq("id", user_id).execute()
         if not res.data:
-            raise HTTPException(status_code=404, detail="Partner not found")
-        logger.info(f"Admin '{username}' updated partner {partner_id}")
-        return res.data[0]
+            raise HTTPException(status_code=404, detail="User not found")
+        logger.info(f"Admin '{username}' unbanned user {user_id}")
+        return {"success": True, "user_id": user_id, "banned": False}
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"admin_update_partner {partner_id}: {e}")
+        logger.error(f"admin_unban_user {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/admin/partners/{partner_id}")
-def admin_delete_partner(partner_id: int, username: str = Depends(require_admin)):
-    """Admin — remove a partner from the Partners page."""
+@app.delete("/admin/users/{user_id}")
+def admin_delete_user(user_id: int, username: str = Depends(require_admin)):
+    """Admin — permanently delete a site user account."""
     try:
-        supabase.table(PARTNERS_TABLE).delete().eq("id", partner_id).execute()
-        logger.info(f"Admin '{username}' deleted partner {partner_id}")
-        return {"message": "Partner deleted", "id": partner_id}
+        supabase.table(USER_TABLE).delete().eq("id", user_id).execute()
+        logger.info(f"Admin '{username}' deleted user {user_id}")
+        return {"success": True, "user_id": user_id}
     except Exception as e:
-        logger.error(f"admin_delete_partner {partner_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# =========================================
-# AUTOMATION: EXPIRY SWEEP
-# =========================================
-@app.post("/admin/story-submissions/run-expiry-check")
-def admin_run_expiry_check(username: str = Depends(require_admin)):
-    """
-    Admin-triggered (or can be called by an external cron) sweep that:
-      - deactivates published submissions past their expires_at
-      - marks linked partners as 'expired' if their submission expired
-    Returns a summary of what was changed.
-    """
-    now = datetime.utcnow()
-    expired_subs = []
-    expired_partners = []
-    try:
-        rows = supabase.table(SUBMISSION_TABLE).select("*").eq("payment_status", "published").eq("is_active", 1).execute().data or []
-        for r in rows:
-            exp = r.get("expires_at")
-            if not exp:
-                continue
-            try:
-                exp_dt = datetime.fromisoformat(str(exp).replace("Z", ""))
-            except ValueError:
-                continue
-            if exp_dt <= now:
-                supabase.table(SUBMISSION_TABLE).update({"is_active": 0}).eq("id", r["id"]).execute()
-                expired_subs.append(r["id"])
-
-                # Expire any linked partner record too
-                partner = supabase.table(PARTNERS_TABLE).select("id").eq("submission_id", r["id"]).execute().data
-                if partner:
-                    supabase.table(PARTNERS_TABLE).update({"status": "expired"}).eq("id", partner[0]["id"]).execute()
-                    expired_partners.append(partner[0]["id"])
-
-        logger.info(f"Admin '{username}' ran expiry check: {len(expired_subs)} submissions expired")
-        return {
-            "checked_at": now.isoformat(),
-            "expired_submissions": expired_subs,
-            "expired_partners": expired_partners,
-        }
-    except Exception as e:
-        logger.error(f"admin_run_expiry_check: {e}")
+        logger.error(f"admin_delete_user {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

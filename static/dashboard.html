@@ -635,9 +635,8 @@ html, body {
     <div class="nav-section-label">Engagement</div>
     <div class="nav-item" data-tab="comments" onclick="switchTab('comments')"><span class="icon">💭</span> Comments</div>
     <div class="nav-item" data-tab="forum" onclick="switchTab('forum')"><span class="icon">🗣️</span> Forum</div>
-    <div class="nav-section-label">Partnerships</div>
-    <div class="nav-item" data-tab="packages" onclick="switchTab('packages')"><span class="icon">📦</span> Story Packages</div>
-    <div class="nav-item" data-tab="partners" onclick="switchTab('partners')"><span class="icon">🤝</span> Partners</div>
+    <div class="nav-section-label">Community</div>
+    <div class="nav-item" data-tab="users" onclick="switchTab('users')"><span class="icon">👥</span> Users</div>
     <div class="nav-section-label">Overview</div>
     <div class="nav-item" data-tab="overview" onclick="switchTab('overview')"><span class="icon">🏠</span> Overview</div>
     <div class="nav-section-label">Account</div>
@@ -817,175 +816,40 @@ html, body {
       </div>
     </div>
 
-    <!-- ===== STORY PACKAGES TAB ===== -->
-    <div id="tab-packages" style="display:none">
-      <!-- Stats -->
-      <div class="hero-stats" id="pkgStats">
-        <div class="hstat loading">
-          <div class="hstat-icon">📦</div>
-          <div class="hstat-num" id="pkg-stat-total">—</div>
-          <div class="hstat-label">Total Submissions</div>
-        </div>
-        <div class="hstat loading">
-          <div class="hstat-icon">🥉</div>
-          <div class="hstat-num" id="pkg-stat-bronze">—</div>
-          <div class="hstat-label">Bronze</div>
-        </div>
-        <div class="hstat loading">
-          <div class="hstat-icon">🥈</div>
-          <div class="hstat-num" id="pkg-stat-silver">—</div>
-          <div class="hstat-label">Silver</div>
-        </div>
-        <div class="hstat loading">
-          <div class="hstat-icon">🥇</div>
-          <div class="hstat-num" id="pkg-stat-gold">—</div>
-          <div class="hstat-label">Gold</div>
-        </div>
-      </div>
-      <div class="hero-stats" style="margin-top:10px">
-        <div class="hstat loading">
-          <div class="hstat-icon">💰</div>
-          <div class="hstat-num" id="pkg-stat-revenue">—</div>
-          <div class="hstat-label">Revenue Generated</div>
-        </div>
-        <div class="hstat loading">
-          <div class="hstat-icon">✅</div>
-          <div class="hstat-num" id="pkg-stat-active">—</div>
-          <div class="hstat-label">Active Sponsored Stories</div>
-        </div>
-        <div class="hstat loading" style="cursor:default">
-          <div class="hstat-icon">⏰</div>
-          <div class="hstat-num" id="pkg-stat-expiring">—</div>
-          <div class="hstat-label">Expiring Soon (≤3 days)</div>
-        </div>
-      </div>
-
-      <div class="panel" style="margin-top:14px">
-        <div class="panel-header">
-          <h2>📦 Story Submissions</h2>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input id="pkgSearchInput" class="search-input" placeholder="🔍 Search submissions…" style="width:200px">
-            <select id="pkgFilterPackage" class="select-sm">
-              <option value="">All Packages</option>
-              <option value="bronze">🥉 Bronze</option>
-              <option value="silver">🥈 Silver</option>
-              <option value="gold">🥇 Gold</option>
-            </select>
-            <select id="pkgFilterStatus" class="select-sm">
-              <option value="">All Statuses</option>
-              <option value="pending_payment">⏳ Pending Payment</option>
-              <option value="paid">💳 Paid</option>
-              <option value="under_review">🔍 Under Review</option>
-              <option value="approved">✅ Approved</option>
-              <option value="rejected">❌ Rejected</option>
-              <option value="published">📰 Published</option>
-            </select>
-            <button class="btn btn-ghost" onclick="loadSubmissions()">⟳ Refresh</button>
-            <button class="btn btn-ghost" onclick="runExpiryCheck()">⏰ Run Expiry Check</button>
-          </div>
-        </div>
-        <div class="panel-body">
-          <div id="submissionsList"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SUBMISSION DETAIL/EDIT MODAL -->
-    <div class="modal-backdrop" id="submissionModalBackdrop">
-      <div class="modal" style="max-width:680px">
-        <div class="modal-header">
-          <h3 id="submissionModalTitle">Submission Details</h3>
-          <button class="btn-icon" onclick="closeSubmissionModal()">✕</button>
-        </div>
-        <div class="modal-body" id="submissionModalBody">
-          <!-- populated dynamically -->
-        </div>
-        <div class="modal-footer" style="flex-wrap:wrap">
-          <button class="btn btn-ghost" onclick="closeSubmissionModal()">Close</button>
-          <button class="btn btn-danger" id="submissionRejectBtn">❌ Reject</button>
-          <button class="btn btn-ghost" id="submissionApproveBtn">✅ Approve</button>
-          <button class="btn btn-primary" id="submissionPublishBtn">📰 Publish</button>
-          <button class="btn btn-primary" id="submissionSaveBtn">💾 Save Changes</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- EXTEND EXPIRY MODAL -->
-    <div class="modal-backdrop" id="extendModalBackdrop">
-      <div class="modal" style="max-width:420px">
-        <div class="modal-header">
-          <h3>⏳ Extend Publication</h3>
-          <button class="btn-icon" onclick="closeExtendModal()">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="required">Extend by (days)</label>
-            <input type="number" id="extendDays" class="form-control" placeholder="e.g. 14" min="1" max="365" value="14">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-ghost" onclick="closeExtendModal()">Cancel</button>
-          <button class="btn btn-primary" id="extendSaveBtn">⏳ Extend</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== PARTNERS TAB ===== -->
-    <div id="tab-partners" style="display:none">
+    <!-- ===== USERS TAB ===== -->
+    <div id="tab-users" style="display:none">
       <div class="panel">
         <div class="panel-header">
-          <h2>🤝 Partners</h2>
-          <button class="btn btn-ghost" onclick="loadPartnersAdmin()">⟳ Refresh</button>
+          <h2>👥 Community Users</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input id="userSearchInput" class="search-input" placeholder="🔍 Search by name or email…" style="width:220px" oninput="renderUsersAdmin()">
+            <select id="userFilterBanned" class="select-sm" onchange="renderUsersAdmin()">
+              <option value="">All Users</option>
+              <option value="0">✅ Active</option>
+              <option value="1">🚫 Banned</option>
+            </select>
+            <button class="btn btn-ghost" onclick="loadUsersAdmin()">⟳ Refresh</button>
+          </div>
         </div>
         <div class="panel-body">
-          <div id="partnersAdminList"></div>
+          <div id="usersAdminList"></div>
         </div>
       </div>
     </div>
 
-    <!-- PARTNER EDIT MODAL -->
-    <div class="modal-backdrop" id="partnerModalBackdrop">
-      <div class="modal" style="max-width:520px">
+    <!-- USER DETAIL MODAL -->
+    <div class="modal-backdrop" id="userModalBackdrop">
+      <div class="modal" style="max-width:480px">
         <div class="modal-header">
-          <h3>✏️ Edit Partner</h3>
-          <button class="btn-icon" onclick="closePartnerModal()">✕</button>
+          <h3 id="userModalTitle">User Details</h3>
+          <button class="btn-icon" onclick="closeUserModal()">✕</button>
         </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="required">Organization Name</label>
-            <input id="partnerOrgName" class="form-control" maxlength="200">
-          </div>
-          <div class="form-group">
-            <label>Description</label>
-            <textarea id="partnerDesc" class="form-control" maxlength="300" rows="3" style="resize:vertical"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Logo URL</label>
-            <input id="partnerLogoUrl" class="form-control" placeholder="https://...">
-          </div>
-          <div class="form-group">
-            <label>Website</label>
-            <input id="partnerWebsite" class="form-control" placeholder="https://...">
-          </div>
-          <div class="form-group">
-            <label>Status</label>
-            <select id="partnerStatus" class="form-control">
-              <option value="active">🟢 Active</option>
-              <option value="paused">🟡 Paused</option>
-              <option value="expired">🔴 Expired</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-              <input type="checkbox" id="partnerFeatured" style="width:auto">
-              ⭐ Featured Partner
-            </label>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-ghost" onclick="closePartnerModal()">Cancel</button>
-          <button class="btn btn-danger" id="partnerDeleteBtn">🗑️ Delete</button>
-          <button class="btn btn-primary" id="partnerSaveBtn">💾 Save</button>
+        <div class="modal-body" id="userModalBody"></div>
+        <div class="modal-footer" style="flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="closeUserModal()">Close</button>
+          <button class="btn btn-danger" id="userModalDeleteBtn">🗑️ Delete</button>
+          <button class="btn btn-danger" id="userModalBanBtn">🚫 Ban</button>
+          <button class="btn btn-primary" id="userModalUnbanBtn">✅ Unban</button>
         </div>
       </div>
     </div>
@@ -1179,9 +1043,7 @@ const API = {
   forumPost:  `${BASE}/forum/post`,
   like:       `${BASE}/like`,
   stats:      `${BASE}/admin/stats`,
-  submissions:      `${BASE}/admin/story-submissions`,
-  submissionStats:  `${BASE}/admin/story-submissions-stats`,
-  partners:         `${BASE}/admin/partners`,
+  users: `${BASE}/admin/users`,
 };
 
 // ================== STATE ==================
@@ -1447,7 +1309,7 @@ function switchTab(tab) {
   document.querySelectorAll('.nav-item').forEach(n =>
     n.classList.toggle('active', n.dataset.tab === tab));
 
-  const allPanels = ['tab-overview','tab-content','tab-comments','tab-forum','tab-settings','tab-packages','tab-partners'];
+  const allPanels = ['tab-overview','tab-content','tab-comments','tab-forum','tab-settings','tab-users'];
   allPanels.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -1462,7 +1324,6 @@ function switchTab(tab) {
     document.getElementById('tab-content').style.display = 'block';
     const title = document.getElementById('sectionTitle');
     if (title) title.textContent = `Manage ${tab.charAt(0).toUpperCase() + tab.slice(1)}`;
-    // Adjust modal fields for content type
     configureModalFields(tab);
     state.page = 1;
     state.search = '';
@@ -1480,14 +1341,9 @@ function switchTab(tab) {
     document.getElementById('tab-forum').style.display = 'block';
     loadForum();
 
-  } else if (tab === 'packages') {
-    document.getElementById('tab-packages').style.display = 'block';
-    loadSubmissionStats();
-    loadSubmissions();
-
-  } else if (tab === 'partners') {
-    document.getElementById('tab-partners').style.display = 'block';
-    loadPartnersAdmin();
+  } else if (tab === 'users') {
+    document.getElementById('tab-users').style.display = 'block';
+    loadUsersAdmin();
 
   } else if (tab === 'settings') {
     document.getElementById('tab-settings').style.display = 'block';
@@ -2660,497 +2516,137 @@ async function changeUsername() {
   } catch { showToast('Network error', 'error'); }
 }
 
-// ================== STORY PACKAGES (ADMIN) ==================
-const PACKAGE_LABELS_ADMIN = {
-  bronze: '🥉 Bronze ($15)',
-  silver: '🥈 Silver ($30)',
-  gold:   '🥇 Gold ($45)',
-};
-const PAYMENT_STATUS_LABELS = {
-  pending_payment: ['⏳ Pending Payment', '#fff3e0', '#e65100'],
-  paid:            ['💳 Paid', '#e3f2fd', '#0d47a1'],
-  under_review:    ['🔍 Under Review', '#f3e5f5', '#6a1b9a'],
-  approved:        ['✅ Approved', '#e8f5e9', '#2e7d32'],
-  rejected:        ['❌ Rejected', '#ffebee', '#c62828'],
-  published:       ['📰 Published', '#e8f5e9', '#1b5e20'],
-};
+// ================== USERS (ADMIN) ==================
+let _allUsersAdmin = [];
 
-let _allSubmissions = [];
-let _currentSubmission = null;
-let _currentPartner = null;
-
-function statusBadgeHtml(status) {
-  const [label, bg, fg] = PAYMENT_STATUS_LABELS[status] || ['—', '#f5f5f5', '#666'];
-  return `<span style="display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;background:${bg};color:${fg}">${label}</span>`;
-}
-
-function daysRemaining(expiresAt) {
-  if (!expiresAt) return null;
-  const exp = new Date(expiresAt);
-  const now = new Date();
-  const diffMs = exp - now;
-  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-}
-
-async function loadSubmissionStats() {
-  try {
-    const res = await fetch(API.submissionStats, { headers: authHeaders() });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const s = await res.json();
-    safeSet('pkg-stat-total', s.total_submissions ?? 0);
-    safeSet('pkg-stat-bronze', s.bronze ?? 0);
-    safeSet('pkg-stat-silver', s.silver ?? 0);
-    safeSet('pkg-stat-gold', s.gold ?? 0);
-    safeSet('pkg-stat-revenue', '$' + (s.revenue ?? 0));
-    safeSet('pkg-stat-active', s.active_sponsored ?? 0);
-    safeSet('pkg-stat-expiring', s.expiring_soon ?? 0);
-    document.querySelectorAll('#tab-packages .hstat').forEach(h => h.classList.remove('loading'));
-  } catch (e) {
-    console.error('[QuoteMe] loadSubmissionStats:', e);
-  }
-}
-
-async function loadSubmissions() {
-  const container = document.getElementById('submissionsList');
+async function loadUsersAdmin() {
+  const container = document.getElementById('usersAdminList');
   if (!container) return;
-  container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Loading submissions…</div>';
+  container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Loading users…</div>';
   try {
-    const params = new URLSearchParams();
-    const pkg = document.getElementById('pkgFilterPackage')?.value;
-    const status = document.getElementById('pkgFilterStatus')?.value;
-    if (pkg) params.set('package', pkg);
-    if (status) params.set('payment_status', status);
-    const url = API.submissions + (params.toString() ? `?${params.toString()}` : '');
-    const res = await fetch(url, { headers: authHeaders(), cache: 'no-store' });
+    const res = await fetch(`${BASE}/admin/users`, { headers: authHeaders(), cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    _allSubmissions = await res.json();
-    renderSubmissions();
-  } catch (e) {
-    console.error('[QuoteMe] loadSubmissions:', e);
-    container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Failed to load submissions.</div>';
+    _allUsersAdmin = await res.json();
+    renderUsersAdmin();
+  } catch(e) {
+    console.error('[QuoteMe] loadUsersAdmin:', e);
+    container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Failed to load users.</div>';
   }
 }
 
-function renderSubmissions() {
-  const container = document.getElementById('submissionsList');
+function renderUsersAdmin() {
+  const container = document.getElementById('usersAdminList');
   if (!container) return;
-  const q = (document.getElementById('pkgSearchInput')?.value || '').toLowerCase().trim();
-  let rows = _allSubmissions;
-  if (q) {
-    rows = rows.filter(r =>
-      (r.full_name || '').toLowerCase().includes(q) ||
-      (r.organization || '').toLowerCase().includes(q) ||
-      (r.story_title || '').toLowerCase().includes(q) ||
-      (r.email || '').toLowerCase().includes(q) ||
-      (r.tracking_number || '').toLowerCase().includes(q)
-    );
-  }
-
+  const q      = (document.getElementById('userSearchInput')?.value || '').toLowerCase().trim();
+  const banned = document.getElementById('userFilterBanned')?.value ?? '';
+  let rows = _allUsersAdmin;
+  if (q)        rows = rows.filter(r => (r.username||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q));
+  if (banned !== '') rows = rows.filter(r => String(r.is_banned || 0) === banned);
   if (!rows.length) {
-    container.innerHTML = '<div class="empty-state"><div class="emoji">📦</div><p>No submissions found.</p></div>';
-    return;
-  }
-
-  container.innerHTML = '';
-  rows.forEach(r => {
-    const card = document.createElement('div');
-    card.className = 'item-card';
-    card.style.cssText = 'margin-bottom:12px;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:14px 16px';
-    card.onclick = () => openSubmissionModal(r.id);
-
-    const expDays = daysRemaining(r.expires_at);
-    let expiryHtml = '';
-    if (r.payment_status === 'published' && r.expires_at) {
-      if (expDays !== null && expDays <= 0) {
-        expiryHtml = `<span style="font-size:11px;color:#c62828;font-weight:700">⏰ Expired</span>`;
-      } else if (expDays !== null && expDays <= 3) {
-        expiryHtml = `<span style="font-size:11px;color:#e65100;font-weight:700">⏰ Expires in ${expDays}d</span>`;
-      } else if (expDays !== null) {
-        expiryHtml = `<span style="font-size:11px;color:var(--muted)">⏰ ${expDays}d remaining</span>`;
-      }
-    }
-
-    const created = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
-
-    card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
-        <div style="flex:1;min-width:180px">
-          <div style="font-weight:700;font-size:14px;margin-bottom:2px">${esc(r.story_title)}</div>
-          <div style="font-size:12px;color:var(--muted)">
-            ${esc(r.full_name)}${r.organization ? ' · ' + esc(r.organization) : ''}
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-          ${statusBadgeHtml(r.payment_status)}
-          <span style="font-size:11px;color:var(--muted)">${PACKAGE_LABELS_ADMIN[r.package] || r.package}</span>
-        </div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--muted)">
-        <span>🎫 ${esc(r.tracking_number)}</span>
-        <span>📅 ${created}</span>
-        ${expiryHtml}
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-function wireSubmissionFilters() {
-  ['pkgSearchInput'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('input', renderSubmissions);
-  });
-  ['pkgFilterPackage', 'pkgFilterStatus'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', loadSubmissions);
-  });
-}
-
-function openSubmissionModal(id) {
-  const sub = _allSubmissions.find(s => s.id === id);
-  if (!sub) return;
-  _currentSubmission = sub;
-
-  document.getElementById('submissionModalTitle').textContent = `Submission — ${sub.tracking_number}`;
-
-  const social = sub.social_links ? esc(sub.social_links) : '<span style="color:var(--muted)">—</span>';
-  const promoText = (sub.instagram_promos_total || sub.facebook_promos_total)
-    ? `📸 Instagram: ${sub.instagram_promos_done || 0}/${sub.instagram_promos_total || 0} &nbsp;|&nbsp; 📘 Facebook: ${sub.facebook_promos_done || 0}/${sub.facebook_promos_total || 0}`
-    : 'No promotions included';
-
-  const expDays = daysRemaining(sub.expires_at);
-  const expiryText = sub.expires_at
-    ? `${new Date(sub.expires_at).toLocaleDateString()} ${expDays !== null ? `(${expDays > 0 ? expDays + ' days remaining' : 'expired'})` : ''}`
-    : '—';
-
-  document.getElementById('submissionModalBody').innerHTML = `
-    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">
-      ${sub.image_url ? `<img src="${esc(sub.image_url)}" alt="Story image" style="width:120px;height:120px;object-fit:cover;border-radius:10px">` : ''}
-      ${sub.logo_url ? `<img src="${esc(sub.logo_url)}" alt="Logo" style="width:120px;height:120px;object-fit:cover;border-radius:10px">` : ''}
-    </div>
-
-    <div class="form-group">
-      <label>Status</label>
-      <select id="editPaymentStatus" class="form-control">
-        ${Object.keys(PAYMENT_STATUS_LABELS).map(s => `<option value="${s}" ${s === sub.payment_status ? 'selected' : ''}>${PAYMENT_STATUS_LABELS[s][0]}</option>`).join('')}
-      </select>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
-      <div><strong style="font-size:12px;color:var(--muted)">Submitter</strong><div>${esc(sub.full_name)}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Organization</strong><div>${esc(sub.organization || '—')}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Email</strong><div>${esc(sub.email)}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Phone</strong><div>${esc(sub.phone || '—')}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Package</strong><div>${PACKAGE_LABELS_ADMIN[sub.package] || sub.package}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Amount</strong><div>$${sub.amount}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Social Links</strong><div style="word-break:break-all">${social}</div></div>
-      <div><strong style="font-size:12px;color:var(--muted)">Expires</strong><div>${expiryText}</div></div>
-    </div>
-
-    <div class="form-group">
-      <label>Story Title</label>
-      <input id="editStoryTitle" class="form-control" maxlength="250" value="${esc(sub.story_title).replace(/"/g, '&quot;')}">
-    </div>
-    <div class="form-group">
-      <label>Story Content</label>
-      <textarea id="editStoryContent" class="form-control" rows="6" maxlength="10000" style="resize:vertical">${esc(sub.story_content)}</textarea>
-    </div>
-    <div class="form-group">
-      <label>Story Image URL</label>
-      <input id="editImageUrl" class="form-control" value="${esc(sub.image_url || '').replace(/"/g, '&quot;')}">
-    </div>
-    <div class="form-group">
-      <label>Logo URL</label>
-      <input id="editLogoUrl" class="form-control" value="${esc(sub.logo_url || '').replace(/"/g, '&quot;')}">
-    </div>
-    <div class="form-group">
-      <label>Admin Notes</label>
-      <textarea id="editNotes" class="form-control" rows="3" maxlength="2000" style="resize:vertical">${esc(sub.notes || '')}</textarea>
-    </div>
-
-    <div style="background:var(--input-bg);border-radius:10px;padding:12px;margin-bottom:10px;font-size:13px">
-      <strong>📣 Promotions:</strong> ${promoText}
-      ${(sub.instagram_promos_total > (sub.instagram_promos_done||0)) ? `<button class="btn btn-ghost" style="margin-left:8px;padding:4px 10px;font-size:11px" onclick="markPromoDone(${sub.id},'instagram')">+1 Instagram</button>` : ''}
-      ${(sub.facebook_promos_total > (sub.facebook_promos_done||0)) ? `<button class="btn btn-ghost" style="margin-left:6px;padding:4px 10px;font-size:11px" onclick="markPromoDone(${sub.id},'facebook')">+1 Facebook</button>` : ''}
-    </div>
-
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      ${sub.payment_status === 'published' ? `<button class="btn btn-ghost" onclick="openExtendModal(${sub.id})">⏳ Extend / Restore</button>` : ''}
-      <button class="btn btn-danger" onclick="deleteSubmission(${sub.id})">🗑️ Delete Submission</button>
-    </div>
-  `;
-
-  // Wire footer action buttons
-  const approveBtn = document.getElementById('submissionApproveBtn');
-  const rejectBtn  = document.getElementById('submissionRejectBtn');
-  const publishBtn = document.getElementById('submissionPublishBtn');
-  const saveBtn    = document.getElementById('submissionSaveBtn');
-
-  approveBtn.style.display = sub.payment_status === 'published' ? 'none' : '';
-  rejectBtn.style.display  = (sub.payment_status === 'published' || sub.payment_status === 'rejected') ? 'none' : '';
-  publishBtn.style.display = (sub.payment_status === 'published') ? 'none' : '';
-  publishBtn.disabled = !['paid','under_review','approved'].includes(sub.payment_status);
-  publishBtn.title = publishBtn.disabled ? 'Submission must be Paid, Under Review, or Approved first' : '';
-
-  approveBtn.onclick = () => approveSubmission(sub.id);
-  rejectBtn.onclick  = () => rejectSubmission(sub.id);
-  publishBtn.onclick = () => publishSubmission(sub.id);
-  saveBtn.onclick    = () => saveSubmissionEdits(sub.id);
-
-  document.getElementById('submissionModalBackdrop').classList.add('show');
-}
-
-function closeSubmissionModal() {
-  document.getElementById('submissionModalBackdrop').classList.remove('show');
-  _currentSubmission = null;
-}
-
-async function saveSubmissionEdits(id) {
-  const payload = {
-    payment_status: document.getElementById('editPaymentStatus').value,
-    story_title:    document.getElementById('editStoryTitle').value.trim(),
-    story_content:  document.getElementById('editStoryContent').value.trim(),
-    image_url:      document.getElementById('editImageUrl').value.trim() || null,
-    logo_url:       document.getElementById('editLogoUrl').value.trim() || null,
-    notes:          document.getElementById('editNotes').value.trim() || null,
-  };
-  try {
-    const res = await fetch(`${API.submissions}/${id}`, {
-      method: 'PUT',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to save');
-    }
-    showToast('✅ Submission updated', 'success');
-    closeSubmissionModal();
-    await loadSubmissions();
-    await loadSubmissionStats();
-  } catch (e) {
-    showToast(e.message || 'Failed to save submission', 'error');
-  }
-}
-
-async function approveSubmission(id) {
-  try {
-    const res = await fetch(`${API.submissions}/${id}/approve`, { method: 'POST', headers: authHeaders() });
-    if (!res.ok) throw new Error('Failed');
-    showToast('✅ Submission approved', 'success');
-    closeSubmissionModal();
-    await loadSubmissions();
-    await loadSubmissionStats();
-  } catch { showToast('Failed to approve submission', 'error'); }
-}
-
-async function rejectSubmission(id) {
-  if (!confirm('Reject this submission? This will mark it inactive.')) return;
-  try {
-    const res = await fetch(`${API.submissions}/${id}/reject`, {
-      method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({}),
-    });
-    if (!res.ok) throw new Error('Failed');
-    showToast('Submission rejected', 'warn');
-    closeSubmissionModal();
-    await loadSubmissions();
-    await loadSubmissionStats();
-  } catch { showToast('Failed to reject submission', 'error'); }
-}
-
-async function publishSubmission(id) {
-  if (!confirm('Publish this story to the public Stories feed now?')) return;
-  try {
-    const res = await fetch(`${API.submissions}/${id}/publish`, { method: 'POST', headers: authHeaders() });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to publish');
-    }
-    showToast('🎉 Story published!', 'success');
-    closeSubmissionModal();
-    await loadSubmissions();
-    await loadSubmissionStats();
-  } catch (e) { showToast(e.message || 'Failed to publish', 'error'); }
-}
-
-async function deleteSubmission(id) {
-  if (!confirm('Permanently delete this submission? This cannot be undone.')) return;
-  try {
-    const res = await fetch(`${API.submissions}/${id}`, { method: 'DELETE', headers: authHeaders() });
-    if (!res.ok) throw new Error('Failed');
-    showToast('Submission deleted', 'success');
-    closeSubmissionModal();
-    await loadSubmissions();
-    await loadSubmissionStats();
-  } catch { showToast('Failed to delete submission', 'error'); }
-}
-
-async function markPromoDone(id, platform) {
-  try {
-    const res = await fetch(`${API.submissions}/${id}/promo`, {
-      method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ platform }),
-    });
-    if (!res.ok) throw new Error('Failed');
-    showToast(`✅ ${platform === 'instagram' ? 'Instagram' : 'Facebook'} promo marked complete`, 'success');
-    await loadSubmissions();
-    // Refresh modal if still open
-    const updated = _allSubmissions.find(s => s.id === id);
-    if (updated && _currentSubmission && _currentSubmission.id === id) openSubmissionModal(id);
-  } catch { showToast('Failed to update promo status', 'error'); }
-}
-
-function openExtendModal(id) {
-  _currentSubmission = _allSubmissions.find(s => s.id === id) || _currentSubmission;
-  document.getElementById('extendDays').value = 14;
-  document.getElementById('extendModalBackdrop').classList.add('show');
-  document.getElementById('extendSaveBtn').onclick = () => extendSubmission(id);
-}
-function closeExtendModal() {
-  document.getElementById('extendModalBackdrop').classList.remove('show');
-}
-async function extendSubmission(id) {
-  const days = parseInt(document.getElementById('extendDays').value, 10);
-  if (!days || days <= 0 || days > 365) {
-    showToast('Please enter a valid number of days (1-365)', 'warn');
-    return;
-  }
-  try {
-    const res = await fetch(`${API.submissions}/${id}/extend`, {
-      method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ days }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to extend');
-    }
-    showToast(`✅ Extended by ${days} days`, 'success');
-    closeExtendModal();
-    closeSubmissionModal();
-    await loadSubmissions();
-    await loadSubmissionStats();
-  } catch (e) { showToast(e.message || 'Failed to extend', 'error'); }
-}
-
-async function runExpiryCheck() {
-  try {
-    const res = await fetch(`${API.submissions}/run-expiry-check`, { method: 'POST', headers: authHeaders() });
-    if (!res.ok) throw new Error('Failed');
-    const data = await res.json();
-    const n = (data.expired_submissions || []).length;
-    showToast(n ? `⏰ ${n} submission(s) expired and deactivated` : '✅ No expired submissions found', n ? 'warn' : 'success');
-    await loadSubmissions();
-    await loadSubmissionStats();
-  } catch { showToast('Failed to run expiry check', 'error'); }
-}
-
-// ================== PARTNERS (ADMIN) ==================
-let _allPartnersAdmin = [];
-
-async function loadPartnersAdmin() {
-  const container = document.getElementById('partnersAdminList');
-  if (!container) return;
-  container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Loading partners…</div>';
-  try {
-    const res = await fetch(API.partners, { headers: authHeaders(), cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    _allPartnersAdmin = await res.json();
-    renderPartnersAdmin();
-  } catch (e) {
-    console.error('[QuoteMe] loadPartnersAdmin:', e);
-    container.innerHTML = '<div style="padding:24px;color:var(--muted);text-align:center">Failed to load partners.</div>';
-  }
-}
-
-function renderPartnersAdmin() {
-  const container = document.getElementById('partnersAdminList');
-  if (!container) return;
-  if (!_allPartnersAdmin.length) {
-    container.innerHTML = '<div class="empty-state"><div class="emoji">🤝</div><p>No partners yet. Partners are created automatically when Silver/Gold submissions are published.</p></div>';
+    container.innerHTML = '<div class="empty-state"><div class="emoji">\u{1F465}</div><p>No users found.</p></div>';
     return;
   }
   container.innerHTML = '';
-  _allPartnersAdmin.forEach(p => {
+  rows.forEach(u => {
     const card = document.createElement('div');
     card.className = 'item-card';
-    card.style.cssText = 'margin-bottom:12px;cursor:pointer;display:flex;gap:12px;align-items:center;padding:14px 16px';
-    card.onclick = () => openPartnerModal(p.id);
-
-    const statusColors = { active: ['#e8f5e9','#2e7d32','🟢'], paused: ['#fff3e0','#e65100','🟡'], expired: ['#ffebee','#c62828','🔴'] };
-    const [bg, fg, dot] = statusColors[p.status] || statusColors.active;
-
+    card.style.cssText = 'margin-bottom:10px;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:12px';
+    card.onclick = () => openUserModal(u.id);
+    const initials = (u.username || '?')[0].toUpperCase();
+    const isBanned = u.is_banned;
+    const joined   = u.created_at ? new Date(u.created_at).toLocaleDateString() : '\u2014';
+    const lastSeen = u.last_seen  ? new Date(u.last_seen).toLocaleDateString()  : '\u2014';
     card.innerHTML = `
-      <div style="width:48px;height:48px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:20px">
-        ${p.logo_url ? `<img src="${esc(p.logo_url)}" style="width:100%;height:100%;object-fit:cover" alt="">` : '🏢'}
-      </div>
+      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#9c27b0);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${esc(initials)}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:14px">${esc(p.organization)}${p.is_featured ? ' ⭐' : ''}</div>
-        <div style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.description || '')}</div>
+        <div style="font-weight:700;font-size:14px">${esc(u.username)} ${isBanned ? '<span style="font-size:11px;background:#ffebee;color:#c62828;padding:2px 8px;border-radius:10px;font-weight:700">\uD83D\uDEAB Banned</span>' : ''}</div>
+        <div style="font-size:12px;color:var(--muted)">${esc(u.email)}</div>
       </div>
-      <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;background:${bg};color:${fg};white-space:nowrap">${dot} ${p.status}</span>
-    `;
+      <div style="text-align:right;font-size:11px;color:var(--muted);flex-shrink:0">
+        <div>Joined: ${joined}</div>
+        <div>Last seen: ${lastSeen}</div>
+      </div>`;
     container.appendChild(card);
   });
 }
 
-function openPartnerModal(id) {
-  const p = _allPartnersAdmin.find(x => x.id === id);
-  if (!p) return;
-  _currentPartner = p;
-  document.getElementById('partnerOrgName').value = p.organization || '';
-  document.getElementById('partnerDesc').value = p.description || '';
-  document.getElementById('partnerLogoUrl').value = p.logo_url || '';
-  document.getElementById('partnerWebsite').value = p.website || '';
-  document.getElementById('partnerStatus').value = p.status || 'active';
-  document.getElementById('partnerFeatured').checked = !!p.is_featured;
-  document.getElementById('partnerModalBackdrop').classList.add('show');
+let _currentUserAdmin = null;
 
-  document.getElementById('partnerSaveBtn').onclick = () => savePartner(id);
-  document.getElementById('partnerDeleteBtn').onclick = () => deletePartner(id);
+function openUserModal(id) {
+  const u = _allUsersAdmin.find(x => x.id === id);
+  if (!u) return;
+  _currentUserAdmin = u;
+  document.getElementById('userModalTitle').textContent = '\u{1F464} ' + u.username;
+  const joined   = u.created_at ? new Date(u.created_at).toLocaleString() : '\u2014';
+  const lastSeen = u.last_seen  ? new Date(u.last_seen).toLocaleString()  : '\u2014';
+  const isBanned = u.is_banned;
+  document.getElementById('userModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div><strong style="font-size:12px;color:var(--muted)">Username</strong><div style="font-size:14px;font-weight:700">${esc(u.username)}</div></div>
+      <div><strong style="font-size:12px;color:var(--muted)">Email</strong><div style="font-size:14px">${esc(u.email)}</div></div>
+      <div><strong style="font-size:12px;color:var(--muted)">Joined</strong><div style="font-size:13px">${joined}</div></div>
+      <div><strong style="font-size:12px;color:var(--muted)">Last Seen</strong><div style="font-size:13px">${lastSeen}</div></div>
+      <div style="grid-column:1/-1"><strong style="font-size:12px;color:var(--muted)">Status</strong>
+        <div>${isBanned
+          ? \`<span style="background:#ffebee;color:#c62828;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">Banned</span>\${u.ban_reason ? \`<div style="font-size:12px;color:var(--muted);margin-top:4px">Reason: \${esc(u.ban_reason)}</div>\` : ''}\`
+          : '<span style="background:#e8f5e9;color:#2e7d32;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700">Active</span>'}
+        </div>
+      </div>
+    </div>
+    \${!isBanned ? \`<div class="form-group"><label>Ban Reason</label><input id="userBanReason" class="form-control" maxlength="300" placeholder="e.g. Spamming or harassment"></div>\` : ''}`;
+  const banBtn   = document.getElementById('userModalBanBtn');
+  const unbanBtn = document.getElementById('userModalUnbanBtn');
+  const delBtn   = document.getElementById('userModalDeleteBtn');
+  banBtn.style.display   = isBanned ? 'none' : '';
+  unbanBtn.style.display = isBanned ? '' : 'none';
+  banBtn.onclick   = () => banUserAdmin(id);
+  unbanBtn.onclick = () => unbanUserAdmin(id);
+  delBtn.onclick   = () => deleteUserAdmin(id);
+  document.getElementById('userModalBackdrop').classList.add('show');
 }
-function closePartnerModal() {
-  document.getElementById('partnerModalBackdrop').classList.remove('show');
-  _currentPartner = null;
+
+function closeUserModal() {
+  document.getElementById('userModalBackdrop').classList.remove('show');
+  _currentUserAdmin = null;
 }
-async function savePartner(id) {
-  const payload = {
-    organization: document.getElementById('partnerOrgName').value.trim(),
-    description:  document.getElementById('partnerDesc').value.trim(),
-    logo_url:      document.getElementById('partnerLogoUrl').value.trim() || null,
-    website:       document.getElementById('partnerWebsite').value.trim() || null,
-    status:        document.getElementById('partnerStatus').value,
-    is_featured:   document.getElementById('partnerFeatured').checked ? 1 : 0,
-  };
-  if (!payload.organization) { showToast('Organization name is required', 'warn'); return; }
+
+async function banUserAdmin(id) {
+  const reason = document.getElementById('userBanReason')?.value.trim() || 'Suspended by admin';
+  if (!confirm('Ban this user?')) return;
   try {
-    const res = await fetch(`${API.partners}/${id}`, {
-      method: 'PUT',
+    const res = await fetch(`${BASE}/admin/users/${id}/ban`, {
+      method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ reason }),
     });
     if (!res.ok) throw new Error('Failed');
-    showToast('✅ Partner updated', 'success');
-    closePartnerModal();
-    await loadPartnersAdmin();
-  } catch { showToast('Failed to save partner', 'error'); }
-}
-async function deletePartner(id) {
-  if (!confirm('Remove this partner from the Partners page?')) return;
-  try {
-    const res = await fetch(`${API.partners}/${id}`, { method: 'DELETE', headers: authHeaders() });
-    if (!res.ok) throw new Error('Failed');
-    showToast('Partner removed', 'success');
-    closePartnerModal();
-    await loadPartnersAdmin();
-  } catch { showToast('Failed to delete partner', 'error'); }
+    showToast('User banned', 'warn');
+    closeUserModal();
+    await loadUsersAdmin();
+  } catch { showToast('Failed to ban user', 'error'); }
 }
 
-// Wire submission filters once DOM is ready
-document.addEventListener('DOMContentLoaded', wireSubmissionFilters);
+async function unbanUserAdmin(id) {
+  if (!confirm('Lift the ban on this user?')) return;
+  try {
+    const res = await fetch(`${BASE}/admin/users/${id}/unban`, { method: 'POST', headers: authHeaders() });
+    if (!res.ok) throw new Error('Failed');
+    showToast('User unbanned', 'success');
+    closeUserModal();
+    await loadUsersAdmin();
+  } catch { showToast('Failed to unban user', 'error'); }
+}
+
+async function deleteUserAdmin(id) {
+  if (!confirm('Permanently delete this user account?')) return;
+  try {
+    const res = await fetch(`${BASE}/admin/users/${id}`, { method: 'DELETE', headers: authHeaders() });
+    if (!res.ok) throw new Error('Failed');
+    showToast('User deleted', 'success');
+    closeUserModal();
+    await loadUsersAdmin();
+  } catch { showToast('Failed to delete user', 'error'); }
+}
 
 // ================== TOAST ==================
 function showToast(msg, type = 'info') {

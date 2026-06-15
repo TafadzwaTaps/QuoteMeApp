@@ -165,18 +165,50 @@ body.dark .comment-form-area textarea { background: #3a3a3a; border-color: #555;
             <div class="state-msg">⏳ Loading comments…</div>
         </div>
 
-        <div class="comment-form-area">
-            <h3>✍️ Leave a Comment</h3>
-            <div class="cf-row">
-                <input type="text" id="commentUsername" placeholder="Your name" autocomplete="off" maxlength="80">
-            </div>
-            <textarea id="commentText" placeholder="Write your comment here…" maxlength="1000"></textarea>
-            <button class="post-btn" id="submitCommentBtn" onclick="submitComment()">Post Comment</button>
+        <div class="comment-form-area" id="storyCommentFormArea">
+            <!-- rendered by renderStoryCommentForm() -->
         </div>
     </div>
 </main>
 
 <div id="storyToast"></div>
+
+<!-- AUTH MODAL (minimal, reuses main site styles) -->
+<div id="storyAuthBackdrop" onclick="if(event.target===this)closeStoryAuth()" style="
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);
+    z-index:2000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;
+">
+    <div style="background:#fff;border-radius:22px;padding:32px;width:100%;max-width:400px;position:relative;box-sizing:border-box">
+        <button onclick="closeStoryAuth()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:#aaa">✕</button>
+        <div id="storyAuthTabs" style="display:flex;margin-bottom:20px;border-radius:12px;overflow:hidden;border:1.5px solid #f0c0d8">
+            <button id="sTabLogin" onclick="sTab('login')" style="flex:1;padding:9px;font-weight:700;font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#d63384,#9c27b0);color:#fff;border:none;cursor:pointer">Sign In</button>
+            <button id="sTabReg" onclick="sTab('register')" style="flex:1;padding:9px;font-weight:700;font-family:'Poppins',sans-serif;background:transparent;color:#aaa;border:none;cursor:pointer">Create Account</button>
+        </div>
+        <!-- Login -->
+        <div id="sAuthLogin">
+            <p style="font-size:13px;color:#999;margin-bottom:16px">Sign in to leave a comment.</p>
+            <div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;color:#d63384;display:block;margin-bottom:4px">Email</label>
+            <input id="sLoginEmail" type="email" style="width:100%;box-sizing:border-box;padding:10px 13px;border-radius:10px;border:1.5px solid #f0c0d8;font-family:'Poppins',sans-serif;font-size:14px" placeholder="you@example.com"></div>
+            <div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;color:#d63384;display:block;margin-bottom:4px">Password</label>
+            <input id="sLoginPwd" type="password" style="width:100%;box-sizing:border-box;padding:10px 13px;border-radius:10px;border:1.5px solid #f0c0d8;font-family:'Poppins',sans-serif;font-size:14px" placeholder="Your password"></div>
+            <div id="sLoginErr" style="font-size:12px;color:#c62828;margin-bottom:8px;display:none"></div>
+            <button id="sLoginBtn" onclick="storyLogin()" style="width:100%;padding:12px;background:linear-gradient(135deg,#d63384,#9c27b0);color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif">Sign In →</button>
+            <p style="text-align:center;font-size:12px;color:#999;margin-top:12px">No account? <a href="#" onclick="sTab('register');return false" style="color:#d63384;font-weight:700">Create one — free!</a></p>
+        </div>
+        <!-- Register -->
+        <div id="sAuthReg" style="display:none">
+            <p style="font-size:13px;color:#999;margin-bottom:16px">Create a free account to comment.</p>
+            <div style="margin-bottom:10px"><label style="font-size:12px;font-weight:700;color:#d63384;display:block;margin-bottom:4px">Username</label>
+            <input id="sRegUser" type="text" maxlength="40" style="width:100%;box-sizing:border-box;padding:10px 13px;border-radius:10px;border:1.5px solid #f0c0d8;font-family:'Poppins',sans-serif;font-size:14px" placeholder="e.g. Ruva123"></div>
+            <div style="margin-bottom:10px"><label style="font-size:12px;font-weight:700;color:#d63384;display:block;margin-bottom:4px">Email</label>
+            <input id="sRegEmail" type="email" style="width:100%;box-sizing:border-box;padding:10px 13px;border-radius:10px;border:1.5px solid #f0c0d8;font-family:'Poppins',sans-serif;font-size:14px" placeholder="you@example.com"></div>
+            <div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;color:#d63384;display:block;margin-bottom:4px">Password</label>
+            <input id="sRegPwd" type="password" maxlength="72" style="width:100%;box-sizing:border-box;padding:10px 13px;border-radius:10px;border:1.5px solid #f0c0d8;font-family:'Poppins',sans-serif;font-size:14px" placeholder="At least 6 characters"></div>
+            <div id="sRegErr" style="font-size:12px;color:#c62828;margin-bottom:8px;display:none"></div>
+            <button id="sRegBtn" onclick="storyRegister()" style="width:100%;padding:12px;background:linear-gradient(135deg,#d63384,#9c27b0);color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif">Create Account →</button>
+        </div>
+    </div>
+</div>
 
 <script>
 const BASE = window.location.origin;
@@ -236,6 +268,7 @@ async function loadStory(id) {
 
         document.title = `${s.title} – QuoteMe ZW`;
         document.getElementById('commentsArea').style.display = 'block';
+        renderStoryCommentForm();
         loadComments(id);
     } catch(e) {
         container.innerHTML = `<div class="state-msg">😕 Could not load this story. <a href="/">Return home</a></div>`;
@@ -285,31 +318,150 @@ async function loadComments(id) {
     }
 }
 
+// ── USER AUTH STATE (reuse from localStorage set by main site) ──
+const AUTH_KEY  = 'qmzw_user_token';
+const AUTH_USER_KEY = 'qmzw_user';
+function getUser()  { try { return JSON.parse(localStorage.getItem(AUTH_USER_KEY)||'null'); } catch { return null; } }
+function getToken() { return localStorage.getItem(AUTH_KEY) || null; }
+function saveAuth(token, user) {
+    localStorage.setItem(AUTH_KEY, token);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+}
+let _storyUser  = getUser();
+let _storyToken = getToken();
+
+// ── STORY AUTH MODAL ──
+function openStoryAuth(tab) {
+    sTab(tab || 'login');
+    document.getElementById('storyAuthBackdrop').style.display = 'flex';
+    document.getElementById('sLoginErr').style.display = 'none';
+    document.getElementById('sRegErr').style.display   = 'none';
+}
+function closeStoryAuth() {
+    document.getElementById('storyAuthBackdrop').style.display = 'none';
+}
+function sTab(t) {
+    document.getElementById('sAuthLogin').style.display = t === 'login' ? '' : 'none';
+    document.getElementById('sAuthReg').style.display   = t === 'register' ? '' : 'none';
+    document.getElementById('sTabLogin').style.background = t === 'login' ? 'linear-gradient(135deg,#d63384,#9c27b0)' : 'transparent';
+    document.getElementById('sTabLogin').style.color = t === 'login' ? '#fff' : '#aaa';
+    document.getElementById('sTabReg').style.background = t === 'register' ? 'linear-gradient(135deg,#d63384,#9c27b0)' : 'transparent';
+    document.getElementById('sTabReg').style.color = t === 'register' ? '#fff' : '#aaa';
+}
+async function storyLogin() {
+    const email = document.getElementById('sLoginEmail').value.trim();
+    const pwd   = document.getElementById('sLoginPwd').value;
+    const errEl = document.getElementById('sLoginErr');
+    const btn   = document.getElementById('sLoginBtn');
+    errEl.style.display = 'none';
+    if (!email || !pwd) { errEl.textContent = 'Email and password are required.'; errEl.style.display = ''; return; }
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    try {
+        const res  = await fetch(`${BASE}/users/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password:pwd}) });
+        const data = await res.json().catch(()=>({}));
+        if (!res.ok) { errEl.textContent = data.detail||'Login failed.'; errEl.style.display=''; return; }
+        saveAuth(data.token, {id:data.id, username:data.username, email:data.email});
+        _storyUser  = getUser();
+        _storyToken = data.token;
+        closeStoryAuth();
+        renderStoryCommentForm();
+        toast('✅ Welcome back, ' + esc(data.username) + '!');
+    } catch(e) { errEl.textContent = 'Network error. Please try again.'; errEl.style.display=''; }
+    finally { btn.disabled = false; btn.textContent = 'Sign In →'; }
+}
+async function storyRegister() {
+    const username = document.getElementById('sRegUser').value.trim();
+    const email    = document.getElementById('sRegEmail').value.trim();
+    const pwd      = document.getElementById('sRegPwd').value;
+    const errEl    = document.getElementById('sRegErr');
+    const btn      = document.getElementById('sRegBtn');
+    errEl.style.display = 'none';
+    if (!username || !/^[a-zA-Z0-9_]{3,40}$/.test(username)) { errEl.textContent='Username: 3-40 chars, letters/numbers/underscores.'; errEl.style.display=''; return; }
+    if (!email.includes('@')) { errEl.textContent='Enter a valid email.'; errEl.style.display=''; return; }
+    if (pwd.length < 6) { errEl.textContent='Password must be at least 6 characters.'; errEl.style.display=''; return; }
+    btn.disabled = true; btn.textContent = 'Creating account…';
+    try {
+        const res  = await fetch(`${BASE}/users/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username,email,password:pwd}) });
+        const data = await res.json().catch(()=>({}));
+        if (!res.ok) { errEl.textContent = data.detail||'Registration failed.'; errEl.style.display=''; return; }
+        saveAuth(data.token, {id:data.id, username:data.username, email:data.email});
+        _storyUser  = getUser();
+        _storyToken = data.token;
+        closeStoryAuth();
+        renderStoryCommentForm();
+        toast('🎉 Welcome, ' + esc(data.username) + '!');
+    } catch(e) { errEl.textContent = 'Network error. Please try again.'; errEl.style.display=''; }
+    finally { btn.disabled = false; btn.textContent = 'Create Account →'; }
+}
+
+// ── RENDER COMMENT FORM ──
+function renderStoryCommentForm() {
+    const area = document.getElementById('storyCommentFormArea');
+    if (!area) return;
+    _storyUser = getUser(); _storyToken = getToken();
+    if (_storyUser) {
+        area.innerHTML = `
+            <h3>✍️ Leave a Comment</h3>
+            <div style="font-size:12px;font-weight:700;color:#d63384;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+                Commenting as <strong>${esc(_storyUser.username)}</strong>
+                <button onclick="storySignOut()" style="background:none;border:none;color:#aaa;font-size:11px;cursor:pointer;text-decoration:underline;font-family:'Poppins',sans-serif">Sign out</button>
+            </div>
+            <textarea id="commentText" class="comment-text-area" placeholder="Write your comment here…" maxlength="1000"></textarea>
+            <button class="post-btn" id="submitCommentBtn" onclick="submitComment()">Post Comment</button>`;
+    } else {
+        area.innerHTML = `
+            <div style="background:rgba(214,51,132,.05);border:1.5px dashed #f0c0d8;border-radius:14px;padding:20px;text-align:center;font-size:13px;color:#888">
+                <strong style="color:#d63384">Join the conversation!</strong><br>
+                Sign in or create a free account to leave a comment.
+                <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                    <button onclick="openStoryAuth('login')" style="background:transparent;border:1.5px solid #d63384;color:#d63384;padding:8px 18px;border-radius:18px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif">Sign In</button>
+                    <button onclick="openStoryAuth('register')" style="background:linear-gradient(135deg,#d63384,#9c27b0);color:#fff;border:none;padding:8px 18px;border-radius:18px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif">Create Account</button>
+                </div>
+            </div>`;
+    }
+}
+
+function storySignOut() {
+    localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+    _storyUser = null; _storyToken = null;
+    renderStoryCommentForm();
+    toast('You have signed out.');
+}
+
 // ── SUBMIT COMMENT ──
 async function submitComment() {
-    const username = document.getElementById('commentUsername').value.trim();
-    const content  = document.getElementById('commentText').value.trim();
-    const btn      = document.getElementById('submitCommentBtn');
-    if (!username) { toast('⚠️ Please enter your name.'); return; }
-    if (!content)  { toast('⚠️ Please write a comment.'); return; }
-    btn.disabled = true;
-    btn.textContent = 'Posting…';
+    _storyUser  = getUser();
+    _storyToken = getToken();
+    if (!_storyUser || !_storyToken) { openStoryAuth('login'); return; }
+    const content = (document.getElementById('commentText')?.value || '').replace(/<[^>]*>/g,'').trim();
+    const btn     = document.getElementById('submitCommentBtn');
+    if (!content) { toast('⚠️ Please write a comment.'); return; }
+    if (content.length > 1000) { toast('⚠️ Comment too long (max 1000 chars).'); return; }
+    btn.disabled = true; btn.textContent = 'Posting…';
     try {
         const res = await fetch(`${BASE}/comments`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, content, item_type: 'story', item_id: storyId })
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_storyToken}` },
+            body: JSON.stringify({ content, item_type: 'story', item_id: storyId })
         });
-        if (!res.ok) throw new Error('Post failed');
+        if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem(AUTH_KEY); localStorage.removeItem(AUTH_USER_KEY);
+            _storyUser = null; _storyToken = null;
+            renderStoryCommentForm();
+            toast('⚠️ Session expired. Please sign in again.');
+            return;
+        }
+        if (!res.ok) {
+            const err = await res.json().catch(()=>({}));
+            toast('❌ ' + (err.detail || 'Failed to post comment.'));
+            return;
+        }
         document.getElementById('commentText').value = '';
         toast('✅ Comment posted!');
         await loadComments(storyId);
-    } catch(e) {
-        toast('❌ Failed to post comment. Please try again.');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Post Comment';
-    }
+    } catch(e) { toast('❌ Failed to post comment. Please try again.'); }
+    finally { btn.disabled = false; btn.textContent = 'Post Comment'; }
 }
 
 // ── INIT: extract story ID from URL /story/123 ──
