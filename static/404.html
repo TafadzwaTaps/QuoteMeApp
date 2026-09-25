@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page Not Found – QuoteMe ZW</title>
+<meta name="robots" content="noindex, follow">
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+<meta name="theme-color" content="#d63384">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Poppins', sans-serif;
+    background: #ffeaf4;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+}
+.notfound-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 48px 40px 40px;
+    box-shadow: 0 8px 32px rgba(214,51,132,.12);
+    max-width: 480px;
+    width: 100%;
+}
+.notfound-code {
+    font-size: 96px;
+    font-weight: 700;
+    color: #d63384;
+    line-height: 1;
+    margin-bottom: 8px;
+    letter-spacing: -4px;
+}
+.notfound-emoji {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+}
+h1 {
+    font-size: 22px;
+    color: #d63384;
+    margin-bottom: 10px;
+}
+p {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 28px;
+    line-height: 1.6;
+}
+.nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 28px;
+}
+.btn {
+    display: inline-block;
+    padding: 10px 22px;
+    background: #d63384;
+    color: #fff;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background .2s;
+}
+.btn:hover { background: #b12a6f; }
+.btn.outline {
+    background: transparent;
+    border: 2px solid #d63384;
+    color: #d63384;
+}
+.btn.outline:hover { background: #d63384; color: #fff; }
+.brand {
+    font-size: 14px;
+    color: #bbb;
+    margin-top: 8px;
+}
+.brand a { color: #d63384; text-decoration: none; font-weight: 600; }
+@media (max-width: 480px) {
+    .notfound-card { padding: 32px 20px 28px; }
+    .notfound-code { font-size: 72px; }
+}
+</style>
+</head>
+<body>
+<div class="notfound-card">
+    <div class="notfound-code">404</div>
+    <span class="notfound-emoji">😕</span>
+    <h1>Page Not Found</h1>
+    <p>The page you're looking for doesn't exist or may have been moved. Let's get you back to something inspiring.</p>
+    <div class="nav-links">
+        <a href="/" class="btn">🏠 Home</a>
+        <a href="/#stories" class="btn outline">📖 Stories</a>
+        <a href="/#blog" class="btn outline">✍️ Blog</a>
+        <a href="/#quotes" class="btn outline">💬 Quotes</a>
+    </div>
+    <p class="brand"><a href="/">QuoteMe ZW</a> — Inspiring Zimbabwe, one story at a time.</p>
+</div>
+</body>
+</html>
